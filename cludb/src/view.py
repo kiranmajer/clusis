@@ -1,10 +1,3 @@
-'''
-Created on Sep 4, 2012
-
-@author: kiran
-
-Provides a view object
-'''
 import matplotlib.pyplot as plt
 import os.path
 

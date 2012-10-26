@@ -1,5 +1,3 @@
-'''Just some tags for git'''
-
 import os.path
 
 

@@ -1,8 +1,3 @@
-'''
-Created on Aug 23, 2012
-
-@author: kiran
-'''
 import os
 from dbshell import Db
 import config
