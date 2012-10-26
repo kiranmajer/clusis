@@ -1,6 +1,3 @@
-'''
-Initializes paths and db folders.
-'''
 import os
 from dbshell import Db
 import config
