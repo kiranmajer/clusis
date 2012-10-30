@@ -228,6 +228,7 @@ class LegacyData(object):
         from the dir structure and add it to mdata
         '''
         if baseDirName in self.metadata['datFileOrig'].split('/'):
+            self.metadata['maschineType'] = baseDirName
             splitted_path = self.metadata['datFileOrig'].split('/')[self.metadata['datFileOrig'].split('/').index(baseDirName) + 1:]
             if len(splitted_path) == 5 or len(splitted_path) == 6:
                 self.metadata['clusterBaseUnit'] = splitted_path[0].title()

@@ -4,7 +4,7 @@ import os.path
 '''
 Adapting the following line should generally suffice.
 '''
-mainStorageDir = '/home/kiran/uni/python/ClusterBib_old'
+mainStorageDir = '/home/kiran/uni/cluster/cludb'
 
 
 '''

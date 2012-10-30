@@ -52,6 +52,25 @@ def moveBack(movedFiles):
     for pair in movedFiles:
         os.rename(pair[0], pair[1])
 
+
+def lsRecursive(rootdir, suffix='.dat'):
+    '''
+    Populates a list with the full path of all files recursively found
+    under rootdir with corresponding suffix.
+     
+    Returns: list.
+    '''
+    fileList = []
+    rootdir = os.path.abspath(rootdir)
+    if os.path.exists(rootdir):
+        for root, subFolders, files in os.walk(rootdir):
+            for f in files:
+                if f.endswith(suffix) and root.find('selection') == -1: #skip selection folders since they contain doublets
+                    fileList.append(os.path.join(root,f))
+    else: raise IOError(2, 'No such file or directory: ' + rootdir)
+            
+    return fileList
+
  
 def importLegacyData(datFiles, commonMdata={}):
     '''Build a list, so we can work with lists only'''
@@ -141,30 +160,30 @@ def loadPickle(pickleFile):
 
     
     
-def load(loads):
-    '''Make a list, so we can work only with lists'''
-    loadList = []
-    if type(loads) is list:
-        loadList.extend(loads)
-    else:
-        loadList.append(loads)
-        
-    pickleSpecs = []
-    legacyDataSpecs = []
-    for item in loadList:
-        if type(item) is str: # should be path to pickle file
-            spec = loadPickle(item)
-            pickleSpecs.append(spec)
-        else:
-            spec = loadLegacyData(item)
-            legacyDataSpecs.append(spec)
-    
-    if len(legacyDataSpecs) > 0:
-        Db.add(legacyDataSpecs)
-        
-    return pickleSpecs.extend(legacyDataSpecs)
-
-    
+#def load(loads):
+#    '''Make a list, so we can work only with lists'''
+#    loadList = []
+#    if type(loads) is list:
+#        loadList.extend(loads)
+#    else:
+#        loadList.append(loads)
+#        
+#    pickleSpecs = []
+#    legacyDataSpecs = []
+#    for item in loadList:
+#        if type(item) is str: # should be path to pickle file
+#            spec = loadPickle(item)
+#            pickleSpecs.append(spec)
+#        else:
+#            spec = loadLegacyData(item)
+#            legacyDataSpecs.append(spec)
+#    
+#    if len(legacyDataSpecs) > 0:
+#        Db.add(legacyDataSpecs)
+#        
+#    return pickleSpecs.extend(legacyDataSpecs)
+#
+#    
     
     
     

@@ -1,11 +1,11 @@
 from __future__ import unicode_literals
 from legacyData import *
 import scipy.constants as constants
-from plotlibs import *
+#from plotlibs import *
 from dbshell import *
 #from recursive_import import *
-from pes_sheet import *
-from msplot import *
+#from pes_sheet import *
+#from msplot import *
 from scipy.optimize import leastsq
 import view
 
@@ -67,7 +67,7 @@ class peSpec(Spec):
         self.xdata['ekin'] = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength')/self.xdata['tof'])**2
     
     def __calcEbin(self):
-        self.xdata['ebin'] = photonEnergy(self.mdata.data('waveLength')) - self.xdata['ekin']
+        self.xdata['ebin'] = self.photonEnergy(self.mdata.data('waveLength')) - self.xdata['ekin']
         
     def __fixNegIntensities(self):
         """

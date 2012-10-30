@@ -11,6 +11,7 @@ class Mdata(object):
         '''
         self.__reference = {'tags': [list, ['ms', 'pes', 'pfs'], True],
                           'sha1': [str, ['ms', 'pes', 'pfs'], True],
+                          'maschineType': [['casi'], ['ms', 'pes', 'pfs'], True],
                           'recTime': [float, ['ms', 'pes', 'pfs'], True],
                           'clusterBaseUnit': [str, ['ms', 'pes', 'pfs'], True],
                           'clusterDopant': [str, ['ms', 'pes', 'pfs'], True],
