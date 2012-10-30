@@ -9,6 +9,8 @@ from spec import *
 #def sha1Unique(mdata):
 #    return db.tableHas(mdata['specType'], ['sha1', mdata['sha1']])
 
+'''Just a few comments for the git'''
+
 
 def fileStoragePossible(mdata):
     paths = [mdata['datFile'], mdata['pickleFile']]
