@@ -84,7 +84,7 @@ def importLegacyData(datFiles, commonMdata={}):
     specList = []
     movedFiles =[]
     failedImports = []
-    '''TODO: adapt for more db'''
+    "TODO: adapt for more db"
     with Db('casi') as db:
         for datFile in datFileList:
             #print 'Importing: '+datFile+' with ', commonMdata

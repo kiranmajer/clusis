@@ -1,6 +1,7 @@
 import os
 from dbshell import Db
 import config
+import ConfigParser
 
 
 
@@ -23,10 +24,23 @@ def initDb(dbDict):
     
         
         
+def initCludb(mainStorageDir=config.mainStorageDir):
+    cfg = ConfigParser.SafeConfigParser()
+    "set base path where all cludb files live"
+    if mainStorageDir == config.mainStorageDir:
+        userCfgFile = os.path.join(config.mainStorageDir, '.cludb')
+        if os.path.isfile(userCfgFile):
+            cfg.read(userCfgFile)
+            config.mainStorageDir = cfg.get('Settings','mainStorageDir')
+    else:
+        userCfgFile = os.path.join(mainStorageDir, '.cludb')
+            
+            with open(userCfgFile) as f:
+            
+    config.mainStorageDir = mainStorageDir
+    for p in config.path.itervalues():
+        checkPath(p)
         
-for p in config.path.itervalues():
-    checkPath(p)
-    
-initDb(config.db)
+    initDb(config.db)
                 
                 

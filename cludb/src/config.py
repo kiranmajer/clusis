@@ -1,24 +1,20 @@
 import os.path
 
-
-'''
-Adapting the following line should generally suffice.
-'''
-mainStorageDir = '/home/kiran/uni/cluster/cludb'
-
-
 '''
 Only change the following if you know what you do
 '''
-dataStorageDir = os.path.join(mainStorageDir, 'data')
-archiveStorageDir = os.path.join(dataStorageDir, 'archive')
+cfgDir = os.path.join(os.path.expanduser('~'), '.cludb')
+baseDir = 'cludb'
+dataStorageDir = os.path.join(baseDir, 'data')
+archiveStorageDir = os.path.join(baseDir, 'archive')
 
-path = {'base': mainStorageDir,
+path = {'cfg': cfgDir,
+        'base': baseDir,
         'data': dataStorageDir,
         'archive': archiveStorageDir
         }
              
-db = {'casi': {'path': path['data'],
+db = {'casi': {'path': path['base'],
                'layout': {'pes': (['sha1', 'TEXT PRIMARY KEY'],
                                   ['clusterBaseUnit', 'TEXT'],
                                   ['clusterBaseUnitNumber', 'INTEGER'],
