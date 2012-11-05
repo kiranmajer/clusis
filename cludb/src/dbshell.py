@@ -3,14 +3,14 @@ import sqlite3
 import os
 #import calendar
 import time
-import config
+#import config
 
 
 class Db(object):
-    def __init__(self, dbName):
+    def __init__(self, dbName, cfg):
         self.__dbName = dbName
         dbFileName = '%s.db' % dbName
-        self.__dbProps = config.db[dbName]
+        self.__dbProps = cfg.db[dbName]
         self.__dbFile = os.path.join(self.__dbProps['path'], dbFileName)
         'TODO: into config?'        
         sqlite3.register_adapter(list, self.__listAdapter)
@@ -246,190 +246,190 @@ class Db(object):
 
 
 
-
-
-class Cursor(object):
-    """Simple wrapper, allows to open a cursor with the 'with'-statement."""
-
-    def __init__(self, connection):
-        self.connection = connection
-
-    def __enter__(self):
-        self.cursor = self.connection.cursor()
-        return self.cursor
-
-    def __exit__(self, value, traceback):
-        self.cursor.close()
-        
-
-class DatabaseConnector(object):
-    """    """
-
-    def __enter__(self, db_path='/home/kiran/python/ClusterBib_old/rawdata',
-                  db_filename='spectra.db'):
-        self.db_file = os.path.join(db_path, db_filename)
-        if not os.path.exists(self.db_file):
-            self.create_pes_table()
-            self.create_ms_table()
-        self.connection = sqlite3.connect(self.db_file)
-        self.connection.row_factory = sqlite3.Row
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self.connection.close()
-        
-    def create_table(self, tablename):
-        sql_query = 'CREATE TABLE IF NOT EXISTS' + tablename
-        sql = sql_query + ", ".join([" ".join([key, value[0]]) for key, value in db_map.iteritems()]) + ')'
-        
-
-    def create_pes_table(self):
-        sql = """CREATE TABLE IF NOT EXISTS pes (
-        clusterBaseUnit TEXT,
-        clusterBaseUnitNumber INTEGER,
-        clusterDopant TEXT,
-        clusterDopantNumber TEXT,
-        pickleFile TEXT UNIQUE,
-        datFile TEXT,
-        tags TEXT,
-        waveLength REAL,
-        recordingTime TEXT UNIQUE
-        )"""
-        connection = sqlite3.connect(self.db_file)
-        with Cursor(connection) as cursor:
-            cursor.execute(sql)
-        connection.close()
-
-
-    def create_ms_table(self):
-        sql = """CREATE TABLE IF NOT EXISTS ms (
-        clusterBaseUnit TEXT,
-        clusterBaseUnitNumberStart INTEGER,
-        clusterBaseUnitNumberEnd INTEGER,
-        clusterDopant TEXT,
-        clusterDopantNumber TEXT,
-        pickleFile TEXT UNIQUE,
-        datFile TEXT,
-        tags TEXT,
-        recordingTime TEXT UNIQUE
-        )"""
-        connection = sqlite3.connect(self.db_file)
-        with Cursor(connection) as cursor:
-            cursor.execute(sql)
-        connection.close()
-
-
-    def prep_sql_query(self, spectrum_sets):
-        def keepit(item):
-            return item
-        sql_key_dict={
-                      'clusterBaseUnit': keepit,
-                      'clusterBaseUnitNumber': keepit,
-                      'clusterDopant': keepit,
-                      'clusterDopantNumber': keepit,
-                      'pickleFile': keepit,
-                      'datFile': keepit,
-                      'tags':str,
-                      'waveLength': keepit,
-                      'recordingTime':calendar.timegm
-                      }
-        return {key: value(spectrum_sets.data[key]) for key,value in 
-                sql_key_dict.iteritems()}
-        
-
-    def prep_sql_query_ms(self, spectrum_sets):
-        def keepit(item):
-            return item
-        sql_key_dict={
-                      'clusterBaseUnit': keepit,
-                      'clusterBaseUnitNumberStart': keepit,
-                      'clusterBaseUnitNumberEnd': keepit,
-                      'clusterDopant': keepit,
-                      'clusterDopantNumber': keepit,
-                      'pickleFile': keepit,
-                      'datFile': keepit,
-                      'tags':str,
-                      'recordingTime':calendar.timegm
-                      }
-        return {key: value(spectrum_sets.data[key]) for key,value in 
-                sql_key_dict.iteritems()}
-
-
-
-    def insert_spectra(self, spectrum_sets):
-        sql = """INSERT OR IGNORE INTO pes (
-        clusterBaseUnit,
-        clusterBaseUnitNumber,
-        clusterDopant,
-        clusterDopantNumber,
-        pickleFile,
-        datFile,
-        tags,
-        waveLength,
-        recordingTime
-        ) VALUES (
-        :clusterBaseUnit,
-        :clusterBaseUnitNumber,
-        :clusterDopant,
-        :clusterDopantNumber,
-        :pickleFile,
-        :datFile,
-        :tags,
-        :waveLength,
-        :recordingTime        
-        )"""
-        sql_query = [self.prep_sql_query(set) for set in spectrum_sets]
-        with Cursor(self.connection) as cursor:
-            cursor.executemany(sql, sql_query)
-        self.connection.commit()
-        
-    
-    def insert_ms(self, spectrum_sets):
-        sql = """INSERT OR IGNORE INTO ms (
-        clusterBaseUnit,
-        clusterBaseUnitNumberStart,
-        clusterBaseUnitNumberEnd,
-        clusterDopant,
-        clusterDopantNumber,
-        pickleFile,
-        datFile,
-        tags,
-        recordingTime
-        ) VALUES (
-        :clusterBaseUnit,
-        :clusterBaseUnitNumberStart,
-        :clusterBaseUnitNumberEnd,
-        :clusterDopant,
-        :clusterDopantNumber,
-        :pickleFile,
-        :datFile,
-        :tags,
-        :recordingTime        
-        )"""
-        sql_query = [self.prep_sql_query_ms(set) for set in spectrum_sets]
-        with Cursor(self.connection) as cursor:
-            cursor.executemany(sql, sql_query)
-        self.connection.commit()    
-    
-        
-    def get_picklefile_from_datfile(self,datFileName, specType='pes'):
-        sql = "SELECT pickleFile from " + specType + " WHERE datFile LIKE ?"
-        with Cursor(self.connection) as cursor:
-            return cursor.execute(sql, ('%'+datFileName+'%', )).fetchall()
-        
-    def sql_query(self, query):
-        with Cursor(self.connection) as cursor:
-            return cursor.execute(query).fetchall()
-        
-        
-        
-if __name__ == "__main__":
-    connection = sqlite3.connect('../rawdata/spectra.db')
-    cursor = connection.cursor()
-    cursor.execute("""CREATE TABLE pes (clusterBaseUnit TEXT, clusterBaseUnitNumber INTEGER, pickleFile TEXT, pickleFileDir TEXT)""")
-    sql = "INSERT INTO pes VALUES (:clusterBaseUnit, :clusterBaseUnitNumber, :pickleFile, :pickleFileDir)"
-    cursor.execute(sql, na38.data)
-    cursor.execute(sql, k38.data)
-    connection.commit()
-    cursor.execute("""SELECT pickleFile, pickleFileDir from pes WHERE clusterBaseUnit='Na' AND clusterBaseUnitNumber = '38'""")
-    cursor.fetchall()
+#
+#
+#class Cursor(object):
+#    """Simple wrapper, allows to open a cursor with the 'with'-statement."""
+#
+#    def __init__(self, connection):
+#        self.connection = connection
+#
+#    def __enter__(self):
+#        self.cursor = self.connection.cursor()
+#        return self.cursor
+#
+#    def __exit__(self, value, traceback):
+#        self.cursor.close()
+#        
+#
+#class DatabaseConnector(object):
+#    """    """
+#
+#    def __enter__(self, db_path='/home/kiran/python/ClusterBib_old/rawdata',
+#                  db_filename='spectra.db'):
+#        self.db_file = os.path.join(db_path, db_filename)
+#        if not os.path.exists(self.db_file):
+#            self.create_pes_table()
+#            self.create_ms_table()
+#        self.connection = sqlite3.connect(self.db_file)
+#        self.connection.row_factory = sqlite3.Row
+#        return self
+#
+#    def __exit__(self, type, value, traceback):
+#        self.connection.close()
+#        
+#    def create_table(self, tablename):
+#        sql_query = 'CREATE TABLE IF NOT EXISTS' + tablename
+#        sql = sql_query + ", ".join([" ".join([key, value[0]]) for key, value in db_map.iteritems()]) + ')'
+#        
+#
+#    def create_pes_table(self):
+#        sql = """CREATE TABLE IF NOT EXISTS pes (
+#        clusterBaseUnit TEXT,
+#        clusterBaseUnitNumber INTEGER,
+#        clusterDopant TEXT,
+#        clusterDopantNumber TEXT,
+#        pickleFile TEXT UNIQUE,
+#        datFile TEXT,
+#        tags TEXT,
+#        waveLength REAL,
+#        recordingTime TEXT UNIQUE
+#        )"""
+#        connection = sqlite3.connect(self.db_file)
+#        with Cursor(connection) as cursor:
+#            cursor.execute(sql)
+#        connection.close()
+#
+#
+#    def create_ms_table(self):
+#        sql = """CREATE TABLE IF NOT EXISTS ms (
+#        clusterBaseUnit TEXT,
+#        clusterBaseUnitNumberStart INTEGER,
+#        clusterBaseUnitNumberEnd INTEGER,
+#        clusterDopant TEXT,
+#        clusterDopantNumber TEXT,
+#        pickleFile TEXT UNIQUE,
+#        datFile TEXT,
+#        tags TEXT,
+#        recordingTime TEXT UNIQUE
+#        )"""
+#        connection = sqlite3.connect(self.db_file)
+#        with Cursor(connection) as cursor:
+#            cursor.execute(sql)
+#        connection.close()
+#
+#
+#    def prep_sql_query(self, spectrum_sets):
+#        def keepit(item):
+#            return item
+#        sql_key_dict={
+#                      'clusterBaseUnit': keepit,
+#                      'clusterBaseUnitNumber': keepit,
+#                      'clusterDopant': keepit,
+#                      'clusterDopantNumber': keepit,
+#                      'pickleFile': keepit,
+#                      'datFile': keepit,
+#                      'tags':str,
+#                      'waveLength': keepit,
+#                      'recordingTime':calendar.timegm
+#                      }
+#        return {key: value(spectrum_sets.data[key]) for key,value in 
+#                sql_key_dict.iteritems()}
+#        
+#
+#    def prep_sql_query_ms(self, spectrum_sets):
+#        def keepit(item):
+#            return item
+#        sql_key_dict={
+#                      'clusterBaseUnit': keepit,
+#                      'clusterBaseUnitNumberStart': keepit,
+#                      'clusterBaseUnitNumberEnd': keepit,
+#                      'clusterDopant': keepit,
+#                      'clusterDopantNumber': keepit,
+#                      'pickleFile': keepit,
+#                      'datFile': keepit,
+#                      'tags':str,
+#                      'recordingTime':calendar.timegm
+#                      }
+#        return {key: value(spectrum_sets.data[key]) for key,value in 
+#                sql_key_dict.iteritems()}
+#
+#
+#
+#    def insert_spectra(self, spectrum_sets):
+#        sql = """INSERT OR IGNORE INTO pes (
+#        clusterBaseUnit,
+#        clusterBaseUnitNumber,
+#        clusterDopant,
+#        clusterDopantNumber,
+#        pickleFile,
+#        datFile,
+#        tags,
+#        waveLength,
+#        recordingTime
+#        ) VALUES (
+#        :clusterBaseUnit,
+#        :clusterBaseUnitNumber,
+#        :clusterDopant,
+#        :clusterDopantNumber,
+#        :pickleFile,
+#        :datFile,
+#        :tags,
+#        :waveLength,
+#        :recordingTime        
+#        )"""
+#        sql_query = [self.prep_sql_query(set) for set in spectrum_sets]
+#        with Cursor(self.connection) as cursor:
+#            cursor.executemany(sql, sql_query)
+#        self.connection.commit()
+#        
+#    
+#    def insert_ms(self, spectrum_sets):
+#        sql = """INSERT OR IGNORE INTO ms (
+#        clusterBaseUnit,
+#        clusterBaseUnitNumberStart,
+#        clusterBaseUnitNumberEnd,
+#        clusterDopant,
+#        clusterDopantNumber,
+#        pickleFile,
+#        datFile,
+#        tags,
+#        recordingTime
+#        ) VALUES (
+#        :clusterBaseUnit,
+#        :clusterBaseUnitNumberStart,
+#        :clusterBaseUnitNumberEnd,
+#        :clusterDopant,
+#        :clusterDopantNumber,
+#        :pickleFile,
+#        :datFile,
+#        :tags,
+#        :recordingTime        
+#        )"""
+#        sql_query = [self.prep_sql_query_ms(set) for set in spectrum_sets]
+#        with Cursor(self.connection) as cursor:
+#            cursor.executemany(sql, sql_query)
+#        self.connection.commit()    
+#    
+#        
+#    def get_picklefile_from_datfile(self,datFileName, specType='pes'):
+#        sql = "SELECT pickleFile from " + specType + " WHERE datFile LIKE ?"
+#        with Cursor(self.connection) as cursor:
+#            return cursor.execute(sql, ('%'+datFileName+'%', )).fetchall()
+#        
+#    def sql_query(self, query):
+#        with Cursor(self.connection) as cursor:
+#            return cursor.execute(query).fetchall()
+#        
+#        
+#        
+#if __name__ == "__main__":
+#    connection = sqlite3.connect('../rawdata/spectra.db')
+#    cursor = connection.cursor()
+#    cursor.execute("""CREATE TABLE pes (clusterBaseUnit TEXT, clusterBaseUnitNumber INTEGER, pickleFile TEXT, pickleFileDir TEXT)""")
+#    sql = "INSERT INTO pes VALUES (:clusterBaseUnit, :clusterBaseUnitNumber, :pickleFile, :pickleFileDir)"
+#    cursor.execute(sql, na38.data)
+#    cursor.execute(sql, k38.data)
+#    connection.commit()
+#    cursor.execute("""SELECT pickleFile, pickleFileDir from pes WHERE clusterBaseUnit='Na' AND clusterBaseUnitNumber = '38'""")
+#    cursor.fetchall()

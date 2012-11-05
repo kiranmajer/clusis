@@ -8,6 +8,7 @@ from dbshell import *
 #from msplot import *
 from scipy.optimize import leastsq
 import view
+import pickle
 
 
 

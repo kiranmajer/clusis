@@ -1,7 +1,7 @@
 from spec import *
 #import config
 #import MdataUtils
-#import pickle
+import pickle
 #import os
 #import numpy as np
 
@@ -25,22 +25,32 @@ def fileStoragePossible(mdata):
         filestoragepossible = True
     finally:
         return filestoragepossible
+    
+def absPath(cfg, p):
+    if not os.path.isabs(p):
+        p = os.path.join(cfg.path['base'], p)
+        
+    return p
 
 
-def archive(mdata):
+def archive(cfg, mdata):
     """Move raw data file(s) *.dat (and *.cfg) to raw data archive.
     Update mdata with file location.
     """
-    old_file = mdata['datFileOrig']
-    new_file = mdata['datFile']
+    old_file = absPath(cfg, mdata['datFileOrig'])
+    new_file = absPath(cfg, mdata['datFile'])
+    if not os.path.exists(os.path.dirname(new_file)):
+        os.mkdir(os.path.dirname(new_file))
     '''TODO: catch io exceptions'''
     os.rename(old_file, new_file)
     movedFiles = [[new_file, old_file]]
         
     
     if 'cfgFileOrig' in mdata:
-        old_cfg = mdata['cfgFileOrig']
-        new_cfg = mdata['cfgFile']
+        old_cfg = absPath(cfg, mdata['cfgFileOrig'])
+        new_cfg = absPath(cfg, mdata['cfgFile'])
+        if not os.path.exists(os.path.dirname(new_cfg)):
+            os.mkdir(os.path.dirname(new_cfg))
         os.rename(old_cfg, new_cfg)
         movedFiles.append([new_cfg, old_cfg])
     
@@ -71,7 +81,7 @@ def lsRecursive(rootdir, suffix='.dat'):
     return fileList
 
  
-def importLegacyData(datFiles, commonMdata={}):
+def importLegacyData(cfg, datFiles, commonMdata={}):
     '''Build a list, so we can work with lists only'''
     datFileList = []
     if type(datFiles) is list:
@@ -85,11 +95,11 @@ def importLegacyData(datFiles, commonMdata={}):
     movedFiles =[]
     failedImports = []
     "TODO: adapt for more db"
-    with Db('casi') as db:
+    with Db('casi', cfg) as db:
         for datFile in datFileList:
             #print 'Importing: '+datFile+' with ', commonMdata
             try:
-                mi = LegacyData(datFile, commonMdata)
+                mi = LegacyData(datFile, cfg, commonMdata)
             except:
                 failedImports.append([datFile, 'LegacyData creation failed'])
                 #raise
@@ -99,7 +109,7 @@ def importLegacyData(datFiles, commonMdata={}):
                     #print os.path.basename(datFile) + '''ready to convert ...
                     #'''
                     try:
-                        moved = archive(mi.mdata.data())
+                        moved = archive(cfg, mi.mdata.data())
                         movedFiles.extend(moved)
                         # init spec obj
                         mdata = mi.mdata.data()
@@ -111,7 +121,7 @@ def importLegacyData(datFiles, commonMdata={}):
                     except:
                         '''TODO: add error reason'''
                         failedImports.append([datFile, 'An error occurred during: moving raw data or creating spec or committing pickle'])
-                        #raise
+                        raise
                     else:
                         spec.mdata.rm('datFileOrig')
                         spec.mdata.rm('cfgFileOrig')

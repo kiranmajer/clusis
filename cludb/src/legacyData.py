@@ -2,19 +2,22 @@ from __future__ import unicode_literals
 import glob
 import numpy as np
 import os
-import pickle
+#import pickle
 import re
 import time
 import hashlib
 import MdataUtils
-import config
+#import config
 
 
 
 class LegacyData(object):
     
-    def __init__(self, fileToImport, commonMdata={}):
-        self.metadata = {'datFileOrig': os.path.abspath(fileToImport), 'tags': []}
+    def __init__(self, fileToImport, cfg, commonMdata={}, machine='casi'):
+        self.metadata = {'datFileOrig': os.path.abspath(fileToImport),
+                         'tags': [],
+                         'machine': machine}
+        self.cfg = cfg
         self.header = []
         self.data = []
         
@@ -59,7 +62,7 @@ class LegacyData(object):
         if 'Wellenlaenge:' in self.header and len(self.data) > min_line_count:
             '''TODO: adapt for more machines'''
             self.metadata['specType'] = 'pes'
-            for k,v in config.defaults['casi']['pes'].iteritems():
+            for k,v in self.cfg.defaults[self.metadata['machine']]['pes'].iteritems():
                 if k not in self.metadata.keys():
                     self.metadata[k] = v
         elif 'Trigger_Offset[s]' in self.header and len(self.data) > min_line_count:
@@ -123,7 +126,9 @@ class LegacyData(object):
         """Adds to the mdata dictionary some basic data: 
            tags, recTime ...
         """
-        self.metadata['datFile'] = os.path.join(config.path['archive'], os.path.basename(self.metadata['datFileOrig']))
+        self.metadata['datFile'] = os.path.join(self.cfg.path['archive'],
+                                                self.metadata['machine'],
+                                                os.path.basename(self.metadata['datFileOrig']))
         #self.metadata['tags'] = []
         ''' build pickle file name and path according following scheme:
         config.path['data']/<year>/<recTime>_<sha1>.pickle'''
@@ -131,7 +136,7 @@ class LegacyData(object):
         m = str(time.localtime(self.metadata['recTime']).tm_mon)
         d = str(time.localtime(self.metadata['recTime']).tm_mday)
         pickleFileName = '%s-%s-%s_%s.pickle' % (y,m,d,self.metadata['sha1'])
-        pickleFileDir = os.path.join(config.path['data'], y)
+        pickleFileDir = os.path.join(self.cfg.path['data'], y)
         self.metadata['pickleFile'] = os.path.join(pickleFileDir, pickleFileName)
 
 
@@ -219,17 +224,18 @@ class LegacyData(object):
         except:
             raise #ValueError('Importing cfg file failed.')
         else:
-            self.metadata['cfgFile'] = os.path.join(config.path['archive'], os.path.basename(self.metadata['cfgFileOrig']))
+            self.metadata['cfgFile'] = os.path.join(self.cfg.path['archive'],
+                                                    self.metadata['machine'],
+                                                    os.path.basename(self.metadata['cfgFileOrig']))
     
     
-    def parseDirStructure(self, baseDirName='casi'):
+    def parseDirStructure(self):
         '''
-        If the the full filepath contains baseDirName, try to extract some metadata
+        If the the full filepath contains self.metadata['machine'], try to extract some metadata
         from the dir structure and add it to mdata
         '''
-        if baseDirName in self.metadata['datFileOrig'].split('/'):
-            self.metadata['maschineType'] = baseDirName
-            splitted_path = self.metadata['datFileOrig'].split('/')[self.metadata['datFileOrig'].split('/').index(baseDirName) + 1:]
+        if self.metadata['machine'] in self.metadata['datFileOrig'].split('/'):
+            splitted_path = self.metadata['datFileOrig'].split('/')[self.metadata['datFileOrig'].split('/').index(self.metadata['machine']) + 1:]
             if len(splitted_path) == 5 or len(splitted_path) == 6:
                 self.metadata['clusterBaseUnit'] = splitted_path[0].title()
                 self.metadata['ionType'] = splitted_path[1]
@@ -274,159 +280,159 @@ class LegacyData(object):
 
 
 
-
-
-
-def cleanup_raw_files(mdata, rawDataArchiveDir):
-    """Move raw data file(s) *.dat (and *.cfg) to raw data archive.
-    Update mdata with file location.
-    
-    Returns: dictionary."""
-    os.rename(mdata['datFile'],
-              os.path.join(rawDataArchiveDir, mdata['datFileName']))
-    del mdata['datFile']
-    del mdata['daFileDir']
-    mdata['rawDataArchiveDir'] = rawDataArchiveDir
-    
-    if 'cfgFileName' in mdata:
-        os.rename(os.path.join(mdata['cfgFileDir'], mdata['cfgFileName']),
-                  os.path.join(rawDataArchiveDir, mdata['cfgFileName']))
-        del mdata['cfgFileDir']
-        
-    return mdata
-
-
-def is_numeric(string):
-    """Return 'int' or 'float', if string can be converted, else raise
-    ValueError exception'.
-    
-    Returns: string."""
-    try:
-        int(string)
-        return 'int'
-    except ValueError:
-        pass
-    try:
-        float(string)
-        return 'float'
-    except ValueError:
-        pass
-
-
-def fix_number_type(mdata):
-    """Convert strings which represent numbers to int or float.
-    
-    Returns: dictionary."""
-    for k,v in mdata.iteritems():
-        if type(v) == str and is_numeric(v) == 'int':
-            mdata[k] = int(v)
-        elif type(v) == str and is_numeric(v) == 'float':
-            mdata[k] = float(v)
-            
-    return mdata
-
-
-def write_data_file(mdata, data_dir, spectrum, fileVersion = 0.1):
-    dataFileName = str(mdata['recTime'].tm_year) + '_' + \
-    str(mdata['recTime'].tm_mon) + '_' + \
-    str(mdata['recTime'].tm_mday) + '-' + \
-    str(mdata['recTime'].tm_hour) + '_' + \
-    str(mdata['recTime'].tm_min) + '_' + \
-    str(mdata['recTime'].tm_sec) + '.dat'
-    mdata['dataFileName'] = dataFileName
-    mdata['dataFileDir'] = os.path.join(data_dir,
-                                           str(mdata['recTime'].tm_year))
-    mdata['dataFile'] = os.path.join(mdata['dataFileDir'], dataFileName)
-   
-    with open(mdata['dataFile'], "w") as f:
-        f.write('# ClusterBib spectrum file, v. ' + str(fileVersion) + '\n')
-        f.write('#\n')
-        f.write('########## begin mdata ##########\n')
-        # reduce mdata
-        mdata['recTime'] = time.strftime("%d %b %Y %H:%M:%S",
-                                                  mdata['recTime'])
-        for key, value in mdata.iteritems():
-            f.write('# ' + key + ' = ' + str(value) + ' ' +
-                    str(type(value)) + '\n')
-            f.write('########## end mdata ##########\n')
-            for line in spectrum:
-                f.write(str(line) + '\n')
-                
-    mdata['recTime'] = time.strptime(mdata['recTime'],
-                                              "%d %b %Y %H:%M:%S")
-    return mdata
-
-def write_pickle_file(mdata, pickle_dir):
-    '''
-    Stores the mdata dict in a pickle file under the path:
-    pickle_dir/<year>/<dat_time>.pickle
-    
-    @param mdata:
-    @param pickle_dir:
-    '''
-    pickle_file_name = str(mdata['recTime'].tm_year) + '_' + \
-    str(mdata['recTime'].tm_mon) + '_' +\
-    str(mdata['recTime'].tm_mday) + '-' + \
-    str(mdata['recTime'].tm_hour) + '_' + \
-    str(mdata['recTime'].tm_min) + '_' + \
-    str(mdata['recTime'].tm_sec) + '.pickle'
-    mdata['pickleFileName'] = pickle_file_name
-    mdata['pickleFileDir'] = os.path.join(pickle_dir,
-                                             str(mdata['recTime'].tm_year))
-    mdata['pickleFile'] = os.path.join(mdata['pickleFileDir'],
-                                          pickle_file_name)
-    if not os.path.exists(mdata['pickleFileDir']):
-        os.makedirs(mdata['pickleFileDir'])
-    with open(mdata['pickleFile'], 'wb') as f:
-        pickle.dump(mdata, f)
-
-
-class LegacyImport(object):
-    def __init__(self, dat_file_name, dat_file_dir, common_values,
-                 pickle_dir = '../rawdata/data',
-                 archive_dir = '../rawdata/archive'):
-        datfile = os.path.join(dat_file_dir, dat_file_name)
-        try:
-            with open(datfile) as f:
-                raw_mdata, spectrum = strip_file(f)
-            mdata = eval_dat_file(raw_mdata, spectrum)
-            mdata = mdata_basics(dat_file_name, dat_file_dir, mdata)
-            if mdata['specType'] == 'pes':
-                mdata = verify_recTime(mdata)
-                mdata = find_cfg_file(mdata['datFileName'],mdata['datFileDir'], mdata)
-                if 'cfgFileName' in mdata:
-                    mdata = parse_cfg_file(mdata['cfgFileName'],mdata['cfgFileDir'], mdata)
-            mdata = parse_dir_structure(mdata)
-            mdata = set_common_values(mdata, common_values)
-            mdata = complete_mdata(mdata)
-            mdata['spectrum'] = spectrum
-            mdata = fix_number_type(mdata)
-            write_pickle_file(mdata, os.path.abspath(pickle_dir))
-            self.data = mdata
-        except:
-            print 'Import of ' + dat_file_name + ' failed.'
-
-
-
-
-
-
-if __name__ == "__main__":
-    dat_file_name='040304_57.dat'
-    dat_file_dir='/home/kiran/python/ClusterBib/rawdata'
-        
-    mdata = mdata_basics(dat_file_name, dat_file_dir)
-    raw_mdata, spectrum = strip_file(mdata['datFile'])
-    mdata = eval_dat_file(raw_mdata, mdata)
-    mdata = find_cfg_file(mdata['datFileName'], 
-                             mdata['datFileDir'], mdata)
-    if 'cfgFileName' in mdata:
-        mdata = parse_cfg_file(mdata['cfgFileName'],
-                                  mdata['cfgFileDir'], mdata)
-    mdata = complete_mdata(mdata)
-    mdata['spectrum'] = spectrum
-    mdata = fix_number_type(mdata)
-    write_pickle_file(mdata, '../rawdata/data')
-    
-    
-    
+#
+#
+#
+#def cleanup_raw_files(mdata, rawDataArchiveDir):
+#    """Move raw data file(s) *.dat (and *.cfg) to raw data archive.
+#    Update mdata with file location.
+#    
+#    Returns: dictionary."""
+#    os.rename(mdata['datFile'],
+#              os.path.join(rawDataArchiveDir, mdata['datFileName']))
+#    del mdata['datFile']
+#    del mdata['daFileDir']
+#    mdata['rawDataArchiveDir'] = rawDataArchiveDir
+#    
+#    if 'cfgFileName' in mdata:
+#        os.rename(os.path.join(mdata['cfgFileDir'], mdata['cfgFileName']),
+#                  os.path.join(rawDataArchiveDir, mdata['cfgFileName']))
+#        del mdata['cfgFileDir']
+#        
+#    return mdata
+#
+#
+#def is_numeric(string):
+#    """Return 'int' or 'float', if string can be converted, else raise
+#    ValueError exception'.
+#    
+#    Returns: string."""
+#    try:
+#        int(string)
+#        return 'int'
+#    except ValueError:
+#        pass
+#    try:
+#        float(string)
+#        return 'float'
+#    except ValueError:
+#        pass
+#
+#
+#def fix_number_type(mdata):
+#    """Convert strings which represent numbers to int or float.
+#    
+#    Returns: dictionary."""
+#    for k,v in mdata.iteritems():
+#        if type(v) == str and is_numeric(v) == 'int':
+#            mdata[k] = int(v)
+#        elif type(v) == str and is_numeric(v) == 'float':
+#            mdata[k] = float(v)
+#            
+#    return mdata
+#
+#
+#def write_data_file(mdata, data_dir, spectrum, fileVersion = 0.1):
+#    dataFileName = str(mdata['recTime'].tm_year) + '_' + \
+#    str(mdata['recTime'].tm_mon) + '_' + \
+#    str(mdata['recTime'].tm_mday) + '-' + \
+#    str(mdata['recTime'].tm_hour) + '_' + \
+#    str(mdata['recTime'].tm_min) + '_' + \
+#    str(mdata['recTime'].tm_sec) + '.dat'
+#    mdata['dataFileName'] = dataFileName
+#    mdata['dataFileDir'] = os.path.join(data_dir,
+#                                           str(mdata['recTime'].tm_year))
+#    mdata['dataFile'] = os.path.join(mdata['dataFileDir'], dataFileName)
+#   
+#    with open(mdata['dataFile'], "w") as f:
+#        f.write('# ClusterBib spectrum file, v. ' + str(fileVersion) + '\n')
+#        f.write('#\n')
+#        f.write('########## begin mdata ##########\n')
+#        # reduce mdata
+#        mdata['recTime'] = time.strftime("%d %b %Y %H:%M:%S",
+#                                                  mdata['recTime'])
+#        for key, value in mdata.iteritems():
+#            f.write('# ' + key + ' = ' + str(value) + ' ' +
+#                    str(type(value)) + '\n')
+#            f.write('########## end mdata ##########\n')
+#            for line in spectrum:
+#                f.write(str(line) + '\n')
+#                
+#    mdata['recTime'] = time.strptime(mdata['recTime'],
+#                                              "%d %b %Y %H:%M:%S")
+#    return mdata
+#
+#def write_pickle_file(mdata, pickle_dir):
+#    '''
+#    Stores the mdata dict in a pickle file under the path:
+#    pickle_dir/<year>/<dat_time>.pickle
+#    
+#    @param mdata:
+#    @param pickle_dir:
+#    '''
+#    pickle_file_name = str(mdata['recTime'].tm_year) + '_' + \
+#    str(mdata['recTime'].tm_mon) + '_' +\
+#    str(mdata['recTime'].tm_mday) + '-' + \
+#    str(mdata['recTime'].tm_hour) + '_' + \
+#    str(mdata['recTime'].tm_min) + '_' + \
+#    str(mdata['recTime'].tm_sec) + '.pickle'
+#    mdata['pickleFileName'] = pickle_file_name
+#    mdata['pickleFileDir'] = os.path.join(pickle_dir,
+#                                             str(mdata['recTime'].tm_year))
+#    mdata['pickleFile'] = os.path.join(mdata['pickleFileDir'],
+#                                          pickle_file_name)
+#    if not os.path.exists(mdata['pickleFileDir']):
+#        os.makedirs(mdata['pickleFileDir'])
+#    with open(mdata['pickleFile'], 'wb') as f:
+#        pickle.dump(mdata, f)
+#
+#
+#class LegacyImport(object):
+#    def __init__(self, dat_file_name, dat_file_dir, common_values,
+#                 pickle_dir = '../rawdata/data',
+#                 archive_dir = '../rawdata/archive'):
+#        datfile = os.path.join(dat_file_dir, dat_file_name)
+#        try:
+#            with open(datfile) as f:
+#                raw_mdata, spectrum = strip_file(f)
+#            mdata = eval_dat_file(raw_mdata, spectrum)
+#            mdata = mdata_basics(dat_file_name, dat_file_dir, mdata)
+#            if mdata['specType'] == 'pes':
+#                mdata = verify_recTime(mdata)
+#                mdata = find_cfg_file(mdata['datFileName'],mdata['datFileDir'], mdata)
+#                if 'cfgFileName' in mdata:
+#                    mdata = parse_cfg_file(mdata['cfgFileName'],mdata['cfgFileDir'], mdata)
+#            mdata = parse_dir_structure(mdata)
+#            mdata = set_common_values(mdata, common_values)
+#            mdata = complete_mdata(mdata)
+#            mdata['spectrum'] = spectrum
+#            mdata = fix_number_type(mdata)
+#            write_pickle_file(mdata, os.path.abspath(pickle_dir))
+#            self.data = mdata
+#        except:
+#            print 'Import of ' + dat_file_name + ' failed.'
+#
+#
+#
+#
+#
+#
+#if __name__ == "__main__":
+#    dat_file_name='040304_57.dat'
+#    dat_file_dir='/home/kiran/python/ClusterBib/rawdata'
+#        
+#    mdata = mdata_basics(dat_file_name, dat_file_dir)
+#    raw_mdata, spectrum = strip_file(mdata['datFile'])
+#    mdata = eval_dat_file(raw_mdata, mdata)
+#    mdata = find_cfg_file(mdata['datFileName'], 
+#                             mdata['datFileDir'], mdata)
+#    if 'cfgFileName' in mdata:
+#        mdata = parse_cfg_file(mdata['cfgFileName'],
+#                                  mdata['cfgFileDir'], mdata)
+#    mdata = complete_mdata(mdata)
+#    mdata['spectrum'] = spectrum
+#    mdata = fix_number_type(mdata)
+#    write_pickle_file(mdata, '../rawdata/data')
+#    
+#    
+#    
