@@ -15,15 +15,17 @@ import pickle
 
 
 class Spec(object):
-    def __init__(self, mdata, xdata, ydata):
+    def __init__(self, mdata, xdata, ydata, cfg):
         self.mdata = MdataUtils.Mdata(mdata)
         self.xdata = xdata
         self.ydata = ydata
+        self.cfg = cfg
         
     
     
     def commitDb(self, mdata):
-        Db.add(mdata)
+        with Db(self.mdata.data('machine'), self.cfg) as db:
+            db.add(mdata)
         
         
     def commitPickle(self):
@@ -31,10 +33,11 @@ class Spec(object):
         Stores the self.mdata.data(), self.xdata, self.ydata dicts in a pickle file under the path:
         config.path['data']/<year>/<recTime>_<sha1>.pickle
         '''
-        pickleDir = os.path.dirname(self.mdata.data('pickleFile'))
+        pickleFile = os.path.join(self.cfg.path['base'], self.mdata.data('pickleFile'))
+        pickleDir = os.path.dirname(pickleFile)
         if not os.path.exists(pickleDir):
             os.mkdir(pickleDir)   
-        with open(self.mdata.data('pickleFile'), 'wb') as f:
+        with open(pickleFile, 'wb') as f:
             pickle.dump((self.mdata.data(), self.xdata, self.ydata), f)
             
             
@@ -58,8 +61,8 @@ class Spec(object):
         
 
 class peSpec(Spec):
-    def __init__(self, mdata, xdata, ydata):
-        Spec.__init__(self, mdata, xdata, ydata)
+    def __init__(self, mdata, xdata, ydata, cfg):
+        Spec.__init__(self, mdata, xdata, ydata, cfg)
         if len(self.xdata) == 1:
             self.calcSpec()
         self.view = view.ViewPes(self)
@@ -91,17 +94,17 @@ class peSpec(Spec):
         
         
 class ptSpec(peSpec):
-    def __init__(self, mdata, xdata, ydata):
-        peSpec.__init__(self, mdata, xdata, ydata)
+    def __init__(self, mdata, xdata, ydata, cfg):
+        peSpec.__init__(self, mdata, xdata, ydata, cfg)
         self.view = view.ViewPt(self)
              
         
     def __fitPeakPos(self):
-        return [p[0] for p in config.ptPeakPar[self.mdata.data('waveLength')]]
+        return [p[0] for p in self.cfg.ptPeakPar[self.mdata.data('waveLength')]]
     
     
     def __fitParInit(self, scale, a, b):
-        l = [i for p in config.ptPeakPar[self.mdata.data('waveLength')] for i in [p[1]*scale,p[2]]]
+        l = [i for p in self.cfg.ptPeakPar[self.mdata.data('waveLength')] for i in [p[1]*scale,p[2]]]
         l.extend([a,b])
         return l
     
@@ -156,8 +159,8 @@ class ptSpec(peSpec):
 
 
 class waterSpec(peSpec):
-    def __init__(self, mdata, xdata, ydata):
-        peSpec.__init__(self, mdata, xdata, ydata)
+    def __init__(self, mdata, xdata, ydata, cfg):
+        peSpec.__init__(self, mdata, xdata, ydata, cfg)
         self.view = view.ViewWater(self)
 
 

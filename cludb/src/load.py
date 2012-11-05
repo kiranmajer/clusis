@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from spec import *
 #import config
 #import MdataUtils
@@ -115,13 +116,13 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
                         mdata = mi.mdata.data()
                         ydata = {'rawIntensity': mi.data}
                         xdata = {'idx': np.arange(1,len(ydata['rawIntensity'])+1)}
-                        spec = specMap[mdata['specType']](mdata, xdata, ydata)
+                        spec = specMap[mdata['specType']](mdata, xdata, ydata, cfg)
                         spec.commitPickle()
                         
                     except:
                         '''TODO: add error reason'''
                         failedImports.append([datFile, 'An error occurred during: moving raw data or creating spec or committing pickle'])
-                        raise
+                        #raise
                     else:
                         spec.mdata.rm('datFileOrig')
                         spec.mdata.rm('cfgFileOrig')
@@ -145,6 +146,7 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
         print 'Number of Spectra to import: ', len(specList)
         print 'Number of files to move: ', len(movedFiles)
         print 'Number of failed imports: ', len(failedImports)
+        del specList
      
     return failedImports
     

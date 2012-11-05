@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import matplotlib.pyplot as plt
 import os.path
 
