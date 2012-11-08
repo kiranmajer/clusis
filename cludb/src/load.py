@@ -96,63 +96,68 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
     movedFiles =[]
     failedImports = []
     "TODO: adapt for more db"
-    with Db('casi', cfg) as db:
-        for datFile in datFileList:
-            #print 'Importing: '+datFile+' with ', commonMdata
-            try:
-                mi = LegacyData(datFile, cfg, commonMdata)
-            except:
-                failedImports.append([datFile, 'LegacyData creation failed'])
-                #raise
-                continue
-            if not db.tableHasSha1(mi.mdata.data('specType'), mi.mdata.data('sha1')):
-                if fileStoragePossible(mi.mdata.data()):
-                    #print os.path.basename(datFile) + '''ready to convert ...
-                    #'''
-                    try:
-                        moved = archive(cfg, mi.mdata.data())
-                        movedFiles.extend(moved)
-                        # init spec obj
-                        mdata = mi.mdata.data()
-                        ydata = {'rawIntensity': mi.data}
-                        xdata = {'idx': np.arange(1,len(ydata['rawIntensity'])+1)}
-                        spec = specMap[mdata['specType']](mdata, xdata, ydata, cfg)
-                        spec.commitPickle()
-                        
-                    except:
-                        '''TODO: add error reason'''
-                        failedImports.append([datFile, 'An error occurred during: moving raw data or creating spec or committing pickle'])
-                        #raise
-                    else:
-                        spec.mdata.rm('datFileOrig')
-                        spec.mdata.rm('cfgFileOrig')
-                        specList.append(spec)
-                else:
-                    #print 'some files already exist'
-                    failedImports.append([datFile, 'Some raw files were already imported'])
-            else:
-                #print os.path.basename(datFile)+': Db has already sha1 entry'
-                failedImports.append([datFile, 'Db has already entry with this sha1'])
-                
+    #with Db('casi', cfg) as db:
+    db = Db('casi', cfg)
+    for datFile in datFileList:
+        #print 'Importing: '+datFile+' with ', commonMdata
         try:
-            db.add(specList)
+            mi = LegacyData(datFile, cfg, commonMdata)
         except:
-            # remove all files in our data dir, from this import
-            moveBack(movedFiles)
-            for spec in specList:
-                os.remove(spec.mdata.data('pickleFile'))
-            raise
-        print 'Number of files to import: ', len(datFiles)
-        print 'Number of Spectra to import: ', len(specList)
-        print 'Number of files to move: ', len(movedFiles)
-        print 'Number of failed imports: ', len(failedImports)
-        del specList
+            failedImports.append([datFile, 'LegacyData creation failed'])
+            #raise
+            continue
+        if not db.tableHasSha1(mi.mdata.data('specType'), mi.mdata.data('sha1')):
+            if fileStoragePossible(mi.mdata.data()):
+                #print os.path.basename(datFile) + '''ready to convert ...
+                #'''
+                try:
+                    moved = archive(cfg, mi.mdata.data())
+                    movedFiles.extend(moved)
+                    # init spec obj
+                    mdata = mi.mdata.data()
+                    ydata = {'rawIntensity': mi.data}
+                    xdata = {'idx': np.arange(1,len(ydata['rawIntensity'])+1)}
+                    spec = specMap[mdata['specType']](mdata, xdata, ydata, cfg)
+                    spec.commitPickle()
+                    
+                except:
+                    '''TODO: add error reason'''
+                    failedImports.append([datFile, 'An error occurred during: moving raw data or creating spec or committing pickle'])
+                    #raise
+                else:
+                    spec.mdata.rm('datFileOrig')
+                    spec.mdata.rm('cfgFileOrig')
+                    specList.append(spec)
+            else:
+                #print 'some files already exist'
+                failedImports.append([datFile, 'Some raw files were already imported'])
+        else:
+            #print os.path.basename(datFile)+': Db has already sha1 entry'
+            failedImports.append([datFile, 'Db has already entry with this sha1'])
+            
+    try:
+        db.add(specList)
+    except:
+        # remove all files in our data dir, from this import
+        moveBack(movedFiles)
+        for spec in specList:
+            pickleFile = os.path.join(cfg.path['base'], spec.mdata.data('pickleFile'))
+            os.remove(pickleFile)
+        raise
+    
+    del db
+        
+    print 'Number of files to import: ', len(datFiles)
+    print 'Number of Spectra to import: ', len(specList)
+    print 'Number of files to move: ', len(movedFiles)
+    print 'Number of failed imports: ', len(failedImports)
      
     return failedImports
     
 
             
-def loadPickle(pickleFile):
+def loadPickle(cfg, pickleFile):
+    pickleFile = os.path.join(cfg.path['base'], pickleFile)
     specMap = {'ms': mSpec, 'pes': peSpec, 'pfs': pfSpec}
     with open(pickleFile, 'rb') as f:
             mdata, xdata, ydata = pickle.load(f)

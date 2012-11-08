@@ -17,14 +17,19 @@ class Db(object):
         sqlite3.register_converter(str('LIST'), self.__listConverter)
 #        sqlite3.register_adapter(time.struct_time, self.__timeAdapter)
 #        sqlite3.register_converter(str('TIME'), self.__timeConverter)               
-        self.__db = sqlite3.connect(self.__dbFile, detect_types=sqlite3.PARSE_DECLTYPES)
-        self.__db.row_factory = sqlite3.Row
+        self.db = sqlite3.connect(self.__dbFile, detect_types=sqlite3.PARSE_DECLTYPES)
+        print 'Db connection open'
+        self.db.row_factory = sqlite3.Row
+        
+    def __del__(self):
+        self.db.close()
         
     def __enter__(self):
         return self
     
     def __exit__(self, exc_type, exc_value, traceback):
-        self.__db.close()
+        self.db.close()
+        print 'Db connection closed.'        
         
     def __listAdapter(self, l):
         return '<|>'.join(l)
@@ -45,9 +50,10 @@ class Db(object):
         tableHead = [' '.join(entry) for entry in self.__dbProps['layout'][specType]]
         sql = sql % tuple(tableHead)
         
-        db_cursor = self.__db.cursor()
+        db_cursor = self.db.cursor()
         db_cursor.execute(sql)
         db_cursor.close()
+        del db_cursor
 
 
     def add(self, spectra):
@@ -69,23 +75,25 @@ class Db(object):
                 valueList[specType] = []
                 valueList[specType].append(tuple(values))
                 
-        db_cursor = self.__db.cursor()
+        db_cursor = self.db.cursor()
         for specType,values in valueList.iteritems():
             sql = 'INSERT INTO ' + specType + " VALUES (" + "?,"*(len(self.__dbProps['layout'][specType])-1) + "?)"
             db_cursor.executemany(sql, tuple(values))
             
                    
         db_cursor.close()
-        self.__db.commit()
+        del db_cursor
+        self.db.commit()
         
         return valueList
         
 
     def tableHasSha1(self, tableName, sha1):
         sql = "SELECT EXISTS (SELECT 1 FROM %s WHERE sha1 IS ?)" % tableName
-        db_cursor = self.__db.cursor()
+        db_cursor = self.db.cursor()
         hasSha1 = db_cursor.execute(sql, (sha1,)).fetchone()[0]
         db_cursor.close()
+        del db_cursor
         
         return hasSha1
 
@@ -215,8 +223,10 @@ class Db(object):
         sql=sql.rstrip(' AND ')
         print 'Querying with: ', sql
         
-        db_cursor = self.__db.cursor()
+        db_cursor = self.db.cursor()
         fetch = db_cursor.execute(sql).fetchall()
+        db_cursor.close()
+        del db_cursor
         
         def printAnswer(fetch):
             def formatRecTime(unixtime):
