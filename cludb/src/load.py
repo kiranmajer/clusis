@@ -99,7 +99,7 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
     #with Db('casi', cfg) as db:
     db = Db('casi', cfg)
     for datFile in datFileList:
-        #print 'Importing: '+datFile+' with ', commonMdata
+        print 'Importing: '+datFile+' with ', commonMdata
         try:
             mi = LegacyData(datFile, cfg, commonMdata)
         except:
@@ -108,8 +108,8 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
             continue
         if not db.tableHasSha1(mi.mdata.data('specType'), mi.mdata.data('sha1')):
             if fileStoragePossible(mi.mdata.data()):
-                #print os.path.basename(datFile) + '''ready to convert ...
-                #'''
+                print os.path.basename(datFile), '''ready to convert ...
+                '''
                 try:
                     moved = archive(cfg, mi.mdata.data())
                     movedFiles.extend(moved)
@@ -136,6 +136,7 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
             failedImports.append([datFile, 'Db has already entry with this sha1'])
             
     try:
+        print 'Starting db import ....'
         db.add(specList)
     except:
         # remove all files in our data dir, from this import

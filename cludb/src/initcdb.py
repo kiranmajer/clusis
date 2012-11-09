@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 import os
+import sqlite3
 from dbshell import Db
 import config
 #import ConfigParser
@@ -11,6 +12,18 @@ def checkPath(p):
         os.makedirs(p)
     elif not os.access(p, os.W_OK):
         raise IOError, '%s not accessible.' % p
+        
+
+def listAdapter(l):
+    return '<|>'.join(l)
+
+def listConverter(s):
+    return s.split('<|>')
+
+def prepSql():
+    sqlite3.register_adapter(list, listAdapter)
+    sqlite3.register_converter(str('LIST'), listConverter)
+    
         
 def initDb(cfg):
     for dbName, dbProps in cfg.db.iteritems():
@@ -47,7 +60,8 @@ def initCludb(userStorageDir):
         else:
             p = os.path.join(cfg.path['base'], p)
             checkPath(p)
-        
+    
+    prepSql()
     initDb(cfg)
     
     return cfg

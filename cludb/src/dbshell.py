@@ -8,13 +8,12 @@ import time
 
 class Db(object):
     def __init__(self, dbName, cfg):
+        print '__init__: Init Db instance.'
         self.__dbName = dbName
         dbFileName = '%s.db' % dbName
         self.__dbProps = cfg.db[dbName]
         self.__dbFile = os.path.join(self.__dbProps['path'], dbFileName)
         'TODO: into config?'        
-        sqlite3.register_adapter(list, self.__listAdapter)
-        sqlite3.register_converter(str('LIST'), self.__listConverter)
 #        sqlite3.register_adapter(time.struct_time, self.__timeAdapter)
 #        sqlite3.register_converter(str('TIME'), self.__timeConverter)               
         self.db = sqlite3.connect(self.__dbFile, detect_types=sqlite3.PARSE_DECLTYPES)
@@ -23,19 +22,16 @@ class Db(object):
         
     def __del__(self):
         self.db.close()
+        print '__del__: Db connection closed.'
         
     def __enter__(self):
+        print '__enter__: Entering Db instance.'
         return self
     
     def __exit__(self, exc_type, exc_value, traceback):
         self.db.close()
-        print 'Db connection closed.'        
+        print '__exit__: Db connection closed.'        
         
-    def __listAdapter(self, l):
-        return '<|>'.join(l)
-    
-    def __listConverter(self, s):
-        return s.split('<|>')
     
 #    def __timeAdapter(self, stime):
 #        return calendar.timegm(stime)
@@ -76,13 +72,15 @@ class Db(object):
                 valueList[specType].append(tuple(values))
                 
         db_cursor = self.db.cursor()
+        print 'cursor created'
         for specType,values in valueList.iteritems():
             sql = 'INSERT INTO ' + specType + " VALUES (" + "?,"*(len(self.__dbProps['layout'][specType])-1) + "?)"
             db_cursor.executemany(sql, tuple(values))
             
                    
         db_cursor.close()
-        del db_cursor
+        print 'cursor closed'
+        #del db_cursor
         self.db.commit()
         
         return valueList
@@ -246,7 +244,6 @@ class Db(object):
         
         return fetch
         
-
 
 
 
