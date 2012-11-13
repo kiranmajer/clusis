@@ -16,7 +16,7 @@ import pickle
 
 class Spec(object):
     def __init__(self, mdata, xdata, ydata, cfg):
-        self.mdata = MdataUtils.Mdata(mdata)
+        self.mdata = MdataUtils.Mdata(mdata, cfg)
         self.xdata = xdata
         self.ydata = ydata
         self.cfg = cfg

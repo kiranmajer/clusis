@@ -131,6 +131,7 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
                         movedFiles.extend(moved)
                         spec.mdata.rm('datFileOrig')
                         spec.mdata.rm('cfgFileOrig')
+                        spec.commitPickle()
                         specList.append(spec)
             else:
                 #print 'some files already exist'

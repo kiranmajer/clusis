@@ -30,7 +30,7 @@ class LegacyData(object):
         self.evalCfgFile()
         self.parseDirStructure()
         # convert metadata to Mdata object
-        self.mdata = MdataUtils.Mdata(self.metadata)
+        self.mdata = MdataUtils.Mdata(self.metadata, self.cfg)
         if len(commonMdata) > 0:
             #print 'Importing commonMdata', commonMdata
             self.mdata.add(commonMdata)
