@@ -62,9 +62,11 @@ class Spec(object):
 
 class peSpec(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
+        print '__init__: Init peSpec'
         Spec.__init__(self, mdata, xdata, ydata, cfg)
         if len(self.xdata) == 1:
             self.calcSpec()
+        #print 'Assigning view.ViewPes'
         self.view = view.ViewPes(self)
     
     def __calcEkin(self):

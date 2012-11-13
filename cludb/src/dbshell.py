@@ -16,12 +16,12 @@ class Db(object):
         'TODO: into config?'        
 #        sqlite3.register_adapter(time.struct_time, self.__timeAdapter)
 #        sqlite3.register_converter(str('TIME'), self.__timeConverter)               
-        self.db = sqlite3.connect(self.__dbFile, detect_types=sqlite3.PARSE_DECLTYPES)
+        self.__db = sqlite3.connect(self.__dbFile, detect_types=sqlite3.PARSE_DECLTYPES)
         print 'Db connection open'
-        self.db.row_factory = sqlite3.Row
+        self.__db.row_factory = sqlite3.Row
         
     def __del__(self):
-        self.db.close()
+        self.__db.close()
         print '__del__: Db connection closed.'
         
     def __enter__(self):
@@ -29,7 +29,7 @@ class Db(object):
         return self
     
     def __exit__(self, exc_type, exc_value, traceback):
-        self.db.close()
+        self.__db.close()
         print '__exit__: Db connection closed.'        
         
     
@@ -46,7 +46,7 @@ class Db(object):
         tableHead = [' '.join(entry) for entry in self.__dbProps['layout'][specType]]
         sql = sql % tuple(tableHead)
         
-        db_cursor = self.db.cursor()
+        db_cursor = self.__db.cursor()
         db_cursor.execute(sql)
         db_cursor.close()
         del db_cursor
@@ -71,7 +71,7 @@ class Db(object):
                 valueList[specType] = []
                 valueList[specType].append(tuple(values))
                 
-        db_cursor = self.db.cursor()
+        db_cursor = self.__db.cursor()
         print 'cursor created'
         for specType,values in valueList.iteritems():
             sql = 'INSERT INTO ' + specType + " VALUES (" + "?,"*(len(self.__dbProps['layout'][specType])-1) + "?)"
@@ -81,14 +81,14 @@ class Db(object):
         db_cursor.close()
         print 'cursor closed'
         #del db_cursor
-        self.db.commit()
+        self.__db.commit()
         
         return valueList
         
 
     def tableHasSha1(self, tableName, sha1):
         sql = "SELECT EXISTS (SELECT 1 FROM %s WHERE sha1 IS ?)" % tableName
-        db_cursor = self.db.cursor()
+        db_cursor = self.__db.cursor()
         hasSha1 = db_cursor.execute(sql, (sha1,)).fetchone()[0]
         db_cursor.close()
         del db_cursor
@@ -217,11 +217,14 @@ class Db(object):
         sql+='WHERE '
         for i in whereItems:
             sql+=i
-        
         sql=sql.rstrip(' AND ')
+        # build order part
+        sql+=' ORDER BY clusterBaseUnitNumber'
+        
+
         print 'Querying with: ', sql
         
-        db_cursor = self.db.cursor()
+        db_cursor = self.__db.cursor()
         fetch = db_cursor.execute(sql).fetchall()
         db_cursor.close()
         del db_cursor
@@ -233,11 +236,23 @@ class Db(object):
             def formatDatFile(datfile):
                 return os.path.basename(datfile)
             
+            print 'Idx'.rjust(6),
+            print 'element'.ljust(7+3),
+            print 'size'.ljust(4+3),
+            print 'waveLength'.ljust(10+3),
+            print 'recTime'.ljust(12),
+            print 'datFile'.ljust(16),
+            print 'tags'
             idx=0
             for row in fetch:
                 # sqlite3.Row expects a str and not a unicode as key
-                print ('%s  '%idx).rjust(6), row[str('clusterBaseUnit')].ljust(5), str(row[str('clusterBaseUnitNumber')]).ljust(5),
-                print formatRecTime(row[str('recTime')]).ljust(12), formatDatFile(row[str('datFile')]).ljust(16), self.__listAdapter(row[str('tags')])
+                print ('%s  '%idx).rjust(6),
+                print row[str('clusterBaseUnit')].ljust(7+3),
+                print str(row[str('clusterBaseUnitNumber')]).ljust(4+3),
+                print str(row[str('waveLength')]*1e9).ljust(10+3),
+                print formatRecTime(row[str('recTime')]).ljust(12),
+                print formatDatFile(row[str('datFile')]).ljust(16),
+                print '<|>'.join(row[str('tags')])
                 idx+=1
                 
         printAnswer(fetch)

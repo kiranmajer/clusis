@@ -112,22 +112,26 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
                 '''
                 try:
                     moved = archive(cfg, mi.mdata.data())
-                    movedFiles.extend(moved)
-                    # init spec obj
-                    mdata = mi.mdata.data()
-                    ydata = {'rawIntensity': mi.data}
-                    xdata = {'idx': np.arange(1,len(ydata['rawIntensity'])+1)}
-                    spec = specMap[mdata['specType']](mdata, xdata, ydata, cfg)
-                    spec.commitPickle()
-                    
-                except:
-                    '''TODO: add error reason'''
-                    failedImports.append([datFile, 'An error occurred during: moving raw data or creating spec or committing pickle'])
-                    #raise
+                except Exception, e:
+                    print '%s: Failed to archive raw data:'%datFile, e
+                    failedImports.append([datFile, 'Import error: Archive failed: %s.'%e])
                 else:
-                    spec.mdata.rm('datFileOrig')
-                    spec.mdata.rm('cfgFileOrig')
-                    specList.append(spec)
+                    try:                    
+                        # init spec obj
+                        mdata = mi.mdata.data()
+                        ydata = {'rawIntensity': mi.data}
+                        xdata = {'idx': np.arange(1,len(ydata['rawIntensity'])+1)}
+                        spec = specMap[mdata['specType']](mdata, xdata, ydata, cfg)
+                        spec.commitPickle()
+                    except Exception, e:
+                        print '%s failed to import:'%datFile, e
+                        failedImports.append([datFile, 'Import error: %s.'%e])
+                        moveBack(moved)
+                    else:
+                        movedFiles.extend(moved)
+                        spec.mdata.rm('datFileOrig')
+                        spec.mdata.rm('cfgFileOrig')
+                        specList.append(spec)
             else:
                 #print 'some files already exist'
                 failedImports.append([datFile, 'Some raw files were already imported'])
@@ -163,11 +167,11 @@ def loadPickle(cfg, pickleFile):
     with open(pickleFile, 'rb') as f:
             mdata, xdata, ydata = pickle.load(f)
     if mdata['clusterBaseUnit'] == 'Pt' and mdata['specType'] == 'pes':
-        spectrum = ptSpec(mdata, xdata, ydata)
+        spectrum = ptSpec(mdata, xdata, ydata, cfg)
     elif mdata['clusterBaseUnit'] in ['H2O', 'D2O'] and mdata['specType'] == 'pes':
-        spectrum = waterSpec(mdata, xdata, ydata)
+        spectrum = waterSpec(mdata, xdata, ydata, cfg)
     else:
-        spectrum = specMap[mdata['specType']](mdata, xdata, ydata)
+        spectrum = specMap[mdata['specType']](mdata, xdata, ydata, cfg)
     
     return spectrum
 

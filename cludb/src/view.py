@@ -5,8 +5,10 @@ import os.path
 
 class View(object):
     def __init__(self,spec):
+        #print '__init__: Initializing View object.'
         self.spec = spec
         self.fig = plt.figure()
+        #print 'Figure created.'
         self.ax = self.fig.add_subplot(1,1,1)
         
         
