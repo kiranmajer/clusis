@@ -53,7 +53,7 @@ class Db(object):
         del db_cursor
 
 
-    def add(self, spectra):
+    def add(self, spectra, update=False):
         '''Make a list, so we can work only with lists'''
         specList = []
         if type(spectra) is list:
@@ -75,7 +75,10 @@ class Db(object):
         db_cursor = self.__db.cursor()
         print 'cursor created'
         for specType,values in valueList.iteritems():
-            sql = 'INSERT INTO ' + specType + " VALUES (" + "?,"*(len(self.__dbProps['layout'][specType])-1) + "?)"
+            if update:
+                sql = 'INSERT OR REPLACE INTO ' + specType + " VALUES (" + "?,"*(len(self.__dbProps['layout'][specType])-1) + "?)"
+            else:
+                sql = 'INSERT INTO ' + specType + " VALUES (" + "?,"*(len(self.__dbProps['layout'][specType])-1) + "?)"
             db_cursor.executemany(sql, tuple(values))
             
                    

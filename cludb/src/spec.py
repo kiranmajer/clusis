@@ -23,9 +23,9 @@ class Spec(object):
         
     
     
-    def commitDb(self, mdata):
+    def commitDb(self, update=False):
         with Db(self.mdata.data('machine'), self.cfg) as db:
-            db.add(mdata)
+            db.add(self, update=update)
         
         
     def commitPickle(self):
@@ -41,9 +41,9 @@ class Spec(object):
             pickle.dump((self.mdata.data(), self.xdata, self.ydata), f)
             
             
-    def commit(self):
+    def commit(self, update=False):
         self.commitPickle()
-        self.commitDb(self.mdata.data())
+        self.commitDb(update=update)
         
     '''TODO: make privat'''    
     def calcTof(self):
@@ -201,6 +201,7 @@ class waterSpec(peSpec):
     
     
     def fit(self, p0, cutoff=None):
+        
         try:
             fitValues = self.__fitGl( p0, cutoff)
         except:

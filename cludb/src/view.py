@@ -35,8 +35,8 @@ class View(object):
         self._clearPlot()
         self.ax.set_xlabel(r'Flight Time ($\mu s$)')
         self.ax.set_ylabel('Intensity (a.u.)')
-        self.ax.set_xlim(0,self.spec.xdata['tof'][-1]*timeUnit)
-        self.ax.plot(self.spec.xdata['tof']*timeUnit, self.spec.ydata['intensity'], color='black')
+        self.ax.set_xlim(0,self.spec.xdata['tof'][-1]/timeUnit)
+        self.ax.plot(self.spec.xdata['tof']/timeUnit, self.spec.ydata['intensity'], color='black')
         self.ax.relim()
         self.ax.autoscale(axis='y')
         textId = self.ax.text(1.0, 1.01, '%s'%(os.path.basename(self.spec.mdata.data('datFile'))),
