@@ -11,6 +11,7 @@ class Db(object):
         print '__init__: Init Db instance.'
         self.__dbName = dbName
         dbFileName = '%s.db' % dbName
+        self.__cfg = cfg
         self.__dbProps = cfg.db[dbName]
         self.__dbFile = os.path.join(self.__dbProps['path'], dbFileName)
         'TODO: into config?'        
@@ -97,7 +98,7 @@ class Db(object):
 
 
     def query(self, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None, clusterBaseUnitNumberRange=None,
-              recTime=None, recTimeRange=None, inTags=None, notInTags=None, datFileName=None):
+              recTime=None, recTimeRange=None, inTags=None, notInTags=None, datFileName=None, waveLength=None):
 
         
         def prepClusterBaseUnit(clusterBaseUnit):
@@ -185,6 +186,23 @@ class Db(object):
                 datsQuery+='datFile GLOB "*%s*" AND '%f
             return datsQuery
         
+        def prepWaveLength(waveLength):
+            waves = []
+            wavesQuery = ''
+            'TODO: adapt for variable machine type.'
+            refWaves = self.__cfg.mdataReference['casi']['waveLength'][0]
+            print refWaves
+            if type(waveLength) is list:
+                waves.extend(waveLength)
+            else:
+                waves.append(waveLength)
+            for i in waves:
+                if type(i) is float and i in refWaves:
+                    wavesQuery+='waveLength IS "%s" AND '%i
+                else:
+                    raise ValueError( 'waveLength must be one of: %s.'%', '.join([str(i) for i in refWaves]) )
+            return wavesQuery
+        
         
                 
         q = {'clusterBaseUnit': [prepClusterBaseUnit, clusterBaseUnit, 'clusterBaseUnit'],
@@ -194,7 +212,8 @@ class Db(object):
              'recTimeRange': [prepRecTimeRange, recTimeRange, 'recTime'],
              'inTags': [prepInTags, inTags, 'tags'],
              'notInTags': [prepNotInTags, notInTags, 'tags'],
-             'datFileName': [prepDatFileName, datFileName, 'datFile']
+             'datFileName': [prepDatFileName, datFileName, 'datFile'],
+             'waveLength': [prepWaveLength, waveLength, 'waveLength']
              }
         #print 'we start with: ', q
             
@@ -219,7 +238,7 @@ class Db(object):
             sql+=i
         sql=sql.rstrip(' AND ')
         # build order part
-        sql+=' ORDER BY clusterBaseUnitNumber'
+        sql+=' ORDER BY clusterBaseUnit, clusterBaseUnitNumber'
         
 
         print 'Querying with: ', sql
