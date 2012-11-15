@@ -7,11 +7,14 @@ class View(object):
     def __init__(self,spec):
         #print '__init__: Initializing View object.'
         self.spec = spec
+        
+        
+    def _createFigure(self):
         self.fig = plt.figure()
         #print 'Figure created.'
         self.ax = self.fig.add_subplot(1,1,1)
         
-        
+            
     def _clearPlot(self):
         self.ax.lines = []
         self.ax.texts = []
