@@ -8,16 +8,15 @@ class View(object):
         #print '__init__: Initializing View object.'
         self.spec = spec
         
-        
-    def _createFigure(self):
-        self.fig = plt.figure()
-        #print 'Figure created.'
-        self.ax = self.fig.add_subplot(1,1,1)
-        
-            
+
     def _clearPlot(self):
-        self.ax.lines = []
-        self.ax.texts = []
+        if hasattr(self, 'fig'):        
+            self.ax.lines = []
+            self.ax.texts = []
+        else:
+            self.fig = plt.figure()
+            #print 'Figure created.'
+            self.ax = self.fig.add_subplot(1,1,1)        
             
             
     def showIdx(self):
