@@ -241,7 +241,7 @@ class LegacyData(object):
                 self.metadata['ionType'] = splitted_path[1]
                 if splitted_path[2] == 'pure':
                     self.metadata['clusterDopant'] = None
-                    self.metadata['clusterDopantNumber'] = None
+                    self.metadata['clusterDopantNumber'] = 0
                 else:
                     dopant_pattern = re.compile(r'(^[A-Za-z]{1,2})(\d{0,1})')
                     self.metadata['clusterDopant'] = dopant_pattern.search(splitted_path[2]).group(1).title()

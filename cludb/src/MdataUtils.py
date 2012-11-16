@@ -28,6 +28,8 @@ class Mdata(object):
         ref = self.__reference
         if ref[key][0] is np.ndarray and type(value) is np.ndarray:
             return value
+        elif ref[key][0] is str and value is None:
+            return value
         elif type(ref[key][0]) is type:
             return ref[key][0](value)
         elif type(ref[key][0]) is list and value in ref[key][0]:
@@ -81,11 +83,12 @@ class Mdata(object):
         
         
         
-    def add(self, newMdata):
+    def add(self, newMdata, update=False):
         """
         Safely add new meta data to the mdata dict. Only accepts valid key, value pairs
         for the given spec type.
         """
+        'TODO: add method to add, remove, modify tags.'
         mdata = self.__mdata
         if type(newMdata) is dict:
             #self.failedKeys = {}
@@ -100,7 +103,8 @@ class Mdata(object):
                             mdata[k].extend(v)
                         else:
                             mdata[k].append(v)
-                        
+                    elif update: #key exists, is not tags
+                        mdata[k]=self.__validValue(k, v)
                     else:
                         v = self.__validValue(k, v)
                         overwrite=''
@@ -113,9 +117,15 @@ class Mdata(object):
                     print 'Failed to add "%s: %s". Key not allowed.' % (k, str(v))
           
         else:
-            raise ValueError('Expected a dict. Got a %s instead.' % type(newMdata).__name__)
+            raise ValueError('Expected a dict. Got a %s instead.'%(type(newMdata).__name__))
 
-    
+
+    def update(self, newMdata):
+        """
+        Shortcut for add(newMdata, update=True)
+        """
+        self.add(newMdata, update=True)
+        
     
     def rm(self, key):
         del self.__mdata[key]

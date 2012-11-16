@@ -101,13 +101,13 @@ class ptSpec(peSpec):
         self.view = view.ViewPt(self)
              
         
-    def __fitPeakPos(self):
-        return [p[0] for p in self.cfg.ptPeakPar[self.mdata.data('waveLength')]]
+    def __fitPeakPos(self, peakPar):
+        return [p[0] for p in peakPar]
     
     
-    def __fitParInit(self, scale, a, b):
-        l = [i for p in self.cfg.ptPeakPar[self.mdata.data('waveLength')] for i in [p[1]*scale,p[2]]]
-        l.extend([a,b])
+    def __fitParInit(self, peakPar, yscale, scale, offset):
+        l = [i for p in peakPar if p[0] for i in [p[1]*yscale,p[2]]]
+        l.extend([scale,offset])
         return l
     
     
@@ -120,15 +120,15 @@ class ptSpec(peSpec):
     def mGauss(self, x, peak_pos, parList):
         plist = list(parList)
         xlist = list(peak_pos)
-        gauss = lambda x, m,A,s,a,b: A*np.exp(-(x-(a*m+b))**2/(2*s**2))
-        b = plist.pop()
-        a = plist.pop()
+        gauss = lambda x, m,A,s,scale,offset: A*np.exp(-(x-(scale*m+offset))**2/(2*s**2))
+        offset = plist.pop()
+        scale = plist.pop()
         mgauss = 0
         while len(plist) > 0:
             s = plist.pop()
             A = plist.pop()
             m = xlist.pop()
-            mgauss += gauss(x, m, A, s, a, b)
+            mgauss += gauss(x, m, A, s, scale, offset)
         return mgauss
     
     
@@ -136,27 +136,30 @@ class ptSpec(peSpec):
         return self.mGauss(x, peak_pos, p)-y
     
     
-    def __fitMgauss(self, a, b):
+    def __fitMgauss(self, peakParRef, scale, offset, rel_y_min):
         xdata = self.xdata['ebin']
         ydata = self.ydata['jacobyIntensity']
-        fitValues = {'fitPeakPos': self.__fitPeakPos()}
+        ebin_max = self.xdata['ebin'].max()
+        peakPar = [p for p in peakParRef if p[0]<ebin_max and p[1]>rel_y_min]
+        fitValues = {'fitPeakPos': self.__fitPeakPos(peakPar)}
         xcenter = fitValues['fitPeakPos'][0]
-        scale = self.__getScale(xdata, ydata, xcenter, 0.2)
-        fitValues['fitPar0'] = self.__fitParInit(scale, a, b)
+        yscale = self.__getScale(xdata, ydata, xcenter, 0.2)
+        fitValues['fitPar0'] = self.__fitParInit(peakPar, yscale, scale, offset)
         p, covar, info, mess, ierr = leastsq(self.__err_mGauss, fitValues['fitPar0'],args=(xdata,ydata,fitValues['fitPeakPos']), full_output=True)
         fitValues.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
         
         return fitValues
         
 
-    def gauge(self, a=1, b=0):
+    def gauge(self, offset=0, rel_y_min=0, scale=1):
+        peakParRef = self.cfg.ptPeakPar[self.mdata.data('waveLength')]
         try:
-            fitValues = self.__fitMgauss( a, b)
+            fitValues = self.__fitMgauss(peakParRef, scale, offset, rel_y_min)
         except:
-            self.mdata.add(fitValues)
+            self.mdata.update(fitValues)
             raise
         else:
-            self.mdata.add(fitValues)
+            self.mdata.update(fitValues)
 
 
 

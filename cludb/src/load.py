@@ -163,7 +163,8 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
 
             
 def loadPickle(cfg, pickleFile):
-    pickleFile = os.path.join(cfg.path['base'], pickleFile)
+    if not os.path.isabs(pickleFile):
+        pickleFile = os.path.join(cfg.path['base'], pickleFile)
     specMap = {'ms': mSpec, 'pes': peSpec, 'pfs': pfSpec}
     with open(pickleFile, 'rb') as f:
             mdata, xdata, ydata = pickle.load(f)
