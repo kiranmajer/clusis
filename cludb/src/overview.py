@@ -77,6 +77,7 @@ class OverView(object):
         ax.plot(spec.xdata['ebin'], spec.ydata['jacobyIntensity'], color='black')
         ax.relim()
         ax.autoscale(axis='y')
+        ax.set_ylim(bottom=0)
         textId = ax.text(1.0, 1.01, '%s'%(os.path.basename(spec.mdata.data('datFile'))),
                                   transform = ax.transAxes, fontsize=6, horizontalalignment='right')
         clusterLegend = '$\mathrm{\mathsf{{%s_{%s}}^{%s}}}$'%(spec.mdata.data('clusterBaseUnit'), 
