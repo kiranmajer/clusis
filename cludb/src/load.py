@@ -102,8 +102,9 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
         print 'Importing: '+datFile+' with ', commonMdata
         try:
             mi = LegacyData(datFile, cfg, commonMdata)
-        except:
-            failedImports.append([datFile, 'LegacyData creation failed'])
+        except Exception, e:
+            print 'LegacyData creation failed:', e
+            failedImports.append([datFile, 'LegacyData creation failed: %s'%e])
             #raise
             continue
         if not db.tableHasSha1(mi.mdata.data('specType'), mi.mdata.data('sha1')):
