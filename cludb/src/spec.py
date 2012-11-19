@@ -9,6 +9,7 @@ from dbshell import *
 from scipy.optimize import leastsq
 import view
 import pickle
+import load
 
 
 
@@ -85,6 +86,10 @@ class peSpec(Spec):
         
     def __calcJacobyIntensity(self):
         self.ydata['jacobyIntensity'] = self.ydata['intensity']/(2*self.xdata['ekin']/self.xdata['tof'])
+        
+    def __calcEbinGauged(self):
+        self.xdata['ebinGauged'] = (self.xdata['ebin'] - self.mdata.data('gaugePar')['offset'])/self.mdata.data('gaugePar')['scale']
+        
     
     def calcSpec(self):
         self.calcTof()
@@ -93,6 +98,15 @@ class peSpec(Spec):
         self.__fixNegIntensities()
         self.__calcJacobyIntensity()
         
+        
+    def gauge(self, gaugeRef):
+        self.mdata.update({'gaugeRef': gaugeRef})
+        gaugeSpec = load.loadPickle(self.cfg, gaugeRef)
+        scale, offset = gaugeSpec.mdata.data('fitPar')[-2:]
+        self.mdata.update({'gaugePar': {'scale': scale, 'offset': offset}})
+        self.__calcEbinGauged()
+        self.commitPickle()
+        del gaugeSpec
         
         
 class ptSpec(peSpec):
@@ -152,6 +166,11 @@ class ptSpec(peSpec):
         
 
     def gauge(self, offset=0, rel_y_min=0, scale=1):
+        '''
+        Fits a multiple gauss to the pes.
+        offset, scale: fit parameter
+        rel_y_min: minimum peak height of reference peaks (cfg.ptPeakPar) to be included in the fit.
+        '''
         peakParRef = self.cfg.ptPeakPar[self.mdata.data('waveLength')]
         try:
             fitValues = self.__fitMgauss(peakParRef, scale, offset, rel_y_min)

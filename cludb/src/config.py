@@ -93,7 +93,9 @@ class Cfg():
                                         'fitPar': [np.ndarray, ['pes'], False],
                                         'fitCovar': [np.ndarray, ['pes'], False],
                                         'fitInfo': [list, ['pes'], False],
-                                        'fitCutoff': [float, ['pes'], False]
+                                        'fitCutoff': [float, ['pes'], False],
+                                        'gaugeRef': [str, ['pes'], False],
+                                        'gaugePar': [dict, ['pes'], False]
                                         }
                                }
         

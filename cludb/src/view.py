@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 import matplotlib.pyplot as plt
 import os.path
-
+import load
 
 class View(object):
     def __init__(self,spec):
@@ -63,7 +63,17 @@ class ViewPes(View):
         View.__init__(self, spec)
         
         
-    def addTextClusterId(self, ax, fontsize=28):      
+    def addTextGaugeMarker(self, ax):
+        ax.text(0, 1.01, 'gauged', transform = self.ax.transAxes, fontsize=8, horizontalalignment='left') 
+        
+        
+    def addTextClusterId(self, ax, textPos='left', fontsize=28):
+        if textPos == 'left':
+            pos_x, pos_y = 0.05, 0.8
+        elif textPos == 'right':
+            pos_x, pos_y = 0.95, 0.8
+        else:
+            raise ValueError('textPos must be one of: left, right. Got "%s" instead.'%(str(textPos)))  
         formatStart = '$\mathrm{\mathsf{'
         formatEnd = '}}$'
         partCluster = '{%s'%self.spec.mdata.data('clusterBaseUnit')
@@ -82,8 +92,20 @@ class ViewPes(View):
         clusterId += partCharge
         clusterId += formatEnd
                
-        ax.text(0.05, 0.8, clusterId, transform = ax.transAxes, fontsize=fontsize, horizontalalignment='left')
+        ax.text(pos_x, pos_y, clusterId, transform = ax.transAxes, fontsize=fontsize, horizontalalignment=textPos)
+        
 
+    def showIdx(self):
+        View.showIdx(self)
+        self.addTextClusterId(self.ax)        
+        self.fig.show()
+
+        
+    def showTof(self):
+        View.showTof(self)
+        self.addTextClusterId(self.ax)        
+        self.fig.show()
+        
 
     def plotEkin(self, ax):
         ax.set_xlabel(r'E$_{kin}$ (eV)')
@@ -98,26 +120,45 @@ class ViewPes(View):
         self._singleFig()
         self.plotEkin(self.ax)        
         self.addTextFileId(self.ax)
-        self.addTextClusterId(self.ax)        
+        self.addTextClusterId(self.ax, textPos='right')        
         self.fig.show()
 
 
-    def plotEbin(self, ax):
+    def plotEbin(self, ax, showGauged=False):
         ax.set_xlabel(r'E$_{bin}$ (eV)')
         ax.set_ylabel('Intensity (a.u.)')
         ax.set_xlim(0,self.spec.photonEnergy(self.spec.mdata.data('waveLength')))
-        ax.plot(self.spec.xdata['ebin'], self.spec.ydata['jacobyIntensity'], color='black')
+        gauged = False
+        if 'ebinGauged' in self.spec.xdata.keys():
+            if showGauged:
+                ebin = self.spec.xdata['ebinGauged']
+                gauged = True
+            else:
+                ebin = self.spec.xdata['ebin']
+        else:
+            ebin = self.spec.xdata['ebin']
+        ax.plot(ebin, self.spec.ydata['jacobyIntensity'], color='black')
         ax.relim()
         ax.autoscale(axis='y')
+        
+        return gauged
 
 
-    def showEbin(self):
+    def showEbin(self, showGauged=True):
         self._singleFig()
-        self.plotEbin(self.ax)        
+        gauged = self.plotEbin(self.ax, showGauged)
+        if gauged:
+            self.addTextGaugeMarker(self.ax)        
         self.addTextFileId(self.ax)
         self.addTextClusterId(self.ax)             
         self.fig.show()
-
+        
+        
+    def showGaugeRef(self):
+        gaugeRef = self.spec.mdata.data('gaugeRef')
+        gaugeSpec = load.loadPickle(self.spec.cfg, gaugeRef)
+        gaugeSpec.view.showEbinFit()
+        
 
 
 class ViewPt(ViewPes):
