@@ -75,6 +75,7 @@ class Spec(object):
         if not self.mdata.data('specType') == bgSpec.mdata.data('specType'):
             raise ValueError('Background file has different spec type.')
         self.mdata.update({'bgFile': bgFile})
+        'TODO: tag managment. Right now the same tag(s) is(are) added, each time subtractGb is called.'
         if isUpDown:
             bgSpec.mdata.update({'tags': ['background', 'up/down'], 'specFile': self.mdata.data('pickleFile')})
             self.mdata.update({'tags': ['up/down']})
