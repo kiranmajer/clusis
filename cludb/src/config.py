@@ -69,6 +69,7 @@ class Cfg():
         
         '''
         Mdata reference: 'key': [type|value list, spectype list, obligatory]
+        Only keys listed are allowed in mdata. Should prevent mdata from being tainted with typos.
         '''
         self.mdataReference = {'casi': {'tags': [list, ['ms', 'pes', 'pfs'], True],
                                         'sha1': [str, ['ms', 'pes', 'pfs'], True],
@@ -95,7 +96,9 @@ class Cfg():
                                         'fitInfo': [list, ['pes'], False],
                                         'fitCutoff': [float, ['pes'], False],
                                         'gaugeRef': [str, ['pes'], False],
-                                        'gaugePar': [dict, ['pes'], False]
+                                        'gaugePar': [dict, ['pes'], False],
+                                        'bgFile': [str, ['ms', 'pes', 'pfs'], False],
+                                        'specFile': [str, ['ms', 'pes', 'pfs'], False]
                                         }
                                }
         
