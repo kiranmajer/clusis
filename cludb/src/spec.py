@@ -57,6 +57,33 @@ class Spec(object):
         photonEnergy = constants.h*constants.c/(constants.e*waveLength)
         
         return photonEnergy
+        
+    def _fixNegIntensities(self, ydataKey='rawIntensity', newKey='intensity'):
+        """
+        The Oscilloscope sets the value for bins without counts to the value of the frame of display.
+        So it's safe to set them to 0. 
+        """
+        fixedIntensity = (self.ydata[ydataKey] + np.abs(self.ydata[ydataKey]))/2
+        self.ydata[newKey] = fixedIntensity
+    
+    def __calcSubIntensities(self, bgSpec):
+        self.ydata['rawIntensitySub'] = self.ydata['intensity'] - bgSpec.ydata['intensity']
+        self._fixNegIntensities('rawIntensitySub', 'intensitySub')
+    
+    def subtractBg(self, bgFile, isUpDown=False):
+        bgSpec = load.loadPickle(self.cfg, bgFile)
+        if not self.mdata.data('specType') == bgSpec.mdata.data('specType'):
+            raise ValueError('Background file has different spec type.')
+        self.mdata.update({'bgFile': bgFile})
+        if isUpDown:
+            'TODO: tag managment. Right now the same tag(s) is(are) added, each time subtractGb is called.'
+            bgSpec.mdata.update({'tags': ['background', 'up/down'], 'specFile': self.mdata.data('pickleFile')})
+            self.mdata.update({'tags': ['up/down']})
+        else:
+            bgSpec.mdata.update({'tags': ['background'], 'specFile': self.mdata.data('pickleFile')})
+        self.__calcSubIntensities(bgSpec)
+        self.commitPickle()
+        bgSpec.commitPickle()
 
 
         
@@ -76,16 +103,8 @@ class peSpec(Spec):
     def __calcEbin(self):
         self.xdata['ebin'] = self.photonEnergy(self.mdata.data('waveLength')) - self.xdata['ekin']
         
-    def __fixNegIntensities(self):
-        """
-        The Oscilloscope sets the value for bins without counts to the value of the frame of display.
-        So it's safe to set them to 0. 
-        """
-        fixedIntensity = (self.ydata['rawIntensity'] + np.abs(self.ydata['rawIntensity']))/2
-        self.ydata['intensity'] = fixedIntensity
-        
-    def __calcJacobyIntensity(self):
-        self.ydata['jacobyIntensity'] = self.ydata['intensity']/(2*self.xdata['ekin']/self.xdata['tof'])
+    def __calcJacobyIntensity(self, ydataKey='intensity', newKey='jacobyIntensity'):
+        self.ydata[newKey] = self.ydata[ydataKey]/(2*self.xdata['ekin']/self.xdata['tof'])
         
     def __calcEbinGauged(self):
         self.xdata['ebinGauged'] = (self.xdata['ebin'] - self.mdata.data('gaugePar')['offset'])/self.mdata.data('gaugePar')['scale']
@@ -95,7 +114,7 @@ class peSpec(Spec):
         self.calcTof()
         self.__calcEkin()
         self.__calcEbin()
-        self.__fixNegIntensities()
+        self._fixNegIntensities()
         self.__calcJacobyIntensity()
         
         
@@ -107,6 +126,11 @@ class peSpec(Spec):
         self.__calcEbinGauged()
         self.commitPickle()
         del gaugeSpec
+        
+    def subtractBg(self, bgFile, isUpDown=True):
+        Spec.subtractBg(self, bgFile, isUpDown=isUpDown)
+        self.__calcJacobyIntensity(ydataKey='intensitySub', newKey='jacobyIntensitySub')
+        self.commitPickle()
         
         
 class ptSpec(peSpec):

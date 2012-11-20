@@ -24,35 +24,43 @@ class View(object):
                 transform = self.ax.transAxes, fontsize=8, horizontalalignment='right')  
 
 
-    def plotIdx(self, ax):
+    def plotIdx(self, ax, subtractBg=False):
         ax.set_xlabel('Index')
         ax.set_ylabel('Intensity (a.u.)')
         ax.set_xlim(0,self.spec.xdata['idx'][-1])
-        ax.plot(self.spec.xdata['idx'], self.spec.ydata['intensity'], color='black')
+        if subtractBg:
+            intensityKey = 'intensitySub'
+        else:
+            intensityKey = 'intensity'
+        ax.plot(self.spec.xdata['idx'], self.spec.ydata[intensityKey], color='black')
         ax.relim()
         ax.autoscale(axis='y')       
             
             
-    def showIdx(self):
+    def showIdx(self, subtractBg=False):
         self._singleFig()
-        self.plotIdx(self.ax)
+        self.plotIdx(self.ax, subtractBg=subtractBg)
         self.addTextFileId(self.ax)
         self.fig.show()
         
         
-    def plotTof(self, ax, timeUnit=1e-6):
+    def plotTof(self, ax, subtractBg=False, timeUnit=1e-6):
         'TODO: adapt for more time units'
         ax.set_xlabel(r'Flight Time ($\mu s$)')
         ax.set_ylabel('Intensity (a.u.)')
         ax.set_xlim(0,self.spec.xdata['tof'][-1]/timeUnit)
-        ax.plot(self.spec.xdata['tof']/timeUnit, self.spec.ydata['intensity'], color='black')
+        if subtractBg:
+            intensityKey = 'intensitySub'
+        else:
+            intensityKey = 'intensity'        
+        ax.plot(self.spec.xdata['tof']/timeUnit, self.spec.ydata[intensityKey], color='black')
         ax.relim()
         ax.autoscale(axis='y')
 
 
-    def showTof(self):
+    def showTof(self, subtractBg=False):
         self._singleFig()
-        self.plotTof(self.ax)        
+        self.plotTof(self.ax, subtractBg=subtractBg)        
         self.addTextFileId(self.ax)
         self.fig.show()
         
@@ -95,58 +103,69 @@ class ViewPes(View):
         ax.text(pos_x, pos_y, clusterId, transform = ax.transAxes, fontsize=fontsize, horizontalalignment=textPos)
         
 
-    def showIdx(self):
-        View.showIdx(self)
+    def showIdx(self, subtractBg=False):
+        View.showIdx(self, subtractBg=subtractBg)
         self.addTextClusterId(self.ax)        
         self.fig.show()
 
         
-    def showTof(self):
-        View.showTof(self)
+    def showTof(self, subtractBg=False):
+        View.showTof(self, subtractBg=subtractBg)
         self.addTextClusterId(self.ax)        
         self.fig.show()
         
 
-    def plotEkin(self, ax):
+    def plotEkin(self, ax, subtractBg=False):
         ax.set_xlabel(r'E$_{kin}$ (eV)')
         ax.set_ylabel('Intensity (a.u.)')
         ax.set_xlim(0,self.spec.photonEnergy(self.spec.mdata.data('waveLength')))
-        ax.plot(self.spec.xdata['ekin'], self.spec.ydata['jacobyIntensity'], color='black')
+        if subtractBg:
+            intensityKey = 'jacobyIntensitySub'
+        else:
+            intensityKey = 'jacobyIntensity'          
+        ax.plot(self.spec.xdata['ekin'], self.spec.ydata[intensityKey], color='black')
         ax.relim()
         ax.autoscale(axis='y')
 
 
-    def showEkin(self):  
+    def showEkin(self, subtractBg=False):  
         self._singleFig()
-        self.plotEkin(self.ax)        
+        self.plotEkin(self.ax, subtractBg=subtractBg)        
         self.addTextFileId(self.ax)
         self.addTextClusterId(self.ax, textPos='right')        
         self.fig.show()
 
 
-    def plotEbin(self, ax, showGauged=False):
+    def plotEbin(self, ax, showGauged=False, subtractBg=False):
         ax.set_xlabel(r'E$_{bin}$ (eV)')
         ax.set_ylabel('Intensity (a.u.)')
         ax.set_xlim(0,self.spec.photonEnergy(self.spec.mdata.data('waveLength')))
         gauged = False
         if 'ebinGauged' in self.spec.xdata.keys():
             if showGauged:
-                ebin = self.spec.xdata['ebinGauged']
+                ebinKey = 'ebinGauged'
                 gauged = True
             else:
-                ebin = self.spec.xdata['ebin']
+                ebinKey = 'ebin'
+        elif showGauged:
+            print 'Spec is not gauged! Plotting normal spectrum instead.'
+            ebinKey = 'ebin'
         else:
-            ebin = self.spec.xdata['ebin']
-        ax.plot(ebin, self.spec.ydata['jacobyIntensity'], color='black')
+            ebinKey = 'ebin'
+        if subtractBg:
+            intensityKey = 'jacobyIntensitySub'
+        else:
+            intensityKey = 'jacobyIntensity'   
+        ax.plot(self.spec.xdata[ebinKey], self.spec.ydata[intensityKey], color='black')
         ax.relim()
         ax.autoscale(axis='y')
         
         return gauged
 
 
-    def showEbin(self, showGauged=True):
+    def showEbin(self, showGauged=True, subtractBg=False):
         self._singleFig()
-        gauged = self.plotEbin(self.ax, showGauged)
+        gauged = self.plotEbin(self.ax, showGauged=showGauged, subtractBg=subtractBg)
         if gauged:
             self.addTextGaugeMarker(self.ax)        
         self.addTextFileId(self.ax)
