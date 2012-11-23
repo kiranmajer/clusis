@@ -235,11 +235,15 @@ class waterSpec(peSpec):
     
     
     def __fitGl(self, p0, cutoff):
-        xdata = self.xdata['ebin']
-        ydata = np.copy(self.ydata['jacobyIntensity'])
-        fitValues = {'fitPar0': p0, 'fitCutoff': cutoff}
         if type(cutoff) in [int,float]:
-            ydata[xdata>cutoff] = xdata[xdata>cutoff]*0
+            xdata = self.xdata['ebin'][self.xdata['ebin']<cutoff]
+            ydata = self.ydata['jacobyIntensity'][:len(xdata)]
+        elif cutoff == None:
+            xdata = self.xdata['ebin']
+            ydata = np.copy(self.ydata['jacobyIntensity'])
+        else:
+            raise ValueError('Cutoff must be int or float')
+        fitValues = {'fitPar0': p0, 'fitCutoff': cutoff}
         p, covar, info, mess, ierr = leastsq(self.__err_mGl, p0, args=(xdata,ydata), full_output=True)
         fitValues.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
         

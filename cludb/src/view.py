@@ -218,6 +218,20 @@ class ViewWater(ViewPes):
         ViewPes.__init__(self, spec)
         
 
+    def addTextFitValues(self, ax):
+        x_hook = 0.05
+        y_hook = 0.6
+        peak_values = list(self.spec.mdata.data('fitPar'))
+        peak_number = 1
+        for peak in peak_values[:-2:2]:
+            ax.text(x_hook, y_hook, '%i. Peak: %s eV'%(peak_number, round(peak, 2)),
+                    transform = self.spec.view.ax.transAxes, fontsize=12)
+            peak_number+=1
+            y_hook-=0.05
+        
+        #textScale = ax.text(0.05, 0.55, 'Scale: %s'%(round(self.spec.mdata.data('fitPar')[-2], 2)),
+        #                        transform = self.spec.view.ax.transAxes, fontsize=12) 
+
     def plotEbinFit(self, ax, fitPar='fitPar'):
         if fitPar in self.spec.mdata.data().keys():
             ax.plot(self.spec.xdata['ebin'],
@@ -240,10 +254,12 @@ class ViewWater(ViewPes):
     def showEbinFit(self, fitPar='fitPar'):
         self._singleFig()
         self.plotEbin(self.ax)
-        self.plotEbinFit(self.ax, fitPar)
+        gauged = self.plotEbinFit(self.ax, fitPar)
         self.addTextFileId(self.ax)
         self.addTextClusterId(self.ax)
-        self.addTextGaugeMarker(self.ax)
+        self.addTextFitValues(self.ax)
+        if gauged:        
+            self.addTextGaugeMarker(self.ax)
         self.fig.show()
 
 

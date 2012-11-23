@@ -28,7 +28,7 @@ class Mdata(object):
         ref = self.__reference
         if ref[key][0] is np.ndarray and type(value) is np.ndarray:
             return value
-        elif ref[key][0] is str and value is None:
+        elif ref[key][0] is str or float and value is None:
             return value
         elif type(ref[key][0]) is type:
             return ref[key][0](value)
