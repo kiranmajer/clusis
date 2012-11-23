@@ -191,7 +191,7 @@ class ViewPt(ViewPes):
         textScale = ax.text(0.05, 0.55, 'Scale: %s'%(round(self.spec.mdata.data('fitPar')[-2], 2)),
                                  transform = self.spec.view.ax.transAxes, fontsize=12)        
         
-    def plotEbinFit(self, ax, fitPar='fitPar'):
+    def plotEbinFit(self, ax, fitPar):
         if fitPar in self.spec.mdata.data().keys():        
             ax.plot(self.spec.xdata['ebin'],
                     self.spec.mGauss(self.spec.xdata['ebin'],self.spec.mdata.data('fitPeakPos'),self.spec.mdata.data(fitPar)),
@@ -205,7 +205,7 @@ class ViewPt(ViewPes):
     def showEbinFit(self, fitPar='fitPar'):
         self._singleFig()
         self.plotEbin(self.ax)
-        self.plotEbinFit(self.ax, fitPar=fitPar)       
+        self.plotEbinFit(self.ax, fitPar)       
         self.addTextFileId(self.ax)
         self.addTextClusterId(self.ax)
         self.addTextGaugePar(self.ax)             
@@ -232,7 +232,7 @@ class ViewWater(ViewPes):
         #textScale = ax.text(0.05, 0.55, 'Scale: %s'%(round(self.spec.mdata.data('fitPar')[-2], 2)),
         #                        transform = self.spec.view.ax.transAxes, fontsize=12) 
 
-    def plotEbinFit(self, ax, fitPar='fitPar'):
+    def plotEbinFit(self, ax, fitPar):
         if fitPar in self.spec.mdata.data().keys():
             ax.plot(self.spec.xdata['ebin'],
                     self.spec.mGl(self.spec.xdata['ebin'], self.spec.mdata.data(fitPar)),
@@ -253,8 +253,9 @@ class ViewWater(ViewPes):
     
     def showEbinFit(self, fitPar='fitPar'):
         self._singleFig()
-        self.plotEbin(self.ax)
-        gauged = self.plotEbinFit(self.ax, fitPar)
+        gauged = self.plotEbin(self.ax, showGauged=self.spec.mdata.data('fitGauged'),
+                               subtractBg=self.spec.mdata.data('fitSubtractBg'))
+        self.plotEbinFit(self.ax, fitPar)
         self.addTextFileId(self.ax)
         self.addTextClusterId(self.ax)
         self.addTextFitValues(self.ax)

@@ -234,26 +234,48 @@ class waterSpec(peSpec):
         return self.mGl(x, par)-y
     
     
-    def __fitGl(self, p0, cutoff):
+    def __fitGl(self, p0, cutoff, subtractBg, gauged):
+        if gauged:
+            ebin_key = 'ebinGauged'
+        else:
+            ebin_key = 'ebin'
+            
+        if subtractBg:
+            int_key = 'jacobyIntensitySub'
+        else:
+            int_key = 'jacobyIntensity'
+            
         if type(cutoff) in [int,float]:
-            xdata = self.xdata['ebin'][self.xdata['ebin']<cutoff]
-            ydata = self.ydata['jacobyIntensity'][:len(xdata)]
+            xdata = self.xdata[ebin_key][self.xdata[ebin_key]<cutoff]
+            ydata = self.ydata[int_key][:len(xdata)]
         elif cutoff == None:
-            xdata = self.xdata['ebin']
-            ydata = np.copy(self.ydata['jacobyIntensity'])
+            xdata = self.xdata[ebin_key]
+            ydata = np.copy(self.ydata[int_key])
         else:
             raise ValueError('Cutoff must be int or float')
-        fitValues = {'fitPar0': p0, 'fitCutoff': cutoff}
+        
+        fitValues = {'fitPar0': p0, 'fitCutoff': cutoff, 'fitGauged': gauged, 'fitSubtractBg': subtractBg}
         p, covar, info, mess, ierr = leastsq(self.__err_mGl, p0, args=(xdata,ydata), full_output=True)
         fitValues.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
         
         return fitValues
     
     
-    def fit(self, p0, cutoff=None):
+    def fit(self, p0, cutoff=None, subtractBg=None, gauged=None):
+        '''If subtractBg and/or gauged are None, try to find useful defaults.'''
+        if subtractBg == None:
+            if 'bgFile' in self.mdata.data().keys():
+                subtractBg = True
+            else:
+                subtractBg = False
+        if gauged == None:
+            if 'gaugeRef' in self.mdata.data().keys():
+                gauged = True
+            else:
+                gauged =False
         
         try:
-            fitValues = self.__fitGl(p0, cutoff)
+            fitValues = self.__fitGl(p0, cutoff, subtractBg, gauged)
         except:
             self.mdata.update(fitValues)
             raise

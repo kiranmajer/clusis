@@ -95,6 +95,8 @@ class Cfg():
                                         'fitCovar': [np.ndarray, ['pes'], False],
                                         'fitInfo': [list, ['pes'], False],
                                         'fitCutoff': [float, ['pes'], False],
+                                        'fitGauged': [[True,False], ['pes'], False],
+                                        'fitSubtractBg': [[True,False], ['pes'], False],
                                         'gaugeRef': [str, ['pes'], False],
                                         'gaugePar': [dict, ['pes'], False],
                                         'bgFile': [str, ['ms', 'pes', 'pfs'], False],
