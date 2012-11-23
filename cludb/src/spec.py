@@ -67,8 +67,8 @@ class Spec(object):
         self.ydata[newKey] = fixedIntensity
     
     def __calcSubIntensities(self, bgSpec):
-        self.ydata['rawIntensitySub'] = self.ydata['intensity'] - bgSpec.ydata['intensity']
-        self._fixNegIntensities('rawIntensitySub', 'intensitySub')
+        self.ydata['intensitySubRaw'] = self.ydata['intensity'] - bgSpec.ydata['intensity']
+        self._fixNegIntensities('intensitySubRaw', 'intensitySub')
     
     def subtractBg(self, bgFile, isUpDown=False):
         bgSpec = load.loadPickle(self.cfg, bgFile)

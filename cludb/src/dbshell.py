@@ -241,7 +241,7 @@ class Db(object):
             sql+=i
         sql=sql.rstrip(' AND ')
         # build order part
-        sql+=' ORDER BY clusterBaseUnit, clusterBaseUnitNumber'
+        sql+=' ORDER BY clusterBaseUnit, clusterBaseUnitNumber, recTime'
         
 
         print 'Querying with: ', sql

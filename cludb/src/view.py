@@ -147,7 +147,7 @@ class ViewPes(View):
                 gauged = True
             else:
                 ebinKey = 'ebin'
-        elif showGauged:
+        elif showGauged and self.spec.mdata.data('clusterBaseUnit') not in ['Pt']:
             print 'Spec is not gauged! Plotting normal spectrum instead.'
             ebinKey = 'ebin'
         else:
