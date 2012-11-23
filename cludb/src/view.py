@@ -193,11 +193,11 @@ class ViewPt(ViewPes):
         
     def plotEbinFit(self, ax, fitPar='fitPar'):
         if fitPar in self.spec.mdata.data().keys():        
-            self.ax.plot(self.spec.xdata['ebin'],
-                         self.spec.mGauss(self.spec.xdata['ebin'],self.spec.mdata.data('fitPeakPos'),self.spec.mdata.data(fitPar)),
-                         color='blue')    
-            self.ax.relim()
-            self.ax.autoscale(axis='y')  
+            ax.plot(self.spec.xdata['ebin'],
+                    self.spec.mGauss(self.spec.xdata['ebin'],self.spec.mdata.data('fitPeakPos'),self.spec.mdata.data(fitPar)),
+                    color='blue')    
+            ax.relim()
+            ax.autoscale(axis='y')  
         else:
             raise ValueError('Spectrum not gauged. Gauge first by running <Spec instance>.gauge(offset=0).')
     
@@ -217,27 +217,35 @@ class ViewWater(ViewPes):
     def __init__(self,spec):
         ViewPes.__init__(self, spec)
         
-        
-    def showEbinFit(self, fitPar='fitPar'):
-        self._clearPlot()
+
+    def plotEbinFit(self, ax, fitPar='fitPar'):
         if fitPar in self.spec.mdata.data().keys():
-            self.showEbin()
-            self.ax.plot(self.spec.xdata['ebin'],
-                         self.spec.mGl(self.spec.xdata['ebin'], self.spec.mdata.data(fitPar)),
-                         color='blue')
-            self.ax.relim()
+            ax.plot(self.spec.xdata['ebin'],
+                    self.spec.mGl(self.spec.xdata['ebin'], self.spec.mdata.data(fitPar)),
+                    color='blue')
+            ax.relim()
             plist = list(self.spec.mdata.data(fitPar))
             sl = plist.pop()
             sg = plist.pop()
             while len(plist) >= 2:
                 A = plist.pop()
                 xmax = plist.pop()
-                self.ax.plot(self.spec.xdata['ebin'],
-                         self.spec.mGl(self.spec.xdata['ebin'], [xmax,A,sg,sl]),
-                         color='DimGray')
-            self.fig.show()
+                ax.plot(self.spec.xdata['ebin'],
+                        self.spec.mGl(self.spec.xdata['ebin'], [xmax,A,sg,sl]),
+                        color='DimGray')        
         else:
             raise ValueError('Spectrum not yet fitted. Fit first.')
+            
+    
+    def showEbinFit(self, fitPar='fitPar'):
+        self._singleFig()
+        self.plotEbin(self.ax)
+        self.plotEbinFit(self.ax, fitPar)
+        self.addTextFileId(self.ax)
+        self.addTextClusterId(self.ax)
+        self.addTextGaugeMarker(self.ax)
+        self.fig.show()
+
 
 
 

@@ -249,12 +249,12 @@ class waterSpec(peSpec):
     def fit(self, p0, cutoff=None):
         
         try:
-            fitValues = self.__fitGl( p0, cutoff)
+            fitValues = self.__fitGl(p0, cutoff)
         except:
-            self.mdata.add(fitValues)
+            self.mdata.update(fitValues)
             raise
         else:
-            self.mdata.add(fitValues)
+            self.mdata.update(fitValues)
 
 
 
