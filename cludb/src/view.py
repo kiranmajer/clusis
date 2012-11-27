@@ -44,7 +44,7 @@ class View(object):
         self.fig.show()
         
         
-    def plotTof(self, ax, subtractBg=False, timeUnit=1e-6):
+    def plotTof(self, ax, showGauged=False, subtractBg=False, timeUnit=1e-6):
         'TODO: adapt for more time units'
         ax.set_xlabel(r'Flight Time ($\mu s$)')
         ax.set_ylabel('Intensity (a.u.)')
@@ -218,22 +218,27 @@ class ViewWater(ViewPes):
         ViewPes.__init__(self, spec)
         
 
-    def addTextFitValues(self, ax):
+    def addTextFitValues(self, ax, specType, timeUnit=1):
+        if specType == 'tof':
+            fitPar_key = 'fitParTof'
+            peakPos_unit = '($\mu s$)'
+        else:
+            fitPar_key = 'fitPar'
+            peakPos_unit = 'eV'
         x_hook = 0.05
         y_hook = 0.6
-        peak_values = list(self.spec.mdata.data('fitPar'))
+        peak_values = list(self.spec.mdata.data(fitPar_key))
         peak_number = 1
         for peak in peak_values[:-2:2]:
-            ax.text(x_hook, y_hook, '%i. Peak: %s eV'%(peak_number, round(peak, 2)),
+            ax.text(x_hook, y_hook, '%i. Peak: %.3f %s'%(peak_number, round(peak/timeUnit, 3), peakPos_unit),
                     transform = self.spec.view.ax.transAxes, fontsize=12)
             peak_number+=1
             y_hook-=0.05
         
         #textScale = ax.text(0.05, 0.55, 'Scale: %s'%(round(self.spec.mdata.data('fitPar')[-2], 2)),
         #                        transform = self.spec.view.ax.transAxes, fontsize=12) 
-
+    'TODO: implement gauging!'
     def plotEbinFit(self, ax, fitPar):
-        if fitPar in self.spec.mdata.data().keys():
             ax.plot(self.spec.xdata['ebin'],
                     self.spec.mGl(self.spec.xdata['ebin'], self.spec.mdata.data(fitPar)),
                     color='blue')
@@ -247,26 +252,59 @@ class ViewWater(ViewPes):
                 ax.plot(self.spec.xdata['ebin'],
                         self.spec.mGl(self.spec.xdata['ebin'], [xmax,A,sg,sl]),
                         color='DimGray')        
-        else:
-            raise ValueError('Spectrum not yet fitted. Fit first.')
+
             
     
     def showEbinFit(self, fitPar='fitPar'):
-        self._singleFig()
-        gauged = self.plotEbin(self.ax, showGauged=self.spec.mdata.data('fitGauged'),
-                               subtractBg=self.spec.mdata.data('fitSubtractBg'))
-        self.plotEbinFit(self.ax, fitPar)
-        self.addTextFileId(self.ax)
-        self.addTextClusterId(self.ax)
-        self.addTextFitValues(self.ax)
-        if gauged:        
-            self.addTextGaugeMarker(self.ax)
-        self.fig.show()
+        if fitPar in self.spec.mdata.data().keys():
+            self._singleFig()
+            gauged = self.plotEbin(self.ax, showGauged=self.spec.mdata.data('fitGauged'),
+                                   subtractBg=self.spec.mdata.data('fitSubtractBg'))
+            self.plotEbinFit(self.ax, fitPar)
+            self.addTextFileId(self.ax)
+            self.addTextClusterId(self.ax)
+            self.addTextFitValues(self.ax, specType='ebin')
+            if gauged:        
+                self.addTextGaugeMarker(self.ax)
+            self.fig.show()
+        else:
+            raise ValueError('Spectrum not yet fitted. Fit first.')            
+
+
+    def plotTofFit(self, ax, fitPar, timeUnit):
+        xdata = self.spec.xdata['tof']/timeUnit
+        ax.plot(xdata,
+                self.spec.mGlTrans(self.spec.xdata['tof'], self.spec.mdata.data(fitPar)),
+                color='blue')
+        ax.relim()
+        plist = list(self.spec.mdata.data(fitPar))
+        sl = plist.pop()
+        sg = plist.pop()
+        while len(plist) >= 2:
+            A = plist.pop()
+            xmax = plist.pop()
+            ax.plot(xdata,
+                    self.spec.mGlTrans(self.spec.xdata['tof'], [xmax,A,sg,sl]),
+                    color='DimGray') 
 
 
 
-
-
-
-
+    def showTofFit(self, fitPar='fitParTof', timeUnit=1e-6):
+        if fitPar in self.spec.mdata.data().keys():
+            self._singleFig()
+            gauged = self.plotTof(self.ax, showGauged=self.spec.mdata.data('fitGaugedTof'),
+                                   subtractBg=self.spec.mdata.data('fitSubtractBgTof'),
+                                   timeUnit=timeUnit)
+            self.plotTofFit(self.ax, fitPar, timeUnit=timeUnit)
+            self.addTextFileId(self.ax)
+            self.addTextClusterId(self.ax, textPos='right')
+            self.addTextFitValues(self.ax, specType='tof', timeUnit=timeUnit)
+            if gauged:        
+                self.addTextGaugeMarker(self.ax)
+            self.fig.show()      
+        else:
+            raise ValueError('Spectrum not yet fitted. Fit first.')
+        
+        
+        
         

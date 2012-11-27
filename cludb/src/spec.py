@@ -290,9 +290,9 @@ class waterSpec(peSpec):
  
     def __fitGlTrans(self, p0, cutoff, subtractBg, gauged):
         if gauged:
-            ebin_key = 'tofGauged'
+            tof_key = 'tofGauged'
         else:
-            ebin_key = 'tof'
+            tof_key = 'tof'
             
         if subtractBg:
             int_key = 'intensitySub'
@@ -300,22 +300,22 @@ class waterSpec(peSpec):
             int_key = 'intensity'
             
         if type(cutoff) in [int,float]:
-            xdata = self.xdata[ebin_key][self.xdata[ebin_key]<cutoff]
+            xdata = self.xdata[tof_key][self.xdata[tof_key]<cutoff]
             ydata = self.ydata[int_key][:len(xdata)]
         elif cutoff == None:
-            xdata = self.xdata[ebin_key]
+            xdata = self.xdata[tof_key]
             ydata = np.copy(self.ydata[int_key])
         else:
             raise ValueError('Cutoff must be int or float')
         
-        fitValues = {'fitPar0': p0, 'fitCutoff': cutoff, 'fitGauged': gauged, 'fitSubtractBg': subtractBg}
+        fitValues = {'fitPar0Tof': p0, 'fitCutoffTof': cutoff, 'fitGaugedTof': gauged, 'fitSubtractBgTof': subtractBg}
         p, covar, info, mess, ierr = leastsq(self.__err_mGlTrans, p0, args=(xdata,ydata), full_output=True)
-        fitValues.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
+        fitValues.update({'fitParTof': p, 'fitCovarTof': covar, 'fitInfoTof': [info, mess, ierr]})
         
         return fitValues 
     
     
-    def fit(self, p0, cutoff=None, subtractBg=None, gauged=None):
+    def fit(self, specType, p0, cutoff=None, subtractBg=None, gauged=None):
         '''If subtractBg and/or gauged are None, try to find useful defaults.'''
         if subtractBg == None:
             if 'bgFile' in self.mdata.data().keys():
@@ -329,7 +329,12 @@ class waterSpec(peSpec):
                 gauged =False
         
         try:
-            fitValues = self.__fitGl(p0, cutoff, subtractBg, gauged)
+            if specType == 'ebin':
+                fitValues = self.__fitGl(p0, cutoff, subtractBg, gauged)
+            elif specType == 'tof':
+                fitValues = self.__fitGlTrans(p0, cutoff, subtractBg, gauged)
+            else:
+                raise ValueError('specType must be one of: "tof" or "ebin".')
         except:
             #self.mdata.update(fitValues)
             raise
@@ -338,27 +343,27 @@ class waterSpec(peSpec):
             self.mdata.update(fitValues)
 
 
-    def fitTrans(self, p0, cutoff=None, subtractBg=None, gauged=None):
-        '''If subtractBg and/or gauged are None, try to find useful defaults.'''
-        if subtractBg == None:
-            if 'bgFile' in self.mdata.data().keys():
-                subtractBg = True
-            else:
-                subtractBg = False
-        if gauged == None:
-            if 'gaugeRef' in self.mdata.data().keys():
-                gauged = True
-            else:
-                gauged =False
-        
-        try:
-            fitValues = self.__fitGlTrans(p0, cutoff, subtractBg, gauged)
-        except:
-            #self.mdata.update(fitValues)
-            raise
-        else:
-            print 'Fit completed, Updating mdata...'
-            self.mdata.update(fitValues)
+#    def fitTof(self, p0, cutoff=None, subtractBg=None, gauged=None):
+#        '''If subtractBg and/or gauged are None, try to find useful defaults.'''
+#        if subtractBg == None:
+#            if 'bgFile' in self.mdata.data().keys():
+#                subtractBg = True
+#            else:
+#                subtractBg = False
+#        if gauged == None:
+#            if 'gaugeRef' in self.mdata.data().keys():
+#                gauged = True
+#            else:
+#                gauged =False
+#        
+#        try:
+#            fitValues = self.__fitGlTrans(p0, cutoff, subtractBg, gauged)
+#        except:
+#            #self.mdata.update(fitValues)
+#            raise
+#        else:
+#            print 'Fit completed, Updating mdata...'
+#            self.mdata.update(fitValues)
 
 
 
