@@ -58,9 +58,9 @@ class View(object):
         ax.autoscale(axis='y')
 
 
-    def showTof(self, subtractBg=False):
+    def showTof(self, subtractBg=False, timeUnit=1e-6):
         self._singleFig()
-        self.plotTof(self.ax, subtractBg=subtractBg)        
+        self.plotTof(self.ax, subtractBg=subtractBg, timeUnit=timeUnit)        
         self.addTextFileId(self.ax)
         self.fig.show()
         
@@ -109,8 +109,8 @@ class ViewPes(View):
         self.fig.show()
 
         
-    def showTof(self, subtractBg=False):
-        View.showTof(self, subtractBg=subtractBg)
+    def showTof(self, subtractBg=False, timeUnit=1e-6):
+        View.showTof(self, subtractBg=subtractBg, timeUnit=timeUnit)
         self.addTextClusterId(self.ax)        
         self.fig.show()
         

@@ -218,6 +218,18 @@ class waterSpec(peSpec):
         y[x>xmax] = A/((x[x>xmax]-xmax)**2/(2*sl**2)+1)
         return y
     
+
+    def __glTrans(self, t, tmax, At, sg, sl):
+        y = np.zeros(t.shape)
+        q = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength'))**2
+        hv = self.photonEnergy(self.mdata.data('waveLength'))
+        ebin = lambda t: hv - q/t**2
+        xmax = ebin(tmax)
+        A = At*tmax/(2*(hv-xmax))
+        y[t<=tmax] = A*np.exp(-(ebin(t[t<=tmax])-xmax)**2/(2*sg**2))*2*q/t[t<=tmax]**3
+        y[t>tmax] = A/((ebin(t[t>tmax])-xmax)**2/(2*sl**2)+1)*2*q/t[t>tmax]**3
+        return y
+    
     
     def mGl(self, x, par):
         plist = list(par)
@@ -230,8 +242,23 @@ class waterSpec(peSpec):
             mgl+=self.__gl(x, xmax, A, sg, sl)
         return mgl
     
+    def mGlTrans(self, x, par):
+        plist = list(par)
+        mgl = 0
+        sl =plist.pop()
+        sg = plist.pop()
+        while len(plist) > 0:
+            A = plist.pop()
+            xmax = plist.pop()
+            mgl+=self.__glTrans(x, xmax, A, sg, sl)
+        return mgl    
+    
+    
     def __err_mGl(self, par, x, y):
         return self.mGl(x, par)-y
+    
+    def __err_mGlTrans(self, par, x, y):
+        return self.mGlTrans(x, par)-y    
     
     
     def __fitGl(self, p0, cutoff, subtractBg, gauged):
@@ -259,6 +286,33 @@ class waterSpec(peSpec):
         fitValues.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
         
         return fitValues
+ 
+ 
+    def __fitGlTrans(self, p0, cutoff, subtractBg, gauged):
+        if gauged:
+            ebin_key = 'tofGauged'
+        else:
+            ebin_key = 'tof'
+            
+        if subtractBg:
+            int_key = 'intensitySub'
+        else:
+            int_key = 'intensity'
+            
+        if type(cutoff) in [int,float]:
+            xdata = self.xdata[ebin_key][self.xdata[ebin_key]<cutoff]
+            ydata = self.ydata[int_key][:len(xdata)]
+        elif cutoff == None:
+            xdata = self.xdata[ebin_key]
+            ydata = np.copy(self.ydata[int_key])
+        else:
+            raise ValueError('Cutoff must be int or float')
+        
+        fitValues = {'fitPar0': p0, 'fitCutoff': cutoff, 'fitGauged': gauged, 'fitSubtractBg': subtractBg}
+        p, covar, info, mess, ierr = leastsq(self.__err_mGlTrans, p0, args=(xdata,ydata), full_output=True)
+        fitValues.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
+        
+        return fitValues 
     
     
     def fit(self, p0, cutoff=None, subtractBg=None, gauged=None):
@@ -277,11 +331,34 @@ class waterSpec(peSpec):
         try:
             fitValues = self.__fitGl(p0, cutoff, subtractBg, gauged)
         except:
-            self.mdata.update(fitValues)
+            #self.mdata.update(fitValues)
             raise
         else:
+            print 'Fit completed, Updating mdata...'
             self.mdata.update(fitValues)
 
+
+    def fitTrans(self, p0, cutoff=None, subtractBg=None, gauged=None):
+        '''If subtractBg and/or gauged are None, try to find useful defaults.'''
+        if subtractBg == None:
+            if 'bgFile' in self.mdata.data().keys():
+                subtractBg = True
+            else:
+                subtractBg = False
+        if gauged == None:
+            if 'gaugeRef' in self.mdata.data().keys():
+                gauged = True
+            else:
+                gauged =False
+        
+        try:
+            fitValues = self.__fitGlTrans(p0, cutoff, subtractBg, gauged)
+        except:
+            #self.mdata.update(fitValues)
+            raise
+        else:
+            print 'Fit completed, Updating mdata...'
+            self.mdata.update(fitValues)
 
 
 
