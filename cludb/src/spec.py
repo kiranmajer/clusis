@@ -203,8 +203,27 @@ class ptSpec(peSpec):
         return mgauss
     
     
+    def mGaussTrans(self, t, peak_pos, parList):
+        plist = list(parList)
+        xlist = list(peak_pos)
+        gaussTrans = lambda t,m,A,s,toff,te: A*np.exp(-(self._hv - self._pFactor*(1/(t + toff)**2 + 1/te**2) - m)**2/(2*s**2))*2*self._pFactor/(t + toff)**3
+        toff = plist.pop()
+        te = plist.pop()
+        mgaussTrans = 0
+        while len(plist) > 0:
+            s = plist.pop()
+            A = plist.pop()
+            m = xlist.pop()
+            mgaussTrans += gaussTrans(t, m, A, s, toff, te)
+        return mgaussTrans
+    
+    
     def __err_mGauss(self, p,x,y,peak_pos):
         return self.mGauss(x, peak_pos, p)-y
+    
+    
+    def __err_mGaussTrans(self, p,t,y,peak_pos):
+        return self.mGaussTrans(t, peak_pos, p)-y    
     
     
     def __fitMgauss(self, peakParRef, scale, offset, rel_y_min, cutoff):
@@ -225,7 +244,27 @@ class ptSpec(peSpec):
         fitValues.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
         
         return fitValues
+
+
+    def __fitMgaussTrans(self, peakParRef, te, toff, rel_y_min, cutoff):
+        xdata = self.xdata['tof']
+        ydata = self.ydata['intensity']
+        if cutoff == None:
+            ebin_max = self.xdata['tof'].max()
+        elif 0 < cutoff < self.xdata['tof'].max():
+            ebin_max =cutoff
+        else:
+            raise ValueError('cutoff must be between 0 and %.2f'%(self.xdata['ebin'].max()))
+        peakPar = [p for p in peakParRef if p[0]<ebin_max and p[1]>rel_y_min]
+        fitValues = {'fitPeakPos': self.__fitPeakPos(peakPar)}
+        xcenter = fitValues['fitPeakPos'][0]
+        yscale = self.__getScale(xdata, ydata, xcenter, 0.2e-6)
+        fitValues['fitPar0'] = self.__fitParInit(peakPar, yscale, te, toff)
+        p, covar, info, mess, ierr = leastsq(self.__err_mGauss, fitValues['fitPar0'],args=(xdata,ydata,fitValues['fitPeakPos']), full_output=True)
+        fitValues.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
         
+        return fitValues
+       
 
     def gauge(self, offset=0, rel_y_min=0, scale=1, cutoff=None):
         '''
