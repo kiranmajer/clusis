@@ -111,7 +111,7 @@ class ViewPes(View):
         
     def showTof(self, subtractBg=False, timeUnit=1e-6):
         View.showTof(self, subtractBg=subtractBg, timeUnit=timeUnit)
-        self.addTextClusterId(self.ax)        
+        self.addTextClusterId(self.ax, textPos='right')        
         self.fig.show()
         
 
@@ -186,9 +186,9 @@ class ViewPt(ViewPes):
         
     
     def addTextGaugePar(self, ax):
-        textOffset = ax.text(0.05, 0.6, 'Offset: %s meV'%(round(self.spec.mdata.data('fitPar')[-1]*1e3, 2)),
+        textOffset = ax.text(0.05, 0.6, 'Offset: %.2f meV'%(self.spec.mdata.data('fitPar')[-1]*1e3),
                                   transform = self.spec.view.ax.transAxes, fontsize=12)
-        textScale = ax.text(0.05, 0.55, 'Scale: %s'%(round(self.spec.mdata.data('fitPar')[-2], 2)),
+        textScale = ax.text(0.05, 0.55, 'Scale: %.3f'%(self.spec.mdata.data('fitPar')[-2]),
                                  transform = self.spec.view.ax.transAxes, fontsize=12)        
         
     def plotEbinFit(self, ax, fitPar):
@@ -248,15 +248,17 @@ class ViewWater(ViewPes):
                     self.spec.mGl(self.spec.xdata['ebin'], self.spec.mdata.data(fitPar)),
                     color='blue')
             ax.relim()
-            plist = list(self.spec.mdata.data(fitPar))
-            sl = plist.pop()
-            sg = plist.pop()
-            while len(plist) >= 2:
-                A = plist.pop()
-                xmax = plist.pop()
-                ax.plot(self.spec.xdata['ebin'],
-                        self.spec.mGl(self.spec.xdata['ebin'], [xmax,A,sg,sl]),
-                        color='DimGray')        
+            # plot single peaks, if there are more than one
+            if len(self.spec.mdata.data(fitPar)) > 4:
+                plist = list(self.spec.mdata.data(fitPar))
+                sl = plist.pop()
+                sg = plist.pop()
+                while len(plist) >= 2:
+                    A = plist.pop()
+                    xmax = plist.pop()
+                    ax.plot(self.spec.xdata['ebin'],
+                            self.spec.mGl(self.spec.xdata['ebin'], [xmax,A,sg,sl]),
+                            color='DimGray')        
 
             
     
@@ -282,15 +284,17 @@ class ViewWater(ViewPes):
                 self.spec.mGlTrans(self.spec.xdata['tof'], self.spec.mdata.data(fitPar)),
                 color='blue')
         ax.relim()
-        plist = list(self.spec.mdata.data(fitPar))
-        sl = plist.pop()
-        sg = plist.pop()
-        while len(plist) >= 2:
-            A = plist.pop()
-            xmax = plist.pop()
-            ax.plot(xdata,
-                    self.spec.mGlTrans(self.spec.xdata['tof'], [xmax,A,sg,sl]),
-                    color='DimGray') 
+        # plot single peaks, if there are more than one
+        if len(self.spec.mdata.data(fitPar)) > 4:        
+            plist = list(self.spec.mdata.data(fitPar))
+            sl = plist.pop()
+            sg = plist.pop()
+            while len(plist) >= 2:
+                A = plist.pop()
+                xmax = plist.pop()
+                ax.plot(xdata,
+                        self.spec.mGlTrans(self.spec.xdata['tof'], [xmax,A,sg,sl]),
+                        color='DimGray') 
 
 
 

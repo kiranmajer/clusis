@@ -99,34 +99,36 @@ class peSpec(Spec):
         #print 'Assigning view.ViewPes'
         self.view = view.ViewPes(self)
         
-    def ekin(self, t):
-        return lambda t: self._pFactor/t**2
-    
     def ebin(self, t, gauge_scale=1, gauge_offset=0):
-        return lambda t, gauge_scale, gauge_offset: (self._hv-self._pFactor/t**2-gauge_offset)/gauge_scale
-    
+        return (self._hv-self._pFactor/t**2 - gauge_offset)/gauge_scale
+
+    def ekin(self, t, gauge_scale=1, gauge_offset=0):
+        return self._hv - self.ebin(t, gauge_scale, gauge_offset)
+        
     def tGauged(self, t, gauge_scale, gauge_offset):
-        return lambda t, gauge_scale, gauge_offset: np.sqrt(-self._pFactor/(gauge_scale(self._hv - self._pFactor/t**2) 
-                                                                            + gauge_offset - self._hv))
+        return np.sqrt(self._pFactor/self.ekin(t, gauge_scale, gauge_offset))
         
     def jTrans(self, intensity, t):
-        return lambda intensity, t: intensity*t**3/(2*self._pFactor)
+        return intensity*t**3/(2*self._pFactor)
     
     def jTransInv(self, intensity, t):
-        return lambda intensity, t: intensity*2*self._pFactor/t**3
+        return intensity*2*self._pFactor/t**3
     
     
-    def __calcEkin(self):
-        self.xdata['ekin'] = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength')/self.xdata['tof'])**2
+    def __calcEkin(self, newKey='ekin', gauge_scale=1, gauge_offset=0):
+        self.xdata[newKey] = self.ekin(self.xdata['tof'], gauge_scale, gauge_offset) 
+        #self.xdata['ekin'] = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength')/self.xdata['tof'])**2
     
-    def __calcEbin(self):
-        self.xdata['ebin'] = self.photonEnergy(self.mdata.data('waveLength')) - self.xdata['ekin']
+    def __calcEbin(self, newKey='ebin', gauge_scale=1, gauge_offset=0):
+        self.xdata[newKey] = self.ebin(self.xdata['tof'], gauge_scale, gauge_offset)
+        #self.xdata['ebin'] = self.photonEnergy(self.mdata.data('waveLength')) - self.xdata['ekin']
         
-    def __calcJacobyIntensity(self, ydataKey='intensity', newKey='jacobyIntensity'):
-        self.ydata[newKey] = self.ydata[ydataKey]/(2*self.xdata['ekin']/self.xdata['tof'])
+    def __calcJacobyIntensity(self, newKey='jacobyIntensity', intensityKey='intensity', tofKey='tof'):
+        self.ydata[newKey] = self.jTrans(self.ydata[intensityKey], self.xdata[tofKey])
+        #self.ydata[newKey] = self.ydata[ydataKey]/(2*self.xdata['ekin']/self.xdata['tof'])
         
-    def __calcEbinGauged(self):
-        self.xdata['ebinGauged'] = (self.xdata['ebin'] - self.mdata.data('gaugePar')['offset'])/self.mdata.data('gaugePar')['scale']
+#    def __calcEbinGauged(self):
+#        self.xdata['ebinGauged'] = (self.xdata['ebin'] - self.mdata.data('gaugePar')['offset'])/self.mdata.data('gaugePar')['scale']
         
     
     def calcSpec(self):
@@ -142,13 +144,25 @@ class peSpec(Spec):
         gaugeSpec = load.loadPickle(self.cfg, gaugeRef)
         scale, offset = gaugeSpec.mdata.data('fitPar')[-2:]
         self.mdata.update({'gaugePar': {'scale': scale, 'offset': offset}})
-        self.__calcEbinGauged()
+        # calc xdata gauged
+        self.__calcEbin(newKey='ebinGauged', gauge_scale=scale, gauge_offset=offset)
+        self.__calcEkin(newKey='ekinGauged', gauge_scale=scale, gauge_offset=offset)
+        self.xdata['tofGauged'] = self.tGauged(self.xdata['tof'], gauge_scale=scale, gauge_offset=offset)
+        # calc ydata gauged
+        self.__calcJacobyIntensity(newKey='jacobyIntensityGauged', intensityKey='intensity', tofKey='tofGauged')
+        if 'jacobyIntensitySub' in self.ydata.keys():
+            self.__calcJacobyIntensity(newKey='jacobyIntensityGaugedSub',
+                                       intensityKey='intensitySub', tofKey='tofGauged')
         self.commitPickle()
         del gaugeSpec
         
     def subtractBg(self, bgFile, isUpDown=True):
         Spec.subtractBg(self, bgFile, isUpDown=isUpDown)
-        self.__calcJacobyIntensity(ydataKey='intensitySub', newKey='jacobyIntensitySub')
+        self.__calcJacobyIntensity(newKey='jacobyIntensitySub', intensityKey='intensitySub')
+        if 'gaugePar' in self.mdata.data().keys():
+            self.__calcJacobyIntensity(newKey='jacobyIntensityGaugedSub',
+                                       intensityKey='intensitySub', tofKey='tofGauged')
+            
         self.commitPickle()
         
         
@@ -193,10 +207,15 @@ class ptSpec(peSpec):
         return self.mGauss(x, peak_pos, p)-y
     
     
-    def __fitMgauss(self, peakParRef, scale, offset, rel_y_min):
+    def __fitMgauss(self, peakParRef, scale, offset, rel_y_min, cutoff):
         xdata = self.xdata['ebin']
         ydata = self.ydata['jacobyIntensity']
-        ebin_max = self.xdata['ebin'].max()
+        if cutoff == None:
+            ebin_max = self.xdata['ebin'].max()
+        elif 0 < cutoff < self.xdata['ebin'].max():
+            ebin_max =cutoff
+        else:
+            raise ValueError('cutoff must be between 0 and %.2f'%(self.xdata['ebin'].max()))
         peakPar = [p for p in peakParRef if p[0]<ebin_max and p[1]>rel_y_min]
         fitValues = {'fitPeakPos': self.__fitPeakPos(peakPar)}
         xcenter = fitValues['fitPeakPos'][0]
@@ -208,7 +227,7 @@ class ptSpec(peSpec):
         return fitValues
         
 
-    def gauge(self, offset=0, rel_y_min=0, scale=1):
+    def gauge(self, offset=0, rel_y_min=0, scale=1, cutoff=None):
         '''
         Fits a multiple gauss to the pes.
         offset, scale: fit parameter
@@ -216,9 +235,9 @@ class ptSpec(peSpec):
         '''
         peakParRef = self.cfg.ptPeakPar[self.mdata.data('waveLength')]
         try:
-            fitValues = self.__fitMgauss(peakParRef, scale, offset, rel_y_min)
+            fitValues = self.__fitMgauss(peakParRef, scale, offset, rel_y_min, cutoff)
         except:
-            self.mdata.update(fitValues)
+            #self.mdata.update(fitValues)
             raise
         else:
             self.mdata.update(fitValues)
