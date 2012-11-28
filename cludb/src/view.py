@@ -218,22 +218,27 @@ class ViewWater(ViewPes):
         ViewPes.__init__(self, spec)
         
 
-    def addTextFitValues(self, ax, specType, timeUnit=1):
+    def addTextFitValues(self, ax, specType, timeUnit=1, textPos='left'):
+        'TODO: adapt units to match timeUnit'
         if specType == 'tof':
             fitPar_key = 'fitParTof'
-            peakPos_unit = '($\mu s$)'
+            peakPos_unit = '$\mu s$'
         else:
             fitPar_key = 'fitPar'
             peakPos_unit = 'eV'
-        x_hook = 0.05
-        y_hook = 0.6
+        if textPos == 'left':
+            pos_x, pos_y = 0.05, 0.6
+        elif textPos == 'right':
+            pos_x, pos_y = 0.95, 0.6
+        else:
+            raise ValueError('textPos must be one of: left, right. Got "%s" instead.'%(str(textPos)))
         peak_values = list(self.spec.mdata.data(fitPar_key))
         peak_number = 1
         for peak in peak_values[:-2:2]:
-            ax.text(x_hook, y_hook, '%i. Peak: %.3f %s'%(peak_number, round(peak/timeUnit, 3), peakPos_unit),
-                    transform = self.spec.view.ax.transAxes, fontsize=12)
+            ax.text(pos_x, pos_y, '%i. Peak: %.3f %s'%(peak_number, round(peak/timeUnit, 3), peakPos_unit),
+                    transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=textPos)
             peak_number+=1
-            y_hook-=0.05
+            pos_y-=0.05
         
         #textScale = ax.text(0.05, 0.55, 'Scale: %s'%(round(self.spec.mdata.data('fitPar')[-2], 2)),
         #                        transform = self.spec.view.ax.transAxes, fontsize=12) 
@@ -298,7 +303,7 @@ class ViewWater(ViewPes):
             self.plotTofFit(self.ax, fitPar, timeUnit=timeUnit)
             self.addTextFileId(self.ax)
             self.addTextClusterId(self.ax, textPos='right')
-            self.addTextFitValues(self.ax, specType='tof', timeUnit=timeUnit)
+            self.addTextFitValues(self.ax, specType='tof', timeUnit=timeUnit, textPos='right')
             if gauged:        
                 self.addTextGaugeMarker(self.ax)
             self.fig.show()      

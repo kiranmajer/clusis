@@ -92,10 +92,29 @@ class peSpec(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
         print '__init__: Init peSpec'
         Spec.__init__(self, mdata, xdata, ydata, cfg)
+        self._pFactor = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength'))**2
+        self._hv = self.photonEnergy(self.mdata.data('waveLength'))
         if len(self.xdata) == 1:
             self.calcSpec()
         #print 'Assigning view.ViewPes'
         self.view = view.ViewPes(self)
+        
+    def ekin(self, t):
+        return lambda t: self._pFactor/t**2
+    
+    def ebin(self, t, gauge_scale=1, gauge_offset=0):
+        return lambda t, gauge_scale, gauge_offset: (self._hv-self._pFactor/t**2-gauge_offset)/gauge_scale
+    
+    def tGauged(self, t, gauge_scale, gauge_offset):
+        return lambda t, gauge_scale, gauge_offset: np.sqrt(-self._pFactor/(gauge_scale(self._hv - self._pFactor/t**2) 
+                                                                            + gauge_offset - self._hv))
+        
+    def jTrans(self, intensity, t):
+        return lambda intensity, t: intensity*t**3/(2*self._pFactor)
+    
+    def jTransInv(self, intensity, t):
+        return lambda intensity, t: intensity*2*self._pFactor/t**3
+    
     
     def __calcEkin(self):
         self.xdata['ekin'] = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength')/self.xdata['tof'])**2
