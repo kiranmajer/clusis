@@ -90,6 +90,7 @@ class Cfg():
                                         'timeOffset': [float,['ms','pes'], True],
                                         'trapTemp': [float, ['ms', 'pes', 'pfs'], False],
                                         'fitPeakPos': [list, ['pes'], False],
+                                        'fitPeakPosTof': [list, ['pes'], False],
                                         'fitPar0': [list, ['pes'], False],
                                         'fitPar': [np.ndarray, ['pes'], False],
                                         'fitCovar': [np.ndarray, ['pes'], False],

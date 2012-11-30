@@ -185,12 +185,20 @@ class ViewPt(ViewPes):
         ViewPes.__init__(self, spec)
         
     
-    def addTextGaugePar(self, ax):
-        textOffset = ax.text(0.05, 0.6, 'Offset: %.2f meV'%(self.spec.mdata.data('fitPar')[-1]*1e3),
-                                  transform = self.spec.view.ax.transAxes, fontsize=12)
-        textScale = ax.text(0.05, 0.55, 'Scale: %.3f'%(self.spec.mdata.data('fitPar')[-2]),
-                                 transform = self.spec.view.ax.transAxes, fontsize=12)        
-        
+    def addTextGaugePar(self, ax, textPos='left'):
+        if textPos == 'left':
+            pos_x, pos_y = 0.05, 0.6
+        elif textPos == 'right':
+            pos_x, pos_y = 0.95, 0.6
+        else:
+            raise ValueError('textPos must be one of: left, right. Got "%s" instead.'%(str(textPos)))        
+        ax.text(pos_x, pos_y, 'E$_{offset}$: %.2f meV'%(self.spec.mdata.data('fitParTof')[-3]*1e3),
+                transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=textPos)
+        ax.text(pos_x, pos_y-0.05, 't$_{offset}$: %.3f ns'%(self.spec.mdata.data('fitParTof')[-2]*1e9),
+                transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=textPos)
+        ax.text(pos_x, pos_y-0.1, 't$_{scale}$: %.3f'%(self.spec.mdata.data('fitParTof')[-1]),
+                transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=textPos)
+               
     def plotEbinFit(self, ax, fitPar):
         if fitPar in self.spec.mdata.data().keys():        
             ax.plot(self.spec.xdata['ebin'],
@@ -199,7 +207,7 @@ class ViewPt(ViewPes):
             ax.relim()
             ax.autoscale(axis='y')  
         else:
-            raise ValueError('Spectrum not gauged. Gauge first by running <Spec instance>.gauge(offset=0).')
+            raise ValueError('Spectrum not gauged. Gauge first by running <Spec instance>.gauge(specType, offset=0).')
     
     
     def showEbinFit(self, fitPar='fitPar'):
@@ -210,6 +218,27 @@ class ViewPt(ViewPes):
         self.addTextClusterId(self.ax)
         self.addTextGaugePar(self.ax)             
         self.fig.show()
+        
+        
+    def plotTofFit(self, ax, fitPar, timeUnit):
+        if fitPar in self.spec.mdata.data().keys():        
+            ax.plot(self.spec.xdata['tof']/timeUnit,
+                    self.spec.mGaussTrans(self.spec.xdata['tof'],self.spec.mdata.data('fitPeakPosTof'),self.spec.mdata.data(fitPar)),
+                    color='blue')    
+            ax.relim()
+            ax.autoscale(axis='y')  
+        else:
+            raise ValueError('Spectrum not gauged. Gauge first by running <Spec instance>.gauge(specType, offset=0).')
+    
+    
+    def showTofFit(self, fitPar='fitParTof', timeUnit=1e-6):
+        self._singleFig()
+        self.plotTof(self.ax, timeUnit=timeUnit)
+        self.plotTofFit(self.ax, fitPar, timeUnit)       
+        self.addTextFileId(self.ax)
+        self.addTextClusterId(self.ax, textPos='right')
+        self.addTextGaugePar(self.ax, textPos='right')             
+        self.fig.show()        
 
         
         
