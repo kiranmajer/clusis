@@ -185,18 +185,18 @@ class ViewPt(ViewPes):
         ViewPes.__init__(self, spec)
         
     
-    def addTextGaugePar(self, ax, textPos='left'):
+    def addTextGaugePar(self, ax, textPos='left', fitPar='fitParTof'):
         if textPos == 'left':
             pos_x, pos_y = 0.05, 0.6
         elif textPos == 'right':
             pos_x, pos_y = 0.95, 0.6
         else:
             raise ValueError('textPos must be one of: left, right. Got "%s" instead.'%(str(textPos)))        
-        ax.text(pos_x, pos_y, 'E$_{offset}$: %.2f meV'%(self.spec.mdata.data('fitParTof')[-3]*1e3),
+        ax.text(pos_x, pos_y, 'E$_{offset}$: %.2f meV'%(self.spec.mdata.data(fitPar)[-3]*1e3),
                 transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=textPos)
-        ax.text(pos_x, pos_y-0.05, 't$_{offset}$: %.3f ns'%(self.spec.mdata.data('fitParTof')[-2]*1e9),
+        ax.text(pos_x, pos_y-0.05, 't$_{offset}$: %.3f ns'%(self.spec.mdata.data(fitPar)[-2]*1e9),
                 transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=textPos)
-        ax.text(pos_x, pos_y-0.1, 't$_{scale}$: %.3f'%(self.spec.mdata.data('fitParTof')[-1]),
+        ax.text(pos_x, pos_y-0.1, 't$_{scale}$: %.3f'%(self.spec.mdata.data(fitPar)[-1]),
                 transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=textPos)
                
     def plotEbinFit(self, ax, fitPar):
@@ -216,7 +216,7 @@ class ViewPt(ViewPes):
         self.plotEbinFit(self.ax, fitPar)       
         self.addTextFileId(self.ax)
         self.addTextClusterId(self.ax)
-        self.addTextGaugePar(self.ax)             
+        self.addTextGaugePar(self.ax, fitPar=fitPar)             
         self.fig.show()
         
         
@@ -237,7 +237,7 @@ class ViewPt(ViewPes):
         self.plotTofFit(self.ax, fitPar, timeUnit)       
         self.addTextFileId(self.ax)
         self.addTextClusterId(self.ax, textPos='right')
-        self.addTextGaugePar(self.ax, textPos='right')             
+        self.addTextGaugePar(self.ax, textPos='right', fitPar=fitPar)             
         self.fig.show()        
 
         

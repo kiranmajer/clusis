@@ -80,10 +80,10 @@ class OverView(object):
         ax.set_ylim(bottom=0)
         textId = ax.text(1.0, 1.01, '%s'%(os.path.basename(spec.mdata.data('datFile'))),
                                   transform = ax.transAxes, fontsize=6, horizontalalignment='right')
-        clusterLegend = '$\mathrm{\mathsf{{%s_{%s}}^{%s}}}$'%(spec.mdata.data('clusterBaseUnit'), 
-                                                              str(spec.mdata.data('clusterBaseUnitNumber')),
-                                                              spec.mdata.data('ionType'))
-        ax.text(0.05, 0.8, clusterLegend, transform = ax.transAxes, fontsize=16, horizontalalignment='left')
+        #clusterLegend = '$\mathrm{\mathsf{{%s_{%s}}^{%s}}}$'%(spec.mdata.data('clusterBaseUnit'), 
+        #                                                      #str(spec.mdata.data('clusterBaseUnitNumber')),
+        #                                                      spec.mdata.data('ionType'))
+        #ax.text(0.05, 0.8, clusterLegend, transform = ax.transAxes, fontsize=16, horizontalalignment='left')
  
         
         

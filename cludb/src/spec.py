@@ -180,9 +180,9 @@ class ptSpec(peSpec):
         return [np.sqrt(self._pFactor/(self._hv-p[0])) for p in peakPar]
     
     
-    def __fitParInit(self, peakPar, yscale, scale, offset, ts):
+    def __fitParInit(self, peakPar, yscale, scale, offset, lscale):
         l = [i for p in peakPar if p[0] for i in [p[1]*yscale,p[2]]]
-        l.extend([scale,offset,ts])
+        l.extend([scale,offset,lscale])
         #l.extend([scale,offset])
         return l
 
@@ -202,34 +202,35 @@ class ptSpec(peSpec):
     def mGauss(self, x, peak_pos, parList):
         plist = list(parList)
         xlist = list(peak_pos)
-        gauss = lambda x, m,A,s,scale,offset: A*np.exp(-(x-(scale*m+offset))**2/(2*s**2))
+        gauss = lambda x, m,A,sigma,scale,offset: A*np.exp(-(x-(scale*m+offset))**2/(2*sigma**2))
         offset = plist.pop()
         scale = plist.pop()
         mgauss = 0
         while len(plist) > 0:
-            s = plist.pop()
+            sigma = plist.pop()
             A = plist.pop()
             m = xlist.pop()
-            mgauss += gauss(x, m, A, s, scale, offset)
+            mgauss += gauss(x, m, A, sigma, scale, offset)
         return mgauss
     
     
     def mGaussTrans(self, t, peak_pos, parList):
         plist = list(parList)
         xlist = list(peak_pos)
-        #gaussTrans = lambda t,m,A,s,toff,te: A*np.exp(-(self._hv - self._pFactor*(1/(t + toff)**2 + 1/te**2) - m)**2/(2*s**2))*2*self._pFactor/(t + toff)**3
-        #gaussTrans = lambda t,m,A,s,toff,te,l: A*np.exp(-(-self._pFactor*(1/(t)**2 + 1/te**2 - 1/(l*m + toff)**2))**2/(2*s**2))*2*self._pFactor/(t)**3
-        gaussTrans = lambda t,m,A,s,toff,te,ts: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor*(1/(1/np.sqrt(1/t**2-te/self._pFactor)-toff)**2/ts**2 - 1/m**2))**2/(2*s**2))
-        ts =plist.pop()
+        #gaussTrans = lambda t,m,A,s,toff,Eoff: A*np.exp(-(self._hv - self._pFactor*(1/(t + toff)**2 + 1/Eoff**2) - m)**2/(2*s**2))*2*self._pFactor/(t + toff)**3
+        #gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*np.exp(-(-self._pFactor*(1/(t)**2 + 1/Eoff**2 - 1/(l*m + toff)**2))**2/(2*s**2))*2*self._pFactor/(t)**3
+        #gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor*(1/(1/np.sqrt(1/t**2-Eoff/self._pFactor)-toff)**2/lscale**2 - 1/m**2))**2/(2*sigma**2))
+        gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor*(1/(1/(lscale*np.sqrt(1/t**2 - Eoff/self._pFactor)) - toff)**2 - 1/m**2))**2/(2*sigma**2))
+        lscale =plist.pop()
         toff = plist.pop()
-        te = plist.pop()
+        Eoff = plist.pop()
         mgaussTrans = 0
         while len(plist) > 0:
-            s = plist.pop()
+            sigma = plist.pop()
             A = plist.pop()
             m = xlist.pop()
-            mgaussTrans += gaussTrans(t, m, A, s, toff, te, ts)
-            #mgaussTrans += gaussTrans(t, m, A, s, toff, te)
+            mgaussTrans += gaussTrans(t, m, A, sigma, toff, Eoff, lscale)
+            #mgaussTrans += gaussTrans(t, m, A, sigma, toff, Eoff)
         return mgaussTrans
     
     
@@ -261,7 +262,7 @@ class ptSpec(peSpec):
         return fitValues
 
 
-    def __fitMgaussTrans(self, peakParRef, te, toff, lf, rel_y_min, cutoff):
+    def __fitMgaussTrans(self, peakParRef, Eoff, toff, lscale, rel_y_min, cutoff):
         xdata = self.xdata['tof']
         ydata = self.ydata['intensity']
         if cutoff == None:
@@ -274,7 +275,7 @@ class ptSpec(peSpec):
         fitValues = {'fitPeakPosTof': self.__fitPeakPosTrans(peakPar)}
         xcenter = peakParRef[0][0]
         yscale = self.__getScale(self.xdata['ebin'], self.ydata['jacobyIntensity'], xcenter, 0.4)
-        fitValues['fitPar0Tof'] = self.__fitParInit(peakPar, yscale, te, toff, lf)
+        fitValues['fitPar0Tof'] = self.__fitParInit(peakPar, yscale, Eoff, toff, lscale)
         p, covar, info, mess, ierr = leastsq(self.__err_mGaussTrans, fitValues['fitPar0Tof'], 
                                              args=(xdata,ydata,fitValues['fitPeakPosTof']), full_output=True)
         fitValues.update({'fitParTof': p, 'fitCovarTof': covar, 'fitInfoTof': [info, mess, ierr]})
@@ -282,7 +283,7 @@ class ptSpec(peSpec):
         return fitValues
        
 
-    def gauge(self, specType, offset=0, rel_y_min=0, scale=1, lf=1, te=0, toff=0, cutoff=None):
+    def gauge(self, specType, offset=0, rel_y_min=0, scale=1, lscale=1, Eoff=0, toff=63e-9, cutoff=None):
         '''
         Fits a multiple gauss to the pes.
         offset, scale: fit parameter
@@ -293,7 +294,7 @@ class ptSpec(peSpec):
             if specType == 'ebin':
                 fitValues = self.__fitMgauss(peakParRef, scale, offset, rel_y_min, cutoff)
             elif specType == 'tof':
-                fitValues = self.__fitMgaussTrans(peakParRef, te, toff, lf, rel_y_min, cutoff)
+                fitValues = self.__fitMgaussTrans(peakParRef, Eoff, toff, lscale, rel_y_min, cutoff)
             else:
                 raise ValueError('specType must be one of: "tof" or "ebin".')                
         except:
