@@ -239,7 +239,11 @@ class ptSpec(peSpec):
     
     
     def __err_mGaussTrans(self, p,t,y,peak_pos):
-        return self.mGaussTrans(t, peak_pos, p)-y    
+        'TODO: move to cfg.'
+        if p[-2]>50e-9: # only allow fits with toff > 50ns
+            return self.mGaussTrans(t, peak_pos, p)-y
+        else:
+            return 1e6    
     
     
     def __fitMgauss(self, peakParRef, scale, offset, rel_y_min, cutoff):
@@ -270,7 +274,7 @@ class ptSpec(peSpec):
         elif 0 < cutoff < self.xdata['tof'].max():
             tof_max =cutoff
         else:
-            raise ValueError('cutoff must be between 0 and %.2f'%(self.xdata['ebin'].max()))
+            raise ValueError('cutoff must be between 0 and %.2f. Got %.1f instead.'%(self.xdata['tof'].max(), cutoff))
         peakPar = [p for p in peakParRef if np.sqrt(self._pFactor/(self._hv-p[0]))<tof_max and p[1]>rel_y_min]
         fitValues = {'fitPeakPosTof': self.__fitPeakPosTrans(peakPar)}
         xcenter = peakParRef[0][0]
