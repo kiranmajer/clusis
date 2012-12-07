@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 import numpy as np
+import re
 
 class Mdata(object):
     
@@ -81,14 +82,33 @@ class Mdata(object):
         else:
             raise ValueError('No specType: Can not perform sanity check.')
         
-        
-        
+    
+    def addTag(self, tag):
+        'TODO: make more robust, e.g. check if tag is str.'
+        l = self.__mdata['tags']
+        if l.count(tag) == 0:
+            l.append(tag)
+        else:
+            print 'Tag already exists.'
+    
+    def renameTag(self, parents, tag, newTag):
+        l = self.__mdata['tags']
+        self.__mdata['tags'] = [t.replace(tag,newTag) if re.search('(^|/)%s/?%s(/|$)'%(parents,tag), t) is not None else t for t in l]
+       
+    def removeTag(self, tag):    
+        'TODO: add method remove a whole tag tree at once.'
+        l = self.__mdata['tags']
+        if tag in l:
+            l.remove(tag)
+        else:
+            raise ValueError('Tag does not exist: %s'%(str(tag)))
+            
+    
     def add(self, newMdata, update=False):
         """
         Safely add new meta data to the mdata dict. Only accepts valid key, value pairs
         for the given spec type.
         """
-        'TODO: add method to add, remove, modify tags.'
         mdata = self.__mdata
         if type(newMdata) is dict:
             #self.failedKeys = {}
@@ -100,9 +120,10 @@ class Mdata(object):
                         mdata[k]=self.__validValue(k, v)
                     elif k == 'tags': # special case tags
                         if type(v) is list:
-                            mdata[k].extend(v)
+                            for t in v:
+                                self.addTag(t)
                         else:
-                            mdata[k].append(v)
+                            self.addTag(v)
                     elif update: #key exists, is not tags
                         mdata[k]=self.__validValue(k, v)
                     else:

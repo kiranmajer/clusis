@@ -61,7 +61,7 @@ class Cfg():
         
         self.defaults = {'casi': {'pes': {'timePerPoint': 2e-9,
                                           'triggerOffset': 0,
-                                          'timeOffset': 63e-9,
+                                          'timeOffset': 0, # 63e-9,
                                           'flightLength': 1.6
                                           }
                                   }

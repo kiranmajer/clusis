@@ -274,7 +274,10 @@ class Db(object):
                 print str(row[str('waveLength')]*1e9).ljust(10+3),
                 print formatRecTime(row[str('recTime')]).ljust(12),
                 print formatDatFile(row[str('datFile')]).ljust(16),
-                print '<|>'.join(row[str('tags')])
+                if type(row[str('tags')]) is type(None):
+                    print ''
+                else:
+                    print '<|>'.join(row[str('tags')])
                 idx+=1
                 
         printAnswer(fetch)

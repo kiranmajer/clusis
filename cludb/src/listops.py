@@ -20,3 +20,17 @@ def updateMdata(specList, mdataDict, cfg):
         del cs
     
 
+def removeTag(specList, tag, cfg):
+    for entry in specList:
+        cs =  load.loadPickle(cfg, entry[str('pickleFile')])
+        try:
+            cs.mdata.removeTag(tag)
+        except:
+            raise
+        else:
+            cs.commit(update=True)
+            
+        del cs
+        
+        
+            

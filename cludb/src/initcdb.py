@@ -18,6 +18,9 @@ def listAdapter(l):
     return '<|>'.join(l)
 
 def listConverter(s):
+#    if type(s) is type(None):
+#        return ''
+#    else:
     return s.split('<|>')
 
 def prepSql():

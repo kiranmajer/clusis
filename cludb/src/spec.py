@@ -24,7 +24,7 @@ class Spec(object):
         
     
     
-    def commitDb(self, update=False):
+    def commitDb(self, update=True):
         with Db(self.mdata.data('machine'), self.cfg) as db:
             db.add(self, update=update)
         
@@ -42,7 +42,7 @@ class Spec(object):
             pickle.dump((self.mdata.data(), self.xdata, self.ydata), f)
             
             
-    def commit(self, update=False):
+    def commit(self, update=True):
         self.commitPickle()
         self.commitDb(update=update)
         
@@ -306,6 +306,7 @@ class ptSpec(peSpec):
             raise
         else:
             self.mdata.update(fitValues)
+            self.mdata.addTag('gauged')
 
 
 

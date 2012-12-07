@@ -108,6 +108,8 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
             #raise
             continue
         if not db.tableHasSha1(mi.mdata.data('specType'), mi.mdata.data('sha1')):
+            '''TODO: handle special files with identical sha1 (e.g. "flat line"-spectra).
+            It might be interesting to have them in the db. Allow fake sha1 = sha1+unix time stamp?'''
             if fileStoragePossible(mi.mdata.data()):
                 print os.path.basename(datFile), '''ready to convert ...
                 '''
@@ -144,7 +146,8 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
     try:
         print 'Starting db import ....'
         db.add(specList)
-    except:
+    except Exception, e:
+        print 'Db population failed:', e
         # remove all files in our data dir, from this import
         moveBack(movedFiles)
         for spec in specList:
