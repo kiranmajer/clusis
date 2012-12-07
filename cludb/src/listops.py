@@ -33,4 +33,41 @@ def removeTag(specList, tag, cfg):
         del cs
         
         
+def listMdata(specList, items, cfg):
+    mdataList = [items]
+    rowCount = 1
+    for s in specList:
+        cs = load.loadPickle(cfg,s[str('pickleFile')])
+        mdataList.append([])
+        for key in items:
+            mdataList[rowCount].append(cs.mdata.data(key))
+        rowCount += 1
+            
+        #print cs.mdata.data('datFile'), cs.mdata.data('recTime'), cs.mdata.data('fitParTof')[-1]
+        del cs
+    
+    for row in mdataList:
+        for item in row:
+            print item,
+
+
+
+def listMdataPtFit(specList, cfg):
+    items = ['recTime', 'datFile', 'fitParTof']
+    mdataList = [items]
+    rowCount = 1
+    for s in specList:
+        cs = load.loadPickle(cfg,s[str('pickleFile')])
+        mdataList.append([])
+        for key in items:
+            mdataList[rowCount].append(cs.mdata.data(key))
+        rowCount += 1
+            
+        #print cs.mdata.data('datFile'), cs.mdata.data('recTime'), cs.mdata.data('fitParTof')[-1]
+        del cs
+    
+        mdataList.reverse()
+        header = mdataList.pop()
+        
+            
             
