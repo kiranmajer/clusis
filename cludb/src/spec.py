@@ -240,10 +240,12 @@ class ptSpec(peSpec):
     
     def __err_mGaussTrans(self, p,t,y,peak_pos):
         'TODO: move to cfg.'
-        if p[-2]>50e-9: # only allow fits with toff > 50ns
+        #if p[-2]>50e-9: # only allow fits with toff > 50ns
+        if 1.009<p[-1]<1.013:
             return self.mGaussTrans(t, peak_pos, p)-y
         else:
-            return 1e6    
+            return 1e6
+#        return self.mGaussTrans(t, peak_pos, p)-y
     
     
     def __fitMgauss(self, peakParRef, scale, offset, rel_y_min, cutoff):

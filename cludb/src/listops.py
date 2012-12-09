@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 #import dbshell
 import load
+import time
+import os
 
 def updateMdata(specList, mdataDict, cfg):
     'TODO: open db only once'
@@ -53,9 +55,15 @@ def listMdata(specList, items, cfg):
 
 
 def listMdataPtFit(specList, cfg):
+    def formatRecTime(unixtime):
+        return time.strftime('%d.%m.%Y', time.localtime(unixtime))
+    
+    def formatDatFile(datfile):
+        return os.path.basename(datfile)
+    
     items = ['recTime', 'datFile', 'fitParTof']
-    mdataList = [items]
-    rowCount = 1
+    mdataList = []
+    rowCount = 0
     for s in specList:
         cs = load.loadPickle(cfg,s[str('pickleFile')])
         mdataList.append([])
@@ -66,8 +74,43 @@ def listMdataPtFit(specList, cfg):
         #print cs.mdata.data('datFile'), cs.mdata.data('recTime'), cs.mdata.data('fitParTof')[-1]
         del cs
     
-        mdataList.reverse()
-        header = mdataList.pop()
+    print 'recTime'.ljust(10+3),
+    print 'datFile'.ljust(13+3),
+    print 'l_scale'.ljust(7+3),
+    print 't_off [ns]'.ljust(10+3),
+    print 'E_off [meV]'.ljust(6)
+    lastDate = ''
+    for row in mdataList:
+        if not formatRecTime(row[0]) == lastDate:
+            print '-'*70
+        print formatRecTime(row[0]).ljust(10+3),
+        print formatDatFile(row[1]).ljust(13+3),
+        print str(round(row[2][-1],3)).ljust(7+3),
+        print str(round(row[2][-2]*1e9,2)).ljust(10+3),
+        print str(round(row[2][-3]*1e3,2)).ljust(6)
+        lastDate = formatRecTime(row[0])
+        
+        
+def regaugePt(specList,cfg):
+    for s in specList:
+        cs = load.loadPickle(cfg,s[str('pickleFile')])
+        try:
+            cs.gauge('tof', 
+                     lscale=1.011,  #cs.mdata.data('fitParTof')[-1], 
+                     Eoff=cs.mdata.data('fitParTof')[-3]#, 
+                     #toff=63e-9  #cs.mdata.data('fitParTof')[-2]
+                     )
+        except:
+            print cs.mdata.data('datFile'), 'Fit failed.'
+        else:
+            cs.commit()
+        del cs
+    listMdataPtFit(specList,cfg)
+    
+    
+    
+    
+    
         
             
             
