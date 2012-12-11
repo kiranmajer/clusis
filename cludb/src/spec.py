@@ -82,8 +82,8 @@ class Spec(object):
         else:
             bgSpec.mdata.update({'tags': ['background'], 'specFile': self.mdata.data('pickleFile')})
         self.__calcSubIntensities(bgSpec)
-        self.commitPickle()
-        bgSpec.commitPickle()
+        self.commit()
+        bgSpec.commit()
 
 
         
@@ -241,7 +241,7 @@ class ptSpec(peSpec):
     def __err_mGaussTrans(self, p,t,y,peak_pos):
         'TODO: move to cfg.'
         #if p[-2]>50e-9: # only allow fits with toff > 50ns
-        if 1.009<p[-1]<1.013:
+        if 1.0<p[-1]<1.007:
             return self.mGaussTrans(t, peak_pos, p)-y
         else:
             return 1e6
@@ -282,11 +282,16 @@ class ptSpec(peSpec):
         xcenter = peakParRef[0][0]
         yscale = self.__getScale(self.xdata['ebin'], self.ydata['jacobyIntensity'], xcenter, 0.4)
         fitValues['fitPar0Tof'] = self.__fitParInit(peakPar, yscale, Eoff, toff, lscale)
-        p, covar, info, mess, ierr = leastsq(self.__err_mGaussTrans, fitValues['fitPar0Tof'], 
-                                             args=(xdata,ydata,fitValues['fitPeakPosTof']), full_output=True)
-        fitValues.update({'fitParTof': p, 'fitCovarTof': covar, 'fitInfoTof': [info, mess, ierr]})
+        try:
+            p, covar, info, mess, ierr = leastsq(self.__err_mGaussTrans, fitValues['fitPar0Tof'], 
+                                                 args=(xdata,ydata,fitValues['fitPeakPosTof']), full_output=True)
+        except:
+            return fitValues
+            raise
+        else:
+            fitValues.update({'fitParTof': p, 'fitCovarTof': covar, 'fitInfoTof': [info, mess, ierr]})
         
-        return fitValues
+            return fitValues
        
 
     def gauge(self, specType, offset=0, rel_y_min=0, scale=1, lscale=1, Eoff=0, toff=63e-9, cutoff=None):
@@ -304,7 +309,7 @@ class ptSpec(peSpec):
             else:
                 raise ValueError('specType must be one of: "tof" or "ebin".')                
         except:
-            #self.mdata.update(fitValues)
+            self.mdata.update(fitValues)
             raise
         else:
             self.mdata.update(fitValues)
