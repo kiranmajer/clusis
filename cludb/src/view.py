@@ -200,10 +200,20 @@ class ViewPt(ViewPes):
                 transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=textPos)
                
     def plotEbinFit(self, ax, fitPar):
-        if fitPar in self.spec.mdata.data().keys():        
-            ax.plot(self.spec.xdata['ebin'],
-                    self.spec.mGauss(self.spec.xdata['ebin'],self.spec.mdata.data('fitPeakPos'),self.spec.mdata.data(fitPar)),
-                    color='blue')    
+        if fitPar in self.spec.mdata.data().keys():
+            if fitPar in ['fitPar', 'fitPar0']:        
+                ax.plot(self.spec.xdata['ebin'],
+                        self.spec.mGauss(self.spec.xdata['ebin'],
+                                         self.spec.mdata.data('fitPeakPos'),
+                                         self.spec.mdata.data(fitPar)),
+                        color='blue')
+            else:
+                ax.plot(self.spec.xdata['ebin'],
+                        self.spec.jTrans(self.spec.mGaussTrans(self.spec.xdata['tof'],
+                                                               self.spec.mdata.data('fitPeakPosTof'),
+                                                               self.spec.mdata.data('fitParTof')),
+                                         self.spec.xdata['tof']),
+                        color='blue')    
             ax.relim()
             ax.autoscale(axis='y')  
         else:
