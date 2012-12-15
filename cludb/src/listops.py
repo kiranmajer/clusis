@@ -96,7 +96,7 @@ def regaugePt(specList,cfg):
         cs = load.loadPickle(cfg,s[str('pickleFile')])
         try:
             cs.gauge('tof', 
-                     lscale=1.011,  #cs.mdata.data('fitParTof')[-1], 
+                     lscale=1.006,  #cs.mdata.data('fitParTof')[-1], 
                      Eoff=cs.mdata.data('fitParTof')[-3]#, 
                      #toff=63e-9  #cs.mdata.data('fitParTof')[-2]
                      )
@@ -108,9 +108,20 @@ def regaugePt(specList,cfg):
     listMdataPtFit(specList,cfg)
     
     
-    
-    
-    
+def showAll(specList,cfg):
+    sl=[]
+    for s in specList:
+        cs = load.loadPickle(cfg,s[str('pickleFile')])
+        cs.view.showTofFit('fitParTof')
+        sl.append(cs)
+    return sl
+
+def specList(slist,cfg):
+    sl=[]
+    for s in slist:
+        cs = load.loadPickle(cfg,s[str('pickleFile')])
+        sl.append(cs)
+    return sl    
         
             
             
