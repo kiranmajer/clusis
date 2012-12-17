@@ -61,7 +61,10 @@ class OverView(object):
                 pf = row[5]
                 currentspec = load.loadPickle(self.cfg, pf)
                 currentax = fig.add_subplot(5,4,idx_list[plotidx])
-                self.plotEkin(currentspec, currentax)
+                currentspec.view.plotEbin(currentax)
+                currentspec.view.addTextFileId(currentax)
+                currentspec.view.addTextClusterId(currentax, fontsize=16)
+                #self.plotEkin(currentspec, currentax)
                 self.format_overview_plot(currentax,currentspec)
                 plotidx += 1
             if pdf:

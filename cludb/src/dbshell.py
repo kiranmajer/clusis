@@ -98,7 +98,15 @@ class Db(object):
         del db_cursor
         
         return hasSha1
-
+    
+    
+    def rebuildDb(self, spectra):
+        '''
+        Basically already implemented over add. Integrate scan pickle dir, build spec list, add.
+        clear tables?
+        check for missing entries? -> consistency check: each table entry has corresponding pickleFile'''
+        pass
+        
 
     def query(self, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None, clusterBaseUnitNumberRange=None,
               recTime=None, recTimeRange=None, inTags=None, notInTags=None, datFileName=None, waveLength=None):

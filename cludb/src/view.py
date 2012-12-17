@@ -6,6 +6,7 @@ import load
 class View(object):
     def __init__(self,spec):
         #print '__init__: Initializing View object.'
+        'TODO: allow multiple specs'
         self.spec = spec
         
 
@@ -21,7 +22,7 @@ class View(object):
 
     def addTextFileId(self, ax):
         ax.text(1.0, 1.01, '%s'%(os.path.basename(self.spec.mdata.data('datFile'))),
-                transform = self.ax.transAxes, fontsize=8, horizontalalignment='right')  
+                transform = ax.transAxes, fontsize=8, horizontalalignment='right')  
 
 
     def plotIdx(self, ax, subtractBg=False):
@@ -211,7 +212,7 @@ class ViewPt(ViewPes):
                 ax.plot(self.spec.xdata['ebin'],
                         self.spec.jTrans(self.spec.mGaussTrans(self.spec.xdata['tof'],
                                                                self.spec.mdata.data('fitPeakPosTof'),
-                                                               self.spec.mdata.data('fitParTof')),
+                                                               self.spec.mdata.data(fitPar)),
                                          self.spec.xdata['tof']),
                         color='blue')    
             ax.relim()
@@ -283,6 +284,7 @@ class ViewWater(ViewPes):
         #                        transform = self.spec.view.ax.transAxes, fontsize=12) 
     'TODO: implement gauging!'
     def plotEbinFit(self, ax, fitPar):
+        if fitPar in ['fitPar', 'fitPar0']:
             ax.plot(self.spec.xdata['ebin'],
                     self.spec.mGl(self.spec.xdata['ebin'], self.spec.mdata.data(fitPar)),
                     color='blue')
@@ -297,15 +299,35 @@ class ViewWater(ViewPes):
                     xmax = plist.pop()
                     ax.plot(self.spec.xdata['ebin'],
                             self.spec.mGl(self.spec.xdata['ebin'], [xmax,A,sg,sl]),
-                            color='DimGray')        
+                            color='DimGray')
+        else:
+            ax.plot(self.spec.xdata['ebin'],
+                    self.spec.jTrans(self.spec.mGlTrans(self.spec.xdata['tof'],
+                                                   self.spec.mdata.data(fitPar)),
+                                     self.spec.xdata['tof']),
+                    color='blue')
+            ax.relim()
+            # plot single peaks, if there are more than one
+            if len(self.spec.mdata.data(fitPar)) > 4:
+                plist = list(self.spec.mdata.data(fitPar))
+                sl = plist.pop()
+                sg = plist.pop()
+                while len(plist) >= 2:
+                    A = plist.pop()
+                    xmax = plist.pop()
+                    ax.plot(self.spec.xdata['ebin'],
+                            self.spec.jTrans(self.spec.mGlTrans(self.spec.xdata['tof'],
+                                                                [xmax,A,sg,sl]),
+                                             self.spec.xdata['tof']),
+                            color='DimGray')             
 
             
     
     def showEbinFit(self, fitPar='fitPar'):
         if fitPar in self.spec.mdata.data().keys():
             self._singleFig()
-            gauged = self.plotEbin(self.ax, showGauged=self.spec.mdata.data('fitGauged'),
-                                   subtractBg=self.spec.mdata.data('fitSubtractBg'))
+            gauged = self.plotEbin(self.ax) #, showGauged=self.spec.mdata.data('fitGauged'),
+                                   #subtractBg=self.spec.mdata.data('fitSubtractBg'))
             self.plotEbinFit(self.ax, fitPar)
             self.addTextFileId(self.ax)
             self.addTextClusterId(self.ax)
