@@ -326,8 +326,8 @@ class ViewWater(ViewPes):
     def showEbinFit(self, fitPar='fitPar'):
         if fitPar in self.spec.mdata.data().keys():
             self._singleFig()
-            gauged = self.plotEbin(self.ax) #, showGauged=self.spec.mdata.data('fitGauged'),
-                                   #subtractBg=self.spec.mdata.data('fitSubtractBg'))
+            gauged = self.plotEbin(self.ax, showGauged=self.spec.mdata.data('fitGauged'),
+                                   subtractBg=self.spec.mdata.data('fitSubtractBg'))
             self.plotEbinFit(self.ax, fitPar)
             self.addTextFileId(self.ax)
             self.addTextClusterId(self.ax)
