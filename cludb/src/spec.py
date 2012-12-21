@@ -238,10 +238,12 @@ class ptSpec(peSpec):
         return self.mGauss(x, peak_pos, p)-y
     
     
-    def __err_mGaussTrans(self, p,t,y,peak_pos):
-        'TODO: move to cfg.'
-        #if p[-2]>50e-9: # only allow fits with toff > 50ns
-        if 1.0<p[-1]<1.007:
+    def __err_mGaussTrans(self, p,t,y,peak_pos, constrain_par, constrain):
+        'TODO: move to cfg or specify, when called.'
+        c_par = constrain_par # -1: lscale, -2: toff, -3: Eoff
+        c = constrain
+        if c[0]<p[c_par]<c[1]: # only allow fits with toff (47-5)ns +- 5ns
+        #if 1.0<p[-1]<1.007: # limit effective flight length to a maximum +0.007% 
             return self.mGaussTrans(t, peak_pos, p)-y
         else:
             return 1e6
@@ -268,7 +270,7 @@ class ptSpec(peSpec):
         return fitValues
 
 
-    def __fitMgaussTrans(self, peakParRef, Eoff, toff, lscale, rel_y_min, cutoff):
+    def __fitMgaussTrans(self, peakParRef, Eoff, toff, lscale, rel_y_min, cutoff, constrain_par, constrain):
         xdata = self.xdata['tof']
         ydata = self.ydata['intensity']
         if cutoff == None:
@@ -284,7 +286,10 @@ class ptSpec(peSpec):
         fitValues['fitPar0Tof'] = self.__fitParInit(peakPar, yscale, Eoff, toff, lscale)
         try:
             p, covar, info, mess, ierr = leastsq(self.__err_mGaussTrans, fitValues['fitPar0Tof'], 
-                                                 args=(xdata,ydata,fitValues['fitPeakPosTof']), full_output=True)
+                                                 args=(xdata,ydata,
+                                                       fitValues['fitPeakPosTof'],
+                                                       constrain_par, constrain),
+                                                 full_output=True)
         except:
             return fitValues
             raise
@@ -294,9 +299,14 @@ class ptSpec(peSpec):
             return fitValues
        
 
-    def gauge(self, specType, offset=0, rel_y_min=0, scale=1, lscale=1, Eoff=0, toff=63e-9, cutoff=None):
+    def gauge(self, specType,
+              offset=0, rel_y_min=0, scale=1,
+              lscale=1, Eoff=0, toff=42e-9, constrain_par=-2, constrain=[37e-9, 47e-9], 
+              cutoff=None):
+        'TODO: consistency of parameters.'
         '''
         Fits a multiple gauss to the pes.
+        constrain_par: which parameter to constrain:  -1: lscale, -2: toff, -3: Eoff
         offset, scale: fit parameter
         rel_y_min: minimum peak height of reference peaks (cfg.ptPeakPar) to be included in the fit.
         '''
@@ -305,11 +315,12 @@ class ptSpec(peSpec):
             if specType == 'ebin':
                 fitValues = self.__fitMgauss(peakParRef, scale, offset, rel_y_min, cutoff)
             elif specType == 'tof':
-                fitValues = self.__fitMgaussTrans(peakParRef, Eoff, toff, lscale, rel_y_min, cutoff)
+                fitValues = self.__fitMgaussTrans(peakParRef, Eoff, toff, lscale, rel_y_min, cutoff,
+                                                  constrain_par, constrain)
             else:
                 raise ValueError('specType must be one of: "tof" or "ebin".')                
         except:
-            self.mdata.update(fitValues)
+            #self.mdata.update(fitValues)
             raise
         else:
             self.mdata.update(fitValues)
