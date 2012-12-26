@@ -7,6 +7,7 @@ from dbshell import *
 #from pes_sheet import *
 #from msplot import *
 from scipy.optimize import leastsq
+from ase import Atoms
 import view
 import pickle
 import load
@@ -490,8 +491,27 @@ class waterSpec(peSpec):
 
 
 class mSpec(Spec):
+    def __init__(self, mdata, xdata, ydata, cfg):
+        print '__init__: Init mSpec'
+        Spec.__init__(self, mdata, xdata, ydata, cfg)  
+        if len(self.xdata) == 1:
+            self.calcSpec() 
+        self.view = view.ViewMs(self)
+        
+        
+    def calcMs(self, xkey='amu', clusterBaseUnitMass=1):
+        self.xdata[xkey] = ((self.xdata['tof']/
+                             (self.mdata.data('referenceTime') - self.mdata.data('timeOffset'))
+                             )**2)*self.mdata.data('referenceMass')/clusterBaseUnitMass
+        
+    
     def calcSpec(self):
-        self.__calcTof()
+        self.calcTof()
+        self._fixNegIntensities()
+        self.calcMs()
+        clusterBaseUnitMass = Atoms(str(self.mdata.data('clusterBaseUnit'))).get_masses().sum()
+        self.calcMs(xkey='ms', clusterBaseUnitMass=clusterBaseUnitMass)
+        
         
         
 

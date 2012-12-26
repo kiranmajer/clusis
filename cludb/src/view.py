@@ -45,11 +45,15 @@ class View(object):
         self.fig.show()
         
         
-    def plotTof(self, ax, showGauged=False, subtractBg=False, timeUnit=1e-6):
+    def plotTof(self, ax, showGauged=False, subtractBg=False, timeUnit=1e-6, xlim=['auto', 'auto']):
         'TODO: adapt for more time units'
+        if xlim[0] == 'auto':
+            xlim[0] = self.spec.xdata['tof'][0]/timeUnit
+        if xlim[1] == 'auto':
+            xlim[1] = self.spec.xdata['tof'][-1]/timeUnit
         ax.set_xlabel(r'Flight Time ($\mu s$)')
         ax.set_ylabel('Intensity (a.u.)')
-        ax.set_xlim(0,self.spec.xdata['tof'][-1]/timeUnit)
+        ax.set_xlim(xlim[0],xlim[1])
         if subtractBg:
             intensityKey = 'intensitySub'
         else:
@@ -59,9 +63,9 @@ class View(object):
         ax.autoscale(axis='y')
 
 
-    def showTof(self, subtractBg=False, timeUnit=1e-6):
+    def showTof(self, subtractBg=False, timeUnit=1e-6, xlim=['auto', 'auto']):
         self._singleFig()
-        self.plotTof(self.ax, subtractBg=subtractBg, timeUnit=timeUnit)        
+        self.plotTof(self.ax, subtractBg=subtractBg, timeUnit=timeUnit, xlim=xlim)        
         self.addTextFileId(self.ax)
         self.fig.show()
         
@@ -110,8 +114,8 @@ class ViewPes(View):
         self.fig.show()
 
         
-    def showTof(self, subtractBg=False, timeUnit=1e-6):
-        View.showTof(self, subtractBg=subtractBg, timeUnit=timeUnit)
+    def showTof(self, subtractBg=False, timeUnit=1e-6, xlim=[0, 'auto']):
+        View.showTof(self, subtractBg=subtractBg, timeUnit=timeUnit, xlim=xlim)
         self.addTextClusterId(self.ax, textPos='right')        
         self.fig.show()
         
@@ -375,6 +379,29 @@ class ViewWater(ViewPes):
         else:
             raise ValueError('Spectrum not yet fitted. Fit first.')
         
+        
+        
+class ViewMs(View):
+    def __init__(self, spec):
+        View.__init__(self, spec)   
+        
+        
+    def plotMs(self, ax, massKey):
+        if massKey == 'ms':
+            ax.set_xlabel('Cluster Size (#)')
+        else:
+            ax.set_xlabel('Cluster Mass (amu)')
+        ax.set_ylabel('Intensity (a.u.)')
+        ax.plot(self.spec.xdata[massKey], self.spec.ydata['intensity'], color='black')
+        ax.relim()
+        ax.autoscale()
+        
+        
+    def showMs(self, massKey='ms'):
+        self._singleFig()
+        self.plotMs(ax=self.ax, massKey=massKey)
+        self.addTextFileId(self.ax)
+        self.fig.show()
         
         
         
