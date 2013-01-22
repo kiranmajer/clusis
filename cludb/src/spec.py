@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 from legacyData import *
 import scipy.constants as constants
 #from plotlibs import *
@@ -7,7 +6,7 @@ from dbshell import *
 #from pes_sheet import *
 #from msplot import *
 from scipy.optimize import leastsq
-from ase import Atoms
+from ase.atoms import Atoms
 import view
 import pickle
 import load
@@ -91,7 +90,7 @@ class Spec(object):
 
 class peSpec(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
-        print '__init__: Init peSpec'
+        print('__init__: Init peSpec')
         Spec.__init__(self, mdata, xdata, ydata, cfg)
         self._pFactor = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength'))**2
         self._hv = self.photonEnergy(self.mdata.data('waveLength'))
@@ -151,7 +150,7 @@ class peSpec(Spec):
         self.xdata['tofGauged'] = self.tGauged(self.xdata['tof'], gauge_scale=scale, gauge_offset=offset)
         # calc ydata gauged
         self.__calcJacobyIntensity(newKey='jacobyIntensityGauged', intensityKey='intensity', tofKey='tofGauged')
-        if 'jacobyIntensitySub' in self.ydata.keys():
+        if 'jacobyIntensitySub' in list(self.ydata.keys()):
             self.__calcJacobyIntensity(newKey='jacobyIntensityGaugedSub',
                                        intensityKey='intensitySub', tofKey='tofGauged')
         self.commitPickle()
@@ -160,7 +159,7 @@ class peSpec(Spec):
     def subtractBg(self, bgFile, isUpDown=True):
         Spec.subtractBg(self, bgFile, isUpDown=isUpDown)
         self.__calcJacobyIntensity(newKey='jacobyIntensitySub', intensityKey='intensitySub')
-        if 'gaugePar' in self.mdata.data().keys():
+        if 'gaugePar' in list(self.mdata.data().keys()):
             self.__calcJacobyIntensity(newKey='jacobyIntensityGaugedSub',
                                        intensityKey='intensitySub', tofKey='tofGauged')
             
@@ -441,12 +440,12 @@ class waterSpec(peSpec):
     def fit(self, specType, p0, cutoff=None, subtractBg=None, gauged=None):
         '''If subtractBg and/or gauged are None, try to find useful defaults.'''
         if subtractBg == None:
-            if 'bgFile' in self.mdata.data().keys():
+            if 'bgFile' in list(self.mdata.data().keys()):
                 subtractBg = True
             else:
                 subtractBg = False
         if gauged == None:
-            if 'gaugeRef' in self.mdata.data().keys():
+            if 'gaugeRef' in list(self.mdata.data().keys()):
                 gauged = True
             else:
                 gauged =False
@@ -462,7 +461,7 @@ class waterSpec(peSpec):
             #self.mdata.update(fitValues)
             raise
         else:
-            print 'Fit completed, Updating mdata...'
+            print('Fit completed, Updating mdata...')
             self.mdata.update(fitValues)
 
 
@@ -492,7 +491,7 @@ class waterSpec(peSpec):
 
 class mSpec(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
-        print '__init__: Init mSpec'
+        print('__init__: Init mSpec')
         Spec.__init__(self, mdata, xdata, ydata, cfg)  
         if len(self.xdata) == 1:
             self.calcSpec() 

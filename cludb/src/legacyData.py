@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import glob
 import numpy as np
 import os
@@ -48,8 +47,8 @@ class LegacyData(object):
                     elif re.search('^-{0,1}\d+.{0,1}\d*[e|E]{0,1}-{0,1}\d*$',line.strip()):
                         self.data.append(float(line.strip()))
         except IOError as e:
-            print 'Reading ' + fileToImport + ' failed.'
-            print "I/O error({0}): {1}".format(e.errno, e.strerror)
+            print('Reading ' + fileToImport + ' failed.')
+            print("I/O error({0}): {1}".format(e.errno, e.strerror))
         else:
             self.data = np.array(self.data[:-1]) # last point has sometimes a strange value like 32768. Skip it!
             
@@ -62,8 +61,8 @@ class LegacyData(object):
         if 'Wellenlaenge:' in self.header and len(self.data) > min_line_count:
             '''TODO: adapt for more machines'''
             self.metadata['specType'] = 'pes'
-            for k,v in self.cfg.defaults[self.metadata['machine']]['pes'].iteritems():
-                if k not in self.metadata.keys():
+            for k,v in self.cfg.defaults[self.metadata['machine']]['pes'].items():
+                if k not in list(self.metadata.keys()):
                     self.metadata[k] = v
         elif 'Trigger_Offset[s]' in self.header and len(self.data) > min_line_count:
             self.metadata['specType'] = 'ms'
@@ -116,7 +115,7 @@ class LegacyData(object):
             else:
                 self.metadata['recTime'] = dayStarts
                 self.metadata['tags'].append('Import warning: Invalid time stamp')
-                print 'Warning: %s has invalid time stamp. Got recTime from filename.' % (datFileName)
+                print('Warning: %s has invalid time stamp. Got recTime from filename.' % (datFileName))
         else:
             self.metadata['recTime'] = timeStamp
 
@@ -183,7 +182,7 @@ class LegacyData(object):
             with open(cfg_file) as cfg:
                 cfg_data = cfg.readlines()[0].split()
         except IOError as e:
-            print "I/O error({0}): {1}".format(e.errno, e.strerror)
+            print("I/O error({0}): {1}".format(e.errno, e.strerror))
         else: # cfg file exist and is readable
             if len(cfg_data) == 17: # normal case
                 try:

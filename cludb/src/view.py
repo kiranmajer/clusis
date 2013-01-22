@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import matplotlib.pyplot as plt
 import os.path
 import load
@@ -146,14 +145,14 @@ class ViewPes(View):
         ax.set_ylabel('Intensity (a.u.)')
         ax.set_xlim(0,self.spec.photonEnergy(self.spec.mdata.data('waveLength')))
         gauged = False
-        if 'ebinGauged' in self.spec.xdata.keys():
+        if 'ebinGauged' in list(self.spec.xdata.keys()):
             if showGauged:
                 ebinKey = 'ebinGauged'
                 gauged = True
             else:
                 ebinKey = 'ebin'
         elif showGauged and self.spec.mdata.data('clusterBaseUnit') not in ['Pt']:
-            print 'Spec is not gauged! Plotting normal spectrum instead.'
+            print('Spec is not gauged! Plotting normal spectrum instead.')
             ebinKey = 'ebin'
         else:
             ebinKey = 'ebin'
@@ -205,7 +204,7 @@ class ViewPt(ViewPes):
                 transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=textPos)
                
     def plotEbinFit(self, ax, fitPar):
-        if fitPar in self.spec.mdata.data().keys():
+        if fitPar in list(self.spec.mdata.data().keys()):
             if fitPar in ['fitPar', 'fitPar0']:        
                 ax.plot(self.spec.xdata['ebin'],
                         self.spec.mGauss(self.spec.xdata['ebin'],
@@ -236,7 +235,7 @@ class ViewPt(ViewPes):
         
         
     def plotTofFit(self, ax, fitPar, timeUnit):
-        if fitPar in self.spec.mdata.data().keys():        
+        if fitPar in list(self.spec.mdata.data().keys()):        
             ax.plot(self.spec.xdata['tof']/timeUnit,
                     self.spec.mGaussTrans(self.spec.xdata['tof'],self.spec.mdata.data('fitPeakPosTof'),self.spec.mdata.data(fitPar)),
                     color='blue')    
@@ -328,7 +327,7 @@ class ViewWater(ViewPes):
             
     
     def showEbinFit(self, fitPar='fitPar'):
-        if fitPar in self.spec.mdata.data().keys():
+        if fitPar in list(self.spec.mdata.data().keys()):
             self._singleFig()
             gauged = self.plotEbin(self.ax, showGauged=self.spec.mdata.data('fitGauged'),
                                    subtractBg=self.spec.mdata.data('fitSubtractBg'))
@@ -364,7 +363,7 @@ class ViewWater(ViewPes):
 
 
     def showTofFit(self, fitPar='fitParTof', timeUnit=1e-6):
-        if fitPar in self.spec.mdata.data().keys():
+        if fitPar in list(self.spec.mdata.data().keys()):
             self._singleFig()
             gauged = self.plotTof(self.ax, showGauged=self.spec.mdata.data('fitGaugedTof'),
                                    subtractBg=self.spec.mdata.data('fitSubtractBgTof'),

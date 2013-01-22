@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import os
 import sqlite3
 from dbshell import Db
@@ -11,31 +10,29 @@ def checkPath(p):
     if not os.path.exists(p):
         os.makedirs(p)
     elif not os.access(p, os.W_OK):
-        raise IOError, '%s not accessible.' % p
+        raise IOError('%s not accessible.' % p)
         
 
 def listAdapter(l):
     return '<|>'.join(l)
 
 def listConverter(s):
-#    if type(s) is type(None):
-#        return ''
-#    else:
+    s = s.decode('utf-8')
     return s.split('<|>')
 
 def prepSql():
     sqlite3.register_adapter(list, listAdapter)
-    sqlite3.register_converter(str('LIST'), listConverter)
-    
+    sqlite3.register_converter('LIST', listConverter)
+ 
         
 def initDb(cfg):
-    for dbName, dbProps in cfg.db.iteritems():
+    for dbName, dbProps in cfg.db.items():
         checkPath(dbProps['path'])
         dbFileName = '%s.db' % dbName
         dbFile = os.path.join(dbProps['path'],dbFileName)
         if not os.path.exists(dbFile):
             with Db(dbName, cfg) as db:
-                for specType in dbProps['layout'].iterkeys():
+                for specType in dbProps['layout'].keys():
                     db.createTable(specType)
             
     
@@ -57,7 +54,7 @@ def initCludb(userStorageDir):
 #            with open(userCfgFile) as f:
 #            
 #    config.mainStorageDir = mainStorageDir
-    for p in cfg.path.itervalues():
+    for p in cfg.path.values():
         if os.path.isabs(p):
             checkPath(p)
         else:

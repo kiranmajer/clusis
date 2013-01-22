@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import sqlite3
 import os
 #import calendar
@@ -8,7 +7,7 @@ import time
 
 class Db(object):
     def __init__(self, dbName, cfg):
-        print '__init__: Init Db instance.'
+        print('__init__: Init Db instance.')
         self.__dbName = dbName
         dbFileName = '%s.db' % dbName
         self.__cfg = cfg
@@ -18,20 +17,20 @@ class Db(object):
 #        sqlite3.register_adapter(time.struct_time, self.__timeAdapter)
 #        sqlite3.register_converter(str('TIME'), self.__timeConverter)               
         self.__db = sqlite3.connect(self.__dbFile, detect_types=sqlite3.PARSE_DECLTYPES)
-        print 'Db connection open'
+        print('Db connection open')
         self.__db.row_factory = sqlite3.Row
         
     def __del__(self):
         self.__db.close()
-        print '__del__: Db connection closed.'
+        print('__del__: Db connection closed.')
         
     def __enter__(self):
-        print '__enter__: Entering Db instance.'
+        print('__enter__: Entering Db instance.')
         return self
     
     def __exit__(self, exc_type, exc_value, traceback):
         self.__db.close()
-        print '__exit__: Db connection closed.'        
+        print('__exit__: Db connection closed.')        
         
     
 #    def __timeAdapter(self, stime):
@@ -66,15 +65,15 @@ class Db(object):
             specType = spec.mdata.data('specType')
             keys = [item[0] for item in self.__dbProps['layout'][specType]]
             values = [spec.mdata.data(key) for key in keys]
-            if specType in valueList.keys():
+            if specType in list(valueList.keys()):
                 valueList[specType].append(tuple(values))
             else:
                 valueList[specType] = []
                 valueList[specType].append(tuple(values))
                 
         db_cursor = self.__db.cursor()
-        print 'cursor created'
-        for specType,values in valueList.iteritems():
+        print('cursor created')
+        for specType,values in valueList.items():
             if update:
                 sql = 'INSERT OR REPLACE INTO ' + specType + " VALUES (" + "?,"*(len(self.__dbProps['layout'][specType])-1) + "?)"
             else:
@@ -83,7 +82,7 @@ class Db(object):
             
                    
         db_cursor.close()
-        print 'cursor closed'
+        print('cursor closed')
         #del db_cursor
         self.__db.commit()
         
@@ -202,7 +201,7 @@ class Db(object):
             wavesQuery = ''
             'TODO: adapt for variable machine type.'
             refWaves = self.__cfg.mdataReference['casi']['waveLength'][0]
-            print refWaves
+            print(refWaves)
             if type(waveLength) is list:
                 waves.extend(waveLength)
             else:
@@ -231,7 +230,7 @@ class Db(object):
         # build select part
         sql = "SELECT * "
         whereItems = []
-        for v in q.itervalues():
+        for v in q.values():
             #print 'processing: ', k, v
             if v[1] is not None:
                 whereItems.append(v[0](v[1]))
@@ -239,20 +238,20 @@ class Db(object):
             raise ValueError('Nothing to query.')
         sql = sql.rstrip(', ')
         # build from part
-        if specType in self.__dbProps['layout'].keys():
-            sql+=' FROM %s '%specType
+        if specType in list(self.__dbProps['layout'].keys()):
+            sql += ' FROM %s '%specType
         else:
             raise ValueError('Unknown specType: %s'%specType)
         # build where part
-        sql+='WHERE '
+        sql += 'WHERE '
         for i in whereItems:
-            sql+=i
-        sql=sql.rstrip(' AND ')
+            sql += i
+        sql = sql.rstrip(' AND ')
         # build order part
-        sql+=' ORDER BY clusterBaseUnit, clusterBaseUnitNumber, recTime'
+        sql += ' ORDER BY clusterBaseUnit, clusterBaseUnitNumber, recTime'
         
 
-        print 'Querying with: ', sql
+        print('Querying with: ', sql)
         
         db_cursor = self.__db.cursor()
         fetch = db_cursor.execute(sql).fetchall()
@@ -266,27 +265,27 @@ class Db(object):
             def formatDatFile(datfile):
                 return os.path.basename(datfile)
             
-            print 'Idx'.rjust(6),
-            print 'element'.ljust(7+3),
-            print 'size'.ljust(4+3),
-            print 'waveLength'.ljust(10+3),
-            print 'recTime'.ljust(12),
-            print 'datFile'.ljust(16),
-            print 'tags'
+            print('Idx'.rjust(6),
+                  'element'.ljust(7+3),
+                  'size'.ljust(4+3),
+                  'waveLength'.ljust(10+3),
+                  'recTime'.ljust(12),
+                  'datFile'.ljust(16),
+                  'tags')
             idx=0
             for row in fetch:
                 # sqlite3.Row expects a str and not a unicode as key
-                print ('%s  '%idx).rjust(6),
-                print row[str('clusterBaseUnit')].ljust(7+3),
-                print str(row[str('clusterBaseUnitNumber')]).ljust(4+3),
-                print str(row[str('waveLength')]*1e9).ljust(10+3),
-                print formatRecTime(row[str('recTime')]).ljust(12),
-                print formatDatFile(row[str('datFile')]).ljust(16),
-                if type(row[str('tags')]) is type(None):
-                    print ''
+                print(('%s  '%idx).rjust(6),
+                      row['clusterBaseUnit'].ljust(7+3),
+                      str(row['clusterBaseUnitNumber']).ljust(4+3),
+                      str(row['waveLength']*1e9).ljust(10+3),
+                      formatRecTime(row['recTime']).ljust(12),
+                      formatDatFile(row['datFile']).ljust(16), end=" ")
+                if row['tags'] is None:
+                    print('')
                 else:
-                    print '<|>'.join(row[str('tags')])
-                idx+=1
+                    print('<|>'.join(row['tags']))
+                idx += 1
                 
         printAnswer(fetch)
         

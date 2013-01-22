@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import os.path
 import numpy as np
 
@@ -6,7 +5,7 @@ import numpy as np
 class Cfg():
     def __init__(self,userStorageDir):
         if not os.path.isabs(userStorageDir):
-            raise ValueError, 'Please enter absolute path.'
+            raise ValueError('Please enter absolute path.')
         'cfg and base dir absolute'
         cfgDir = os.path.join(os.path.expanduser('~'), '.cludb')
         baseDir = os.path.join(userStorageDir, 'cludb')

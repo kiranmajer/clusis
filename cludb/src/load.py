@@ -1,8 +1,8 @@
-from __future__ import unicode_literals
+
 from spec import *
 #import config
 #import MdataUtils
-import pickle
+#import pickle
 #import os
 #import numpy as np
 
@@ -18,7 +18,7 @@ def fileStoragePossible(mdata):
     try:
         for p in paths:
             if os.path.exists(p):
-                raise ValueError, 'Import error: %s already exists' % p
+                raise ValueError('Import error: %s already exists' % p)
     except:
         filestoragepossible = False
         raise
@@ -99,11 +99,11 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
     #with Db('casi', cfg) as db:
     db = Db('casi', cfg)
     for datFile in datFileList:
-        print 'Importing: '+datFile+' with ', commonMdata
+        print('Importing: '+datFile+' with ', commonMdata)
         try:
             mi = LegacyData(datFile, cfg, commonMdata)
-        except Exception, e:
-            print 'LegacyData creation failed:', e
+        except Exception as e:
+            print('LegacyData creation failed:', e)
             failedImports.append([datFile, 'LegacyData creation failed: %s'%e])
             #raise
             continue
@@ -111,12 +111,12 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
             '''TODO: handle special files with identical sha1 (e.g. "flat line"-spectra).
             It might be interesting to have them in the db. Allow fake sha1 = sha1+unix time stamp?'''
             if fileStoragePossible(mi.mdata.data()):
-                print os.path.basename(datFile), '''ready to convert ...
-                '''
+                print(os.path.basename(datFile), '''ready to convert ...
+                ''')
                 try:
                     moved = archive(cfg, mi.mdata.data())
-                except Exception, e:
-                    print '%s: Failed to archive raw data:'%datFile, e
+                except Exception as e:
+                    print('%s: Failed to archive raw data:'%datFile, e)
                     failedImports.append([datFile, 'Import error: Archive failed: %s.'%e])
                 else:
                     try:                    
@@ -126,8 +126,8 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
                         xdata = {'idx': np.arange(1,len(ydata['rawIntensity'])+1)}
                         spec = specMap[mdata['specType']](mdata, xdata, ydata, cfg)
                         spec.commitPickle()
-                    except Exception, e:
-                        print '%s failed to import:'%datFile, e
+                    except Exception as e:
+                        print('%s failed to import:'%datFile, e)
                         failedImports.append([datFile, 'Import error: %s.'%e])
                         moveBack(moved)
                     else:
@@ -144,10 +144,10 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
             failedImports.append([datFile, 'Db has already entry with this sha1'])
             
     try:
-        print 'Starting db import ....'
+        print('Starting db import ....')
         db.add(specList)
-    except Exception, e:
-        print 'Db population failed:', e
+    except Exception as e:
+        print('Db population failed:', e)
         # remove all files in our data dir, from this import
         moveBack(movedFiles)
         for spec in specList:
@@ -157,10 +157,10 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
     
     del db
         
-    print 'Number of files to import: ', len(datFiles)
-    print 'Number of Spectra to import: ', len(specList)
-    print 'Number of files to move: ', len(movedFiles)
-    print 'Number of failed imports: ', len(failedImports)
+    print('Number of files to import: ', len(datFiles))
+    print('Number of Spectra to import: ', len(specList))
+    print('Number of files to move: ', len(movedFiles))
+    print('Number of failed imports: ', len(failedImports))
      
     return failedImports
     

@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 #import dbshell
 import load
 import time
@@ -7,7 +6,7 @@ import os
 def updateMdata(specList, mdataDict, cfg):
     'TODO: open db only once'
     for entry in specList:
-        print entry[str('pickleFile')]
+        print(entry[str('pickleFile')])
         cs =  load.loadPickle(cfg, entry[str('pickleFile')])
         try:
             cs.mdata.update(mdataDict)
@@ -50,7 +49,7 @@ def listMdata(specList, items, cfg):
     
     for row in mdataList:
         for item in row:
-            print item,
+            print(item, end=' ')
 
 
 
@@ -74,20 +73,20 @@ def listMdataPtFit(specList, cfg):
         #print cs.mdata.data('datFile'), cs.mdata.data('recTime'), cs.mdata.data('fitParTof')[-1]
         del cs
     
-    print 'recTime'.ljust(10+3),
-    print 'datFile'.ljust(13+3),
-    print 'l_scale'.ljust(7+3),
-    print 't_off [ns]'.ljust(10+3),
-    print 'E_off [meV]'.ljust(6)
+    print('recTime'.ljust(10+3), end=' ')
+    print('datFile'.ljust(13+3), end=' ')
+    print('l_scale'.ljust(7+3), end=' ')
+    print('t_off [ns]'.ljust(10+3), end=' ')
+    print('E_off [meV]'.ljust(6))
     lastDate = ''
     for row in mdataList:
         if not formatRecTime(row[0]) == lastDate:
-            print '-'*70
-        print formatRecTime(row[0]).ljust(10+3),
-        print formatDatFile(row[1]).ljust(13+3),
-        print str(round(row[2][-1],3)).ljust(7+3),
-        print str(round(row[2][-2]*1e9,2)).ljust(10+3),
-        print str(round(row[2][-3]*1e3,2)).ljust(6)
+            print('-'*70)
+        print(formatRecTime(row[0]).ljust(10+3), end=' ')
+        print(formatDatFile(row[1]).ljust(13+3), end=' ')
+        print(str(round(row[2][-1],3)).ljust(7+3), end=' ')
+        print(str(round(row[2][-2]*1e9,2)).ljust(10+3), end=' ')
+        print(str(round(row[2][-3]*1e3,2)).ljust(6))
         lastDate = formatRecTime(row[0])
         
         
@@ -101,7 +100,7 @@ def regaugePt(specList,cfg):
                      #toff=63e-9  #cs.mdata.data('fitParTof')[-2]
                      )
         except:
-            print cs.mdata.data('datFile'), 'Fit failed.'
+            print(cs.mdata.data('datFile'), 'Fit failed.')
         else:
             cs.commit()
         del cs

@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import numpy as np
 import re
 
@@ -14,7 +13,7 @@ class Mdata(object):
         '''
         True if key is a valid mdata key for this spec type.
         '''
-        if key in self.__reference.keys() and self.__mdata['specType'] in self.__reference[key][1]:
+        if key in list(self.__reference.keys()) and self.__mdata['specType'] in self.__reference[key][1]:
             return True
         else:
             return False
@@ -43,7 +42,7 @@ class Mdata(object):
     
     
     def __askForKeyValue(self, key):
-        value = raw_input('Value of %s is missing or has wrong type. Please insert: ' % (key))
+        value = input('Value of %s is missing or has wrong type. Please insert: ' % (key))
         return {key: value}
      
      
@@ -65,9 +64,9 @@ class Mdata(object):
         if 'specType' in mdata:
             hasChanged = True
             while hasChanged:
-                for k, v in ref.iteritems():
+                for k, v in ref.items():
                     if mdata['specType'] in v[1] and v[2]:
-                        if mdata.has_key(k):
+                        if k in mdata:
                             try:
                                 mdata[k] = self.__validValue(k, mdata[k])
                                 hasChanged = False
@@ -89,7 +88,7 @@ class Mdata(object):
         if l.count(tag) == 0:
             l.append(tag)
         else:
-            print 'Tag already exists.'
+            print('Tag already exists.')
     
     def renameTag(self, parents, tag, newTag):
         l = self.__mdata['tags']
@@ -131,11 +130,11 @@ class Mdata(object):
                         overwrite=''
                         while overwrite not in ['y', 'n']:
                             q = 'Key "%s" already exists. Overwrite "%s" with "%s"? [y|n]: ' % (k, str(mdata[k]), str(v))
-                            overwrite = raw_input(q)
+                            overwrite = input(q)
                         if overwrite == 'y':# else keep
                             mdata[k]=self.__validValue(k, v)
                 else:
-                    print 'Failed to add "%s: %s". Key not allowed.' % (k, str(v))
+                    print('Failed to add "%s: %s". Key not allowed.' % (k, str(v)))
           
         else:
             raise ValueError('Expected a dict. Got a %s instead.'%(type(newMdata).__name__))

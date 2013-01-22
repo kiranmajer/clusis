@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import matplotlib as mpl
 import matplotlib.backends.backend_pdf as Pdf
 import matplotlib.pyplot as plt
@@ -45,7 +44,7 @@ class OverView(object):
         'TODO: clear or del remains from previous plots'
         while len(plot_list) > 0:
             # create page
-            print 'Creating page', figidx
+            print('Creating page', figidx)
             fig = plt.figure(figidx, figsize=(0.21/constants.inch, 0.297/constants.inch))
             plt.subplots_adjust(left  = 0.05,
                                 right = 0.95,
