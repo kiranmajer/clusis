@@ -248,7 +248,9 @@ class Db(object):
             sql += i
         sql = sql.rstrip(' AND ')
         # build order part
-        sql += ' ORDER BY clusterBaseUnit, clusterBaseUnitNumber, recTime'
+        orderResults = {'pes': ' ORDER BY clusterBaseUnit, clusterBaseUnitNumber, recTime',
+                        'ms': ' ORDER BY clusterBaseUnit, recTime'}
+        sql += orderResults[specType]
         
 
         print('Querying with: ', sql)
@@ -265,22 +267,51 @@ class Db(object):
             def formatDatFile(datfile):
                 return os.path.basename(datfile)
             
-            print('Idx'.rjust(6),
-                  'element'.ljust(7+3),
-                  'size'.ljust(4+3),
-                  'waveLength'.ljust(10+3),
-                  'recTime'.ljust(12),
-                  'datFile'.ljust(16),
-                  'tags')
+            def printHeadPes():
+                print('Idx'.rjust(6),
+                              'element'.ljust(7+3),
+                              'size'.ljust(4+3),
+                              'waveLength'.ljust(10+3),
+                              'recTime'.ljust(12),
+                              'datFile'.ljust(16),
+                              'tags')
+                
+            def printHeadMs():
+                print('Idx'.rjust(6),
+                              'element'.ljust(7+3),
+                              'recTime'.ljust(12),
+                              'datFile'.ljust(16),
+                              'tags')
+                
+            printHead = {'pes': printHeadPes,
+                         'ms': printHeadMs
+                         }            
+            
+            def printDataPes(row):
+                print(('%s  '%idx).rjust(6),
+                                          row['clusterBaseUnit'].ljust(7+3),
+                                          str(row['clusterBaseUnitNumber']).ljust(4+3),
+                                          str(row['waveLength']*1e9).ljust(10+3),
+                                          formatRecTime(row['recTime']).ljust(12),
+                                          formatDatFile(row['datFile']).ljust(16), end=" ")
+                
+            def printDataMs(row):
+                print(('%s  '%idx).rjust(6),
+                                          row['clusterBaseUnit'].ljust(7+3),    
+                                          formatRecTime(row['recTime']).ljust(12),
+                                          formatDatFile(row['datFile']).ljust(16), end=" ")
+                
+            printData = {'pes': printDataPes,
+                         'ms': printDataMs
+                         } 
+            
+            
+            printHead[specType]()
+            
             idx=0
             for row in fetch:
                 # sqlite3.Row expects a str and not a unicode as key
-                print(('%s  '%idx).rjust(6),
-                      row['clusterBaseUnit'].ljust(7+3),
-                      str(row['clusterBaseUnitNumber']).ljust(4+3),
-                      str(row['waveLength']*1e9).ljust(10+3),
-                      formatRecTime(row['recTime']).ljust(12),
-                      formatDatFile(row['datFile']).ljust(16), end=" ")
+                printData[specType](row)
                 if row['tags'] is None:
                     print('')
                 else:
