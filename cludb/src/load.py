@@ -95,6 +95,7 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
     specList = []
     movedFiles =[]
     failedImports = []
+    sha1ToImport = []
     "TODO: adapt for more db"
     #with Db('casi', cfg) as db:
     db = Db('casi', cfg)
@@ -107,9 +108,10 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
             failedImports.append([datFile, 'LegacyData creation failed: %s'%e])
             #raise
             continue
-        if not db.tableHasSha1(mi.mdata.data('specType'), mi.mdata.data('sha1')):
+        if not db.tableHasSha1(mi.mdata.data('specType'), mi.mdata.data('sha1')) and mi.mdata.data('sha1') not in sha1ToImport:
             '''TODO: handle special files with identical sha1 (e.g. "flat line"-spectra).
-            It might be interesting to have them in the db. Allow fake sha1 = sha1+unix time stamp?'''
+            It might be interesting to have them in the db. Allow fake sha1 = sha1+unix 
+            time stamp?'''
             if fileStoragePossible(mi.mdata.data()):
                 print(os.path.basename(datFile), '''ready to convert ...
                 ''')
@@ -136,12 +138,13 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
                         spec.mdata.rm('cfgFileOrig')
                         spec.commitPickle()
                         specList.append(spec)
+                        sha1ToImport.append(mi.mdata.data('sha1'))
             else:
                 #print 'some files already exist'
                 failedImports.append([datFile, 'Some raw files were already imported'])
         else:
             #print os.path.basename(datFile)+': Db has already sha1 entry'
-            failedImports.append([datFile, 'Db has already entry with this sha1'])
+            failedImports.append([datFile, 'Db or earlier import has already entry with this sha1'])
             
     try:
         print('Starting db import ....')

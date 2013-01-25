@@ -17,6 +17,7 @@ def listAdapter(l):
     return '<|>'.join(l)
 
 def listConverter(s):
+    '''Not sure why we get byte out while put str in.'''
     s = s.decode('utf-8')
     return s.split('<|>')
 

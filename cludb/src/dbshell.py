@@ -289,17 +289,21 @@ class Db(object):
             
             def printDataPes(row):
                 print(('%s  '%idx).rjust(6),
-                                          row['clusterBaseUnit'].ljust(7+3),
-                                          str(row['clusterBaseUnitNumber']).ljust(4+3),
-                                          str(row['waveLength']*1e9).ljust(10+3),
-                                          formatRecTime(row['recTime']).ljust(12),
-                                          formatDatFile(row['datFile']).ljust(16), end=" ")
+                      row['clusterBaseUnit'].ljust(7+3),
+                      str(row['clusterBaseUnitNumber']).ljust(4+3),
+                      str(row['waveLength']*1e9).ljust(10+3),
+                      formatRecTime(row['recTime']).ljust(12),
+                      formatDatFile(row['datFile']).ljust(16),
+                      end=" "
+                      )
                 
             def printDataMs(row):
                 print(('%s  '%idx).rjust(6),
-                                          row['clusterBaseUnit'].ljust(7+3),    
-                                          formatRecTime(row['recTime']).ljust(12),
-                                          formatDatFile(row['datFile']).ljust(16), end=" ")
+                      row['clusterBaseUnit'].ljust(7+3),    
+                      formatRecTime(row['recTime']).ljust(12),
+                      formatDatFile(row['datFile']).ljust(16),
+                      end=" "
+                      )
                 
             printData = {'pes': printDataPes,
                          'ms': printDataMs
