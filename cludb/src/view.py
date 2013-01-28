@@ -261,13 +261,17 @@ class ViewWater(ViewPes):
         ViewPes.__init__(self, spec)
         
 
-    def addTextFitValues(self, ax, specType, timeUnit=1, textPos='left'):
+    def addTextFitValues(self, ax, fitParKey, specType, timeUnit=1, textPos='left'):
         'TODO: adapt units to match timeUnit'
+        if specType=='ebin' and fitParKey in ['fitParTof', 'fitPar0Tof']:
+            peak_values = list(self.spec.ebin(self.spec.mdata.data(fitParKey)[:-2:2]))
+            peakPos_unit = 'eV'
+        else:
+            peak_values = list(self.spec.mdata.data(fitParKey)[:-2:2])
+            peakPos_unit = '$\mu s$'
         if specType == 'tof':
-            fitPar_key = 'fitParTof'
             peakPos_unit = '$\mu s$'
         else:
-            fitPar_key = 'fitPar'
             peakPos_unit = 'eV'
         if textPos == 'left':
             pos_x, pos_y = 0.05, 0.6
@@ -275,9 +279,8 @@ class ViewWater(ViewPes):
             pos_x, pos_y = 0.95, 0.6
         else:
             raise ValueError('textPos must be one of: left, right. Got "%s" instead.'%(str(textPos)))
-        peak_values = list(self.spec.mdata.data(fitPar_key))
         peak_number = 1
-        for peak in peak_values[:-2:2]:
+        for peak in peak_values:
             ax.text(pos_x, pos_y, '%i. Peak: %.3f %s'%(peak_number, round(peak/timeUnit, 3), peakPos_unit),
                     transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=textPos)
             peak_number+=1
@@ -329,13 +332,16 @@ class ViewWater(ViewPes):
     def showEbinFit(self, fitPar='fitPar'):
         if fitPar in list(self.spec.mdata.data().keys()):
             self._singleFig()
-            gauged = False 
-            """self.plotEbin(self.ax, showGauged=self.spec.mdata.data('fitGauged'),
-                                   subtractBg=self.spec.mdata.data('fitSubtractBg'))"""
+            if fitPar in ['fitPar', 'fitPar0']:
+                gauged = self.plotEbin(self.ax, showGauged=self.spec.mdata.data('fitGauged'),
+                                       subtractBg=self.spec.mdata.data('fitSubtractBg'))
+            else:
+                gauged = self.plotEbin(self.ax, showGauged=self.spec.mdata.data('fitGaugedTof'),
+                                       subtractBg=self.spec.mdata.data('fitSubtractBgTof'))
             self.plotEbinFit(self.ax, fitPar)
             self.addTextFileId(self.ax)
             self.addTextClusterId(self.ax)
-            self.addTextFitValues(self.ax, specType='ebin')
+            self.addTextFitValues(self.ax, fitParKey=fitPar, specType='ebin')
             if gauged:        
                 self.addTextGaugeMarker(self.ax)
             self.fig.show()
@@ -372,7 +378,7 @@ class ViewWater(ViewPes):
             self.plotTofFit(self.ax, fitPar, timeUnit=timeUnit)
             self.addTextFileId(self.ax)
             self.addTextClusterId(self.ax, textPos='right')
-            self.addTextFitValues(self.ax, specType='tof', timeUnit=timeUnit, textPos='right')
+            self.addTextFitValues(self.ax, fitParKey=fitPar, specType='tof', timeUnit=timeUnit, textPos='right')
             if gauged:        
                 self.addTextGaugeMarker(self.ax)
             self.fig.show()      
