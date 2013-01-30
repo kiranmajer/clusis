@@ -500,9 +500,11 @@ class mSpec(Spec):
         
         
     def calcMs(self, xkey='amu', clusterBaseUnitMass=1):
+#        self.xdata[xkey] = ((self.xdata['tof']/
+#                             (self.mdata.data('referenceTime') - self.mdata.data('timeOffset'))
+#                             )**2)*self.mdata.data('referenceMass')/clusterBaseUnitMass
         self.xdata[xkey] = ((self.xdata['tof']/
-                             (self.mdata.data('referenceTime') - self.mdata.data('timeOffset'))
-                             )**2)*self.mdata.data('referenceMass')/clusterBaseUnitMass
+                             self.mdata.data('referenceTime'))**2)*self.mdata.data('referenceMass')/clusterBaseUnitMass
         
     
     def calcSpec(self):

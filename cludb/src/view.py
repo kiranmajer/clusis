@@ -394,7 +394,7 @@ class ViewMs(View):
         
     def plotMs(self, ax, massKey):
         if massKey == 'ms':
-            ax.set_xlabel('Cluster Size (#)')
+            ax.set_xlabel('Cluster Size (#%s)'%self.spec.mdata.data('clusterBaseUnit'))
         else:
             ax.set_xlabel('Cluster Mass (amu)')
         ax.set_ylabel('Intensity (a.u.)')
