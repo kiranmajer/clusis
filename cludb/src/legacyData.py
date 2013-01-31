@@ -6,6 +6,7 @@ import re
 import time
 import hashlib
 import MdataUtils
+from ase.atoms import Atoms
 #import config
 
 
@@ -28,7 +29,9 @@ class LegacyData(object):
         self.mdataBasics()
         self.evalCfgFile()
         self.parseDirStructure()
-        self.parseDatFileName()
+        if self.metadata['specType'] in ['ms']:
+            self.parseDatFileName()
+            self.metadata['clusterBaseUnitMass'] = Atoms(str(self.mdata.data('clusterBaseUnit'))).get_masses().sum()
         # convert metadata to Mdata object
         self.mdata = MdataUtils.Mdata(self.metadata, self.cfg)
         if len(commonMdata) > 0:

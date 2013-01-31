@@ -6,7 +6,7 @@ from dbshell import *
 #from pes_sheet import *
 #from msplot import *
 from scipy.optimize import leastsq
-from ase.atoms import Atoms
+#from ase.atoms import Atoms
 import view
 import pickle
 import load
@@ -493,7 +493,7 @@ class waterSpec(peSpec):
 class mSpec(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
         print('__init__: Init mSpec')
-        Spec.__init__(self, mdata, xdata, ydata, cfg)  
+        Spec.__init__(self, mdata, xdata, ydata, cfg)
         if len(self.xdata) == 1:
             self.calcSpec() 
         self.view = view.ViewMs(self)
@@ -511,8 +511,40 @@ class mSpec(Spec):
         self.calcTof()
         self._fixNegIntensities()
         self.calcMs()
-        clusterBaseUnitMass = Atoms(str(self.mdata.data('clusterBaseUnit'))).get_masses().sum()
-        self.calcMs(xkey='ms', clusterBaseUnitMass=clusterBaseUnitMass)
+        self.calcMs(xkey='ms', clusterBaseUnitMass=self.mdata.data('clusterBaseUnitMass'))
+        
+        
+    def gauge(self):
+        '''Simple gauge function. Needs to query for t1, t2, dn.
+        '''
+        t_off = lambda n,dn,t1,t2: (np.sqrt(1-float(dn)/n)*t2 - t1)/(np.sqrt(1-float(dn)/n)-1)
+        t_ref = lambda m_unit,dn,t1,t2,t_off: np.sqrt(193.96/(m_unit*dn)*((t2-t_off)**2 - (t1-t_off)**2))
+        self.mdata.update({'timeOffset':0, 'referenceTime':0})
+        self.calcTof()
+        self.view.showTof()
+        # Ask for t1,t2,dn
+        no_valid_input = True
+        while no_valid_input:
+            q = 'Enter t1, t2, and dn separated by comma: '
+            ui = input(q)
+            ui_list = ui.split(',')
+            t1 = float(ui_list[0].strip())
+            t2 = float(ui_list[1].strip())
+            dn = int(ui_list[2].strip())
+            if t1<t2:
+                no_valid_input = False
+            else:
+                print('t1, t2 should be numbers with t1<t2.')
+                
+        start_size = max(dn + 1, self.mdata.data('clusterBaseUnitNumberStart'))
+        X = np.arange(start_size,
+                      self.mdata.data('clusterBaseUnitNumberEnd'))
+        Y = t_off(X, dn, t1, t2)
+        n = X[np.abs(Y).argmin()]
+        to = t_off(n, dn, t1, t2)
+        tr = t_ref(self.mdata.data('clusterBaseUnitMass'),dn,t1,t2,to)
+        self.mdata.update({'timeOffset': to, 'referenceTime': tr})
+        self.calcSpec()
         
         
         
