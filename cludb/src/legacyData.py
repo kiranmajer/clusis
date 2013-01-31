@@ -28,6 +28,7 @@ class LegacyData(object):
         self.mdataBasics()
         self.evalCfgFile()
         self.parseDirStructure()
+        self.parseDatFileName()
         # convert metadata to Mdata object
         self.mdata = MdataUtils.Mdata(self.metadata, self.cfg)
         if len(commonMdata) > 0:
@@ -163,7 +164,10 @@ class LegacyData(object):
             
         if len(cfg_file) == 1:
             self.metadata['cfgFileOrig'] = cfg_file[0]
-        elif len(cfg_file) == 0:
+        elif len(cfg_file) == 0 and self.metadata['specType'] == 'ms':
+            print('No cfg. But for ms it is not vital. Skipping...')
+            self.metadata['tags'].append('Could not find cfg file')
+        elif len(cfg_file) == 0 and self.metadata['specType'] == 'pes':
             raise ValueError('Could not find cfg file.')
         else:
             self.metadata['tags'].append('Several cfg files: ' + str(cfg_file))
@@ -191,27 +195,30 @@ class LegacyData(object):
                 except:
                     raise
                 else:
+                    if self.metadata['specType'] in ['pes']:
+                        self.metadata[cfg_data_map[-1]] = int(cfg_data[-1])
+            elif len(cfg_data) == 1: # sometimes it contains only the cluster size
+                if self.metadata['specType'] in ['pes']:
                     self.metadata[cfg_data_map[-1]] = int(cfg_data[-1])
-            elif len(cfg_data) == 1: # sometimes it contain only the cluster size
-                self.metadata[cfg_data_map[-1]] = int(cfg_data[-1])
             else:
-                raise ValueError(cfg_file + ' does not contain valid data.')
+                raise ValueError('{} does not contain valid data.'.format(cfg_file))
                     
-            """Get information from file name
+            """Get information from file name (pes only)
             """
-            cfg_file_name_map = ['clusterBaseUnit', 'clusterBaseUnitNumber',
-                          'cfgFileNumber', 'cfgFileDate.cfg']
-            cfg_file_name = os.path.basename(self.metadata['cfgFileOrig'])
-            if len(cfg_file_name.split('_')) == 4:
-                cfg_file_nameData = dict([(cfg_file_name_map[i], cfg_file_name.split('_')[i])
-                                          for i in range(len(cfg_file_name_map))])
-                self.metadata['clusterBaseUnit'] = cfg_file_nameData['clusterBaseUnit']
-                """Test if cluster size in file and file name differs"""
-                if self.metadata['clusterBaseUnitNumber'] != int(cfg_file_nameData['clusterBaseUnitNumber']):
-                    self.metadata['clusterBaseUnitNumberFromFileName'] = int(cfg_file_nameData['clusterBaseUnitNumber'])
-                    self.metadata['tags'].append('clusterBaseUnitNumber ambiguous')
-            else:
-                raise ValueError('Unexpected file name: ' + cfg_file_name)
+            if self.metadata['specType'] in ['pes']:
+                cfg_file_name_map = ['clusterBaseUnit', 'clusterBaseUnitNumber',
+                              'cfgFileNumber', 'cfgFileDate.cfg']
+                cfg_file_name = os.path.basename(self.metadata['cfgFileOrig'])
+                if len(cfg_file_name.split('_')) == 4:
+                    cfg_file_nameData = dict([(cfg_file_name_map[i], cfg_file_name.split('_')[i])
+                                              for i in range(len(cfg_file_name_map))])
+                    self.metadata['clusterBaseUnit'] = cfg_file_nameData['clusterBaseUnit']
+                    """Test if cluster size in file and file name differs"""
+                    if self.metadata['clusterBaseUnitNumber'] != int(cfg_file_nameData['clusterBaseUnitNumber']):
+                        self.metadata['clusterBaseUnitNumberFromFileName'] = int(cfg_file_nameData['clusterBaseUnitNumber'])
+                        self.metadata['tags'].append('clusterBaseUnitNumber ambiguous')
+                else:
+                    raise ValueError('Unexpected file name: ' + cfg_file_name)
 
     
     def evalCfgFile(self):
@@ -219,13 +226,15 @@ class LegacyData(object):
         """
         try:
             self.findCfgFile()
-            self.parseCfgFile(self.metadata['cfgFileOrig'])
+            if 'cfgFileOrig' in self.metadata.keys():
+                self.parseCfgFile(self.metadata['cfgFileOrig'])
         except:
             raise #ValueError('Importing cfg file failed.')
         else:
-            self.metadata['cfgFile'] = os.path.join(self.cfg.path['archive'],
-                                                    self.metadata['machine'],
-                                                    os.path.basename(self.metadata['cfgFileOrig']))
+            if 'cfgFileOrig' in self.metadata.keys():
+                self.metadata['cfgFile'] = os.path.join(self.cfg.path['archive'],
+                                                        self.metadata['machine'],
+                                                        os.path.basename(self.metadata['cfgFileOrig']))
     
     
     def parseDirStructure(self):
@@ -252,7 +261,16 @@ class LegacyData(object):
                 if len(splitted_path) == 6 and splitted_path[4].replace('_', ' ') not in self.metadata['tags']:
                     self.metadata['tags'].append(splitted_path[4].replace('_', ' '))
 
-
+                    
+    def parseDatFileName(self):
+        fname_parts = os.path.splitext(os.path.basename(self.metadata['datFileOrig']))[0].split('_')
+        if len(fname_parts) == 4:
+            self.metadata['clusterBaseUnitNumberStart'] = fname_parts[2].split('-')[0]
+            self.metadata['clusterBaseUnitNumberEnd'] = fname_parts[2].split('-')[-1]
+            self.metadata['trapTemp'] = int(fname_parts[3].split('K')[0])
+        else:
+            print('Warning: Could not parse file name (%s).'%(os.path.basename(self.metadata['datFileOrig'])))
+            self.metadata['tags'].append('Import warning: Could not parse file name.')
 
 
       

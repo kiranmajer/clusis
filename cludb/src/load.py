@@ -135,7 +135,8 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
                     else:
                         movedFiles.extend(moved)
                         spec.mdata.rm('datFileOrig')
-                        spec.mdata.rm('cfgFileOrig')
+                        if 'cfgFileOrig' in spec.mdata.data().keys():
+                            spec.mdata.rm('cfgFileOrig')
                         spec.commitPickle()
                         specList.append(spec)
                         sha1ToImport.append(mi.mdata.data('sha1'))
