@@ -57,7 +57,7 @@ class OverView(object):
                 #print 'Creating plot', plotidx
                 row = plot_list.pop()
                 #print 'type row is:', type(row)
-                pf = row[5]
+                pf = row['pickleFile']
                 currentspec = load.loadPickle(self.cfg, pf)
                 currentax = fig.add_subplot(5,4,idx_list[plotidx])
                 currentspec.view.plotEbin(currentax)

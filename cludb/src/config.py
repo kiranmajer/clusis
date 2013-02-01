@@ -71,6 +71,7 @@ class Cfg():
         Only keys listed are allowed in mdata. Should prevent mdata from being tainted with typos.
         '''
         self.mdataReference = {'casi': {'tags': [list, ['ms', 'pes', 'pfs'], True],
+                                        'info': [str, ['ms', 'pes', 'pfs'], True],
                                         'sha1': [str, ['ms', 'pes', 'pfs'], True],
                                         'machine': [['casi'], ['ms', 'pes', 'pfs'], True],
                                         'recTime': [float, ['ms', 'pes', 'pfs'], True],
