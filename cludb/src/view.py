@@ -23,6 +23,40 @@ class View(object):
         ax.text(1.0, 1.01, '%s'%(os.path.basename(self.spec.mdata.data('datFile'))),
                 transform = ax.transAxes, fontsize=8, horizontalalignment='right')  
 
+        
+    def addTextGaugeMarker(self, ax):
+        ax.text(0, 1.01, 'gauged', transform = self.ax.transAxes, fontsize=8, horizontalalignment='left') 
+        
+        
+    def addTextClusterId(self, ax, textPos='left', fontsize=28, ms=False):
+        if textPos == 'left':
+            pos_x, pos_y = 0.05, 0.8
+        elif textPos == 'right':
+            pos_x, pos_y = 0.95, 0.8
+        else:
+            raise ValueError('textPos must be one of: left, right. Got "%s" instead.'%(str(textPos)))  
+        formatStart = '$\mathrm{\mathsf{'
+        formatEnd = '}}$'
+        partCluster = '{%s'%self.spec.mdata.data('clusterBaseUnit')
+        if not ms:
+            partClusterNumber = '_{%s}'%(str(self.spec.mdata.data('clusterBaseUnitNumber')))
+        partCharge = '}^{%s}'%self.spec.mdata.data('ionType')
+        partDopant = '{%s}'%self.spec.mdata.data('clusterDopant')
+        partDopantNumber = '_{%s}'%(str(self.spec.mdata.data('clusterDopantNumber')))
+        
+        clusterId = formatStart + partCluster
+        if not ms:
+            if self.spec.mdata.data('clusterBaseUnitNumber') > 1:
+                clusterId += partClusterNumber
+        if self.spec.mdata.data('clusterDopant'):
+            clusterId += partDopant
+            if self.spec.mdata.data('clusterDopantNumber') > 1:
+                clusterId += partDopantNumber
+        clusterId += partCharge
+        clusterId += formatEnd
+               
+        ax.text(pos_x, pos_y, clusterId, transform = ax.transAxes, fontsize=fontsize, horizontalalignment=textPos)
+        
 
     def plotIdx(self, ax, subtractBg=False):
         ax.set_xlabel('Index')
@@ -73,38 +107,6 @@ class View(object):
 class ViewPes(View):
     def __init__(self, spec):
         View.__init__(self, spec)
-        
-        
-    def addTextGaugeMarker(self, ax):
-        ax.text(0, 1.01, 'gauged', transform = self.ax.transAxes, fontsize=8, horizontalalignment='left') 
-        
-        
-    def addTextClusterId(self, ax, textPos='left', fontsize=28):
-        if textPos == 'left':
-            pos_x, pos_y = 0.05, 0.8
-        elif textPos == 'right':
-            pos_x, pos_y = 0.95, 0.8
-        else:
-            raise ValueError('textPos must be one of: left, right. Got "%s" instead.'%(str(textPos)))  
-        formatStart = '$\mathrm{\mathsf{'
-        formatEnd = '}}$'
-        partCluster = '{%s'%self.spec.mdata.data('clusterBaseUnit')
-        partClusterNumber = '_{%s}'%(str(self.spec.mdata.data('clusterBaseUnitNumber')))
-        partCharge = '}^{%s}'%self.spec.mdata.data('ionType')
-        partDopant = '{%s}'%self.spec.mdata.data('clusterDopant')
-        partDopantNumber = '_{%s}'%(str(self.spec.mdata.data('clusterDopantNumber')))
-        
-        clusterId = formatStart + partCluster
-        if self.spec.mdata.data('clusterBaseUnitNumber') > 1:
-            clusterId += partClusterNumber
-        if self.spec.mdata.data('clusterDopant'):
-            clusterId += partDopant
-            if self.spec.mdata.data('clusterDopantNumber') > 1:
-                clusterId += partDopantNumber
-        clusterId += partCharge
-        clusterId += formatEnd
-               
-        ax.text(pos_x, pos_y, clusterId, transform = ax.transAxes, fontsize=fontsize, horizontalalignment=textPos)
         
 
     def showIdx(self, subtractBg=False):
@@ -407,6 +409,7 @@ class ViewMs(View):
         self._singleFig()
         self.plotMs(ax=self.ax, massKey=massKey)
         self.addTextFileId(self.ax)
+        self.addTextClusterId(self.ax, ms=True)
         self.fig.show()
         
         

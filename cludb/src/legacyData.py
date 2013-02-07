@@ -31,7 +31,7 @@ class LegacyData(object):
         self.parseDirStructure()
         if self.metadata['specType'] in ['ms']:
             self.parseDatFileName()
-            self.metadata['clusterBaseUnitMass'] = Atoms(str(self.mdata.data('clusterBaseUnit'))).get_masses().sum()
+            self.metadata['clusterBaseUnitMass'] = Atoms(self.metadata['clusterBaseUnit']).get_masses().sum()
         # convert metadata to Mdata object
         self.mdata = MdataUtils.Mdata(self.metadata, self.cfg)
         if len(commonMdata) > 0:

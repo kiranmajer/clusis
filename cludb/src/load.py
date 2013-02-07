@@ -125,7 +125,7 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
                         # init spec obj
                         mdata = mi.mdata.data()
                         ydata = {'rawIntensity': mi.data}
-                        xdata = {'idx': np.arange(1,len(ydata['rawIntensity'])+1)}
+                        xdata = {'idx': np.arange(0,len(ydata['rawIntensity']))}
                         spec = specMap[mdata['specType']](mdata, xdata, ydata, cfg)
                         spec.commitPickle()
                     except Exception as e:

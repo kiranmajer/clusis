@@ -514,9 +514,16 @@ class mSpec(Spec):
         self.calcMs(xkey='ms', clusterBaseUnitMass=self.mdata.data('clusterBaseUnitMass'))
         
         
-    def gauge(self):
+    def gauge(self, unit='cluster'):
         '''Simple gauge function. Needs to query for t1, t2, dn.
+        unit: one of 'cluster' or 'amu'
         '''
+        if unit == 'cluster':
+            m_unit = self.mdata.data('clusterBaseUnitMass')
+        elif unit == 'amu':
+            m_unit = 1
+        else:
+            raise ValueError('unit must be one of [cluster/amu].')
         t_off = lambda n,dn,t1,t2: (np.sqrt(1-float(dn)/n)*t2 - t1)/(np.sqrt(1-float(dn)/n)-1)
         t_ref = lambda m_unit,dn,t1,t2,t_off: np.sqrt(193.96/(m_unit*dn)*((t2-t_off)**2 - (t1-t_off)**2))
         self.mdata.update({'timeOffset':0, 'referenceTime':0})
@@ -542,7 +549,7 @@ class mSpec(Spec):
         Y = t_off(X, dn, t1, t2)
         n = X[np.abs(Y).argmin()]
         to = t_off(n, dn, t1, t2)
-        tr = t_ref(self.mdata.data('clusterBaseUnitMass'),dn,t1,t2,to)
+        tr = t_ref(m_unit,dn,t1,t2,to)
         self.mdata.update({'timeOffset': to, 'referenceTime': tr})
         self.calcSpec()
         

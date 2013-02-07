@@ -70,6 +70,7 @@ class Cfg():
         Mdata reference: 'key': [type|value list, spectype list, obligatory]
         Only keys listed are allowed in mdata. Should prevent mdata from being tainted with typos.
         '''
+        'TODO: mdata version, status key for gauged, fitted, subtracted?'
         self.mdataReference = {'casi': {'tags': [list, ['ms', 'pes', 'pfs'], True],
                                         'info': [str, ['ms', 'pes', 'pfs'], True],
                                         'sha1': [str, ['ms', 'pes', 'pfs'], True],
@@ -84,11 +85,12 @@ class Cfg():
                                         'clusterDopantNumber': [int, ['ms', 'pes', 'pfs'], True],
                                         'specType': [['ms', 'pes', 'pfs'], ['ms', 'pes', 'pfs'], True],
                                         'ionType': [['+','-'], ['ms', 'pes', 'pfs'], True],
-                                        'waveLength': [[157e-9, 193e-9, 248e-9, 308e-9, 800e-9],['pes', 'pfs'], True],
+                                        'waveLength': [[157e-9, 193e-9, 248e-9, 308e-9, 800e-9],['pes', 'pfs'], True], # 193.35e-9
                                         'flightLength': [[1.6],['pes'], True],
                                         'referenceMass': [float,['ms'], True],
                                         'referenceTime': [float,['ms'], True],
                                         'timeOffset': [float,['ms','pes'], True],
+                                        'triggerOffset':[float,['ms','pfs'], True],
                                         'trapTemp': [float, ['ms', 'pes', 'pfs'], False],
                                         'fitPeakPos': [list, ['pes'], False],
                                         'fitPeakPosTof': [list, ['pes'], False],
