@@ -180,17 +180,19 @@ class ptSpec(peSpec):
         return [np.sqrt(self._pFactor/(self._hv-p[0])) for p in peakPar]
     
     
-    def __fitParInit(self, peakPar, yscale, scale, offset, lscale):
+    def __fitParInit(self, peakPar, yscale, scale, offset):
         l = [i for p in peakPar if p[0] for i in [p[1]*yscale,p[2]]]
-        l.extend([scale,offset,lscale])
-        #l.extend([scale,offset])
-        return l
-
-
-    def __fitParInitTrans(self, peakPar, yscale, scale, offset):
-        l = [i for p in peakPar if p[0] for i in [self.jTransInv(p[1]*yscale, np.sqrt(self._pFactor/(self._hv-p[0]))),p[2]]]
         l.extend([scale,offset])
-        return l
+        #l.extend([scale,offset])
+        return np.array(l)
+
+
+    def __fitParInitTrans(self, peakPar, yscale, Eoff, toff, lscale):
+        l = [i for p in peakPar if p[0] for i in [p[1]*yscale,p[2]]]
+        #l = [i for p in peakPar if p[0] for i in [self.jTransInv(p[1]*yscale, np.sqrt(self._pFactor/(self._hv-p[0]))),p[2]]]
+        l.extend([Eoff, toff, lscale])
+        #print(l)
+        return np.array(l)
     
     
     def __getScale(self, xdata, ydata, xcenter, xinterval):
@@ -283,7 +285,7 @@ class ptSpec(peSpec):
         fitValues = {'fitPeakPosTof': self.__fitPeakPosTrans(peakPar)}
         xcenter = peakParRef[0][0]
         yscale = self.__getScale(self.xdata['ebin'], self.ydata['jacobyIntensity'], xcenter, 0.4)
-        fitValues['fitPar0Tof'] = self.__fitParInit(peakPar, yscale, Eoff, toff, lscale)
+        fitValues['fitPar0Tof'] = self.__fitParInitTrans(peakPar, yscale, Eoff, toff, lscale)
         try:
             p, covar, info, mess, ierr = leastsq(self.__err_mGaussTrans, fitValues['fitPar0Tof'], 
                                                  args=(xdata,ydata,

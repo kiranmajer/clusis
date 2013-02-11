@@ -202,7 +202,7 @@ class ViewPt(ViewPes):
                 transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=textPos)
         ax.text(pos_x, pos_y-0.05, 't$_{offset}$: %.3f ns'%(self.spec.mdata.data(fitPar)[-2]*1e9),
                 transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=textPos)
-        ax.text(pos_x, pos_y-0.1, 't$_{scale}$: %.3f'%(self.spec.mdata.data(fitPar)[-1]),
+        ax.text(pos_x, pos_y-0.1, 'l$_{scale}$: %.3f'%(self.spec.mdata.data(fitPar)[-1]),
                 transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=textPos)
                
     def plotEbinFit(self, ax, fitPar):
