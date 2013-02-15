@@ -53,6 +53,13 @@ class Cfg():
                                           ['waveLength', 'REAL'],
                                           ['recTime', 'REAL']
                                           ),
+                                  'generic': (['sha1', 'TEXT PRIMARY KEY'],
+                                              ['pickleFile', 'TEXT UNIQUE'],
+                                              ['datFile', 'TEXT'],
+                                              ['tags', 'LIST'],
+                                              ['recTime', 'REAL'],
+                                              ['info', 'TEXT']
+                                              )
                                   }
                        }
               } 
