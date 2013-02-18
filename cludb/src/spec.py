@@ -74,13 +74,13 @@ class Spec(object):
         bgSpec = load.loadPickle(self.cfg, bgFile)
         if not self.mdata.data('specType') == bgSpec.mdata.data('specType'):
             raise ValueError('Background file has different spec type.')
-        self.mdata.update({'bgFile': bgFile})
-        'TODO: tag managment. Right now the same tag(s) is(are) added, each time subtractGb is called.'
+        self.mdata.update({'subtractBgBgFile': bgFile})
+        'TODO: tag managment. Right now the same tag(s) is(are) added, each time subtractBg is called.'
         if isUpDown:
-            bgSpec.mdata.update({'tags': ['background', 'up/down'], 'specFile': self.mdata.data('pickleFile')})
+            bgSpec.mdata.update({'tags': ['background', 'up/down'], 'subtractBgSpecFile': self.mdata.data('pickleFile')})
             self.mdata.update({'tags': ['up/down']})
         else:
-            bgSpec.mdata.update({'tags': ['background'], 'specFile': self.mdata.data('pickleFile')})
+            bgSpec.mdata.update({'tags': ['background'], 'subtractBgSpecFile': self.mdata.data('pickleFile')})
         self.__calcSubIntensities(bgSpec)
         self.commit()
         bgSpec.commit()
@@ -443,7 +443,7 @@ class waterSpec(peSpec):
         fitPar0 = np.array(fitPar0)
         '''If subtractBg and/or gauged are None, try to find useful defaults.'''
         if subtractBg == None:
-            if 'bgFile' in list(self.mdata.data().keys()):
+            if 'subtractBgBgFile' in list(self.mdata.data().keys()):
                 subtractBg = True
             else:
                 subtractBg = False
@@ -471,7 +471,7 @@ class waterSpec(peSpec):
 #    def fitTof(self, fitPar0, cutoff=None, subtractBg=None, gauged=None):
 #        '''If subtractBg and/or gauged are None, try to find useful defaults.'''
 #        if subtractBg == None:
-#            if 'bgFile' in self.mdata.data().keys():
+#            if 'subtractBgBgFile' in self.mdata.data().keys():
 #                subtractBg = True
 #            else:
 #                subtractBg = False
