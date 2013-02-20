@@ -40,7 +40,7 @@ class Db(object):
 #        return time.gmtime(utime)
     
         
-    def createTable(self, specType):
+    def create_table(self, specType):
         
         sql = "CREATE TABLE IF NOT EXISTS " + specType + " (" + "%s, "*(len(self.__dbProps['layout'][specType])-1) + "%s)"
         tableHead = [' '.join(entry) for entry in self.__dbProps['layout'][specType]]
@@ -89,7 +89,7 @@ class Db(object):
         return valueList
         
 
-    def tableHasSha1(self, tableName, sha1):
+    def table_has_sha1(self, tableName, sha1):
         sql = "SELECT EXISTS (SELECT 1 FROM %s WHERE sha1 IS ?)" % tableName
         db_cursor = self.__db.cursor()
         hasSha1 = db_cursor.execute(sql, (sha1,)).fetchone()[0]
@@ -99,7 +99,7 @@ class Db(object):
         return hasSha1
     
     
-    def rebuildDb(self, spectra):
+    def rebuild_db(self, spectra):
         '''
         Basically already implemented over add. Integrate scan pickle dir, build spec list, add.
         clear tables?
@@ -111,13 +111,13 @@ class Db(object):
               recTime=None, recTimeRange=None, inTags=None, notInTags=None, datFileName=None, waveLength=None):
 
         
-        def prepClusterBaseUnit(clusterBaseUnit):
+        def sqlformat_ClusterBaseUnit(clusterBaseUnit):
             if type(clusterBaseUnit) is str:
                 return 'clusterBaseUnit IS "%s" AND '%clusterBaseUnit
             else:
                 raise ValueError('clusterBaseUnit must be a string. Got "%s" instead'%clusterBaseUnit)
             
-        def prepClusterBaseUnitNumber(clusterBaseUnitNumber):
+        def sqlformat_ClusterBaseUnitNumber(clusterBaseUnitNumber):
             numbers = []
             numbersQuery = ''
             if type(clusterBaseUnitNumber) is list:
@@ -131,14 +131,14 @@ class Db(object):
                     raise ValueError('clusterBaseUnitNumber must be an int > 0. Got "%s" instead'%i)
             return numbersQuery
         
-        def prepClusterBaseUnitNumberRange(clusterBaseUnitNumberRange):
+        def sqlformat_ClusterBaseUnitNumberRange(clusterBaseUnitNumberRange):
             if type(clusterBaseUnitNumberRange) is list and len(clusterBaseUnitNumberRange) == 2 \
             and clusterBaseUnitNumberRange[0] is int and clusterBaseUnitNumberRange[1] is int:
                 return 'clusterBaseUnitNumber BETWEEN %S AND %s AND '%tuple(clusterBaseUnitNumberRange)
             else:
                 raise ValueError('Not a valid range.')
             
-        def prepRecTime(recTime):
+        def sqlformat_RecTime(recTime):
             times = []
             timesQuery = ''
             if type(recTime) is list:
@@ -152,7 +152,7 @@ class Db(object):
             
             return timesQuery
         
-        def prepRecTimeRange(recTimeRange):
+        def sqlformat_RecTimeRange(recTimeRange):
             '''TODO: check if t0<t1'''
             if type(recTimeRange) is list and len(recTimeRange) == 2:
                 startTime = time.mktime(time.strptime(recTimeRange[0], '%d.%m.%Y'))
@@ -161,7 +161,7 @@ class Db(object):
             else:
                 raise ValueError('Not a valid time range.')
             
-        def prepInTags(inTags):
+        def sqlformat_InTags(inTags):
             tags = []
             tagsQuery = ''
             if type(inTags) is list:
@@ -172,7 +172,7 @@ class Db(object):
                 tagsQuery+='tags GLOB "*%s*" AND '%(t,)
             return tagsQuery
                 
-        def prepNotInTags(notInTags):
+        def sqlformat_NotInTags(notInTags):
             tags = []
             tagsQuery = ''
             if type(inTags) is list:
@@ -183,7 +183,7 @@ class Db(object):
                 tagsQuery+='tags NOT GLOB "*%s*" AND '%(t,)
             return tagsQuery
             
-        def prepDatFileName(datFileName):
+        def sqlformat_DatFileName(datFileName):
             dats = []
             datsQuery = ''
             if type(datFileName) is list:
@@ -196,7 +196,7 @@ class Db(object):
                 datsQuery+='datFile GLOB "*%s*" AND '%f
             return datsQuery
         
-        def prepWaveLength(waveLength):
+        def sqlformat_WaveLength(waveLength):
             waves = []
             wavesQuery = ''
             'TODO: adapt for variable machine type.'
@@ -215,15 +215,15 @@ class Db(object):
         
         
                 
-        q = {'clusterBaseUnit': [prepClusterBaseUnit, clusterBaseUnit, 'clusterBaseUnit'],
-             'clusterBaseUnitNumber': [prepClusterBaseUnitNumber, clusterBaseUnitNumber, 'clusterBaseUnitNumber'],
-             'clusterBaseUnitNumberRange': [prepClusterBaseUnitNumberRange, clusterBaseUnitNumberRange, 'clusterBaseUnitNumber'],
-             'recTime': [prepRecTime, recTime, 'recTime'],
-             'recTimeRange': [prepRecTimeRange, recTimeRange, 'recTime'],
-             'inTags': [prepInTags, inTags, 'tags'],
-             'notInTags': [prepNotInTags, notInTags, 'tags'],
-             'datFileName': [prepDatFileName, datFileName, 'datFile'],
-             'waveLength': [prepWaveLength, waveLength, 'waveLength']
+        q = {'clusterBaseUnit': [sqlformat_ClusterBaseUnit, clusterBaseUnit, 'clusterBaseUnit'],
+             'clusterBaseUnitNumber': [sqlformat_ClusterBaseUnitNumber, clusterBaseUnitNumber, 'clusterBaseUnitNumber'],
+             'clusterBaseUnitNumberRange': [sqlformat_ClusterBaseUnitNumberRange, clusterBaseUnitNumberRange, 'clusterBaseUnitNumber'],
+             'recTime': [sqlformat_RecTime, recTime, 'recTime'],
+             'recTimeRange': [sqlformat_RecTimeRange, recTimeRange, 'recTime'],
+             'inTags': [sqlformat_InTags, inTags, 'tags'],
+             'notInTags': [sqlformat_NotInTags, notInTags, 'tags'],
+             'datFileName': [sqlformat_DatFileName, datFileName, 'datFile'],
+             'waveLength': [sqlformat_WaveLength, waveLength, 'waveLength']
              }
         #print 'we start with: ', q
             
@@ -260,14 +260,14 @@ class Db(object):
         db_cursor.close()
         del db_cursor
         
-        def printAnswer(fetch):
-            def formatRecTime(unixtime):
+        def print_answer(fetch):
+            def format_RecTime(unixtime):
                 return time.strftime('%d.%m.%Y', time.localtime(unixtime))
             
-            def formatDatFile(datfile):
+            def format_DatFile(datfile):
                 return os.path.basename(datfile)
             
-            def printHeadPes():
+            def print_head_pes():
                 print('Idx'.rjust(6),
                               'element'.ljust(7+3),
                               'size'.ljust(4+3),
@@ -276,37 +276,37 @@ class Db(object):
                               'datFile'.ljust(16),
                               'tags')
                 
-            def printHeadMs():
+            def print_head_ms():
                 print('Idx'.rjust(6),
                               'element'.ljust(7+3),
                               'recTime'.ljust(12),
                               'datFile'.ljust(16),
                               'tags')
                 
-            printHead = {'pes': printHeadPes,
-                         'ms': printHeadMs
+            printHead = {'pes': print_head_pes,
+                         'ms': print_head_ms
                          }            
             
-            def printDataPes(row):
+            def print_data_pes(row):
                 print(('%s  '%idx).rjust(6),
                       row['clusterBaseUnit'].ljust(7+3),
                       str(row['clusterBaseUnitNumber']).ljust(4+3),
                       str(row['waveLength']*1e9).ljust(10+3),
-                      formatRecTime(row['recTime']).ljust(12),
-                      formatDatFile(row['datFile']).ljust(16),
+                      format_RecTime(row['recTime']).ljust(12),
+                      format_DatFile(row['datFile']).ljust(16),
                       end=" "
                       )
                 
-            def printDataMs(row):
+            def print_data_ms(row):
                 print(('%s  '%idx).rjust(6),
                       row['clusterBaseUnit'].ljust(7+3),    
-                      formatRecTime(row['recTime']).ljust(12),
-                      formatDatFile(row['datFile']).ljust(16),
+                      format_RecTime(row['recTime']).ljust(12),
+                      format_DatFile(row['datFile']).ljust(16),
                       end=" "
                       )
                 
-            printData = {'pes': printDataPes,
-                         'ms': printDataMs
+            printData = {'pes': print_data_pes,
+                         'ms': print_data_ms
                          } 
             
             
@@ -322,7 +322,7 @@ class Db(object):
                     print('<|>'.join(row['tags']))
                 idx += 1
                 
-        printAnswer(fetch)
+        print_answer(fetch)
         
         return fetch
         

@@ -9,7 +9,7 @@ class View(object):
         self.spec = spec
         
 
-    def _singleFig(self):
+    def _single_fig_output(self):
         if hasattr(self, 'fig'):        
             self.ax.lines = []
             self.ax.texts = []
@@ -19,16 +19,16 @@ class View(object):
             self.ax = self.fig.add_subplot(1,1,1)    
 
 
-    def addTextFileId(self, ax):
+    def addtext_file_id(self, ax):
         ax.text(1.0, 1.01, '%s'%(os.path.basename(self.spec.mdata.data('datFile'))),
                 transform = ax.transAxes, fontsize=8, horizontalalignment='right')  
 
         
-    def addTextGaugeMarker(self, ax):
+    def addtext_gaugemarker(self, ax):
         ax.text(0, 1.01, 'gauged', transform = self.ax.transAxes, fontsize=8, horizontalalignment='left') 
         
         
-    def addTextClusterId(self, ax, textPos='left', fontsize=28, ms=False):
+    def addtext_cluster_id(self, ax, textPos='left', fontsize=28, ms=False):
         if textPos == 'left':
             pos_x, pos_y = 0.05, 0.8
         elif textPos == 'right':
@@ -58,7 +58,7 @@ class View(object):
         ax.text(pos_x, pos_y, clusterId, transform = ax.transAxes, fontsize=fontsize, horizontalalignment=textPos)
         
 
-    def plotIdx(self, ax, subtractBg=False):
+    def plot_idx(self, ax, subtractBg=False):
         ax.set_xlabel('Index')
         ax.set_ylabel('Intensity (a.u.)')
         ax.set_xlim(0,self.spec.xdata['idx'][-1])
@@ -71,14 +71,14 @@ class View(object):
         ax.autoscale(axis='y')       
             
             
-    def showIdx(self, subtractBg=False):
-        self._singleFig()
-        self.plotIdx(self.ax, subtractBg=subtractBg)
-        self.addTextFileId(self.ax)
+    def show_idx(self, subtractBg=False):
+        self._single_fig_output()
+        self.plot_idx(self.ax, subtractBg=subtractBg)
+        self.addtext_file_id(self.ax)
         self.fig.show()
         
         
-    def plotTof(self, ax, showGauged=False, subtractBg=False, timeUnit=1e-6, xlim=['auto', 'auto']):
+    def plot_tof(self, ax, showGauged=False, subtractBg=False, timeUnit=1e-6, xlim=['auto', 'auto']):
         'TODO: adapt for more time units'
         if xlim[0] == 'auto':
             xlim[0] = self.spec.xdata['tof'][0]/timeUnit
@@ -96,10 +96,10 @@ class View(object):
         ax.autoscale(axis='y')
 
 
-    def showTof(self, subtractBg=False, timeUnit=1e-6, xlim=['auto', 'auto']):
-        self._singleFig()
-        self.plotTof(self.ax, subtractBg=subtractBg, timeUnit=timeUnit, xlim=xlim)        
-        self.addTextFileId(self.ax)
+    def show_tof(self, subtractBg=False, timeUnit=1e-6, xlim=['auto', 'auto']):
+        self._single_fig_output()
+        self.plot_tof(self.ax, subtractBg=subtractBg, timeUnit=timeUnit, xlim=xlim)        
+        self.addtext_file_id(self.ax)
         self.fig.show()
         
         
@@ -109,40 +109,40 @@ class ViewPes(View):
         View.__init__(self, spec)
         
 
-    def showIdx(self, subtractBg=False):
-        View.showIdx(self, subtractBg=subtractBg)
-        self.addTextClusterId(self.ax)        
+    def show_idx(self, subtractBg=False):
+        View.show_idx(self, subtractBg=subtractBg)
+        self.addtext_cluster_id(self.ax)        
         self.fig.show()
 
         
-    def showTof(self, subtractBg=False, timeUnit=1e-6, xlim=[0, 'auto']):
-        View.showTof(self, subtractBg=subtractBg, timeUnit=timeUnit, xlim=xlim)
-        self.addTextClusterId(self.ax, textPos='right')        
+    def show_tof(self, subtractBg=False, timeUnit=1e-6, xlim=[0, 'auto']):
+        View.show_tof(self, subtractBg=subtractBg, timeUnit=timeUnit, xlim=xlim)
+        self.addtext_cluster_id(self.ax, textPos='right')        
         self.fig.show()
         
 
-    def plotEkin(self, ax, subtractBg=False):
+    def plot_ekin(self, ax, subtractBg=False):
         ax.set_xlabel(r'E$_{kin}$ (eV)')
         ax.set_ylabel('Intensity (a.u.)')
         ax.set_xlim(0,self.spec.photonEnergy(self.spec.mdata.data('waveLength')))
         if subtractBg:
-            intensityKey = 'jacobyIntensitySub'
+            intensityKey = 'jIntensitySub'
         else:
-            intensityKey = 'jacobyIntensity'          
+            intensityKey = 'jIntensity'          
         ax.plot(self.spec.xdata['ekin'], self.spec.ydata[intensityKey], color='black')
         ax.relim()
         ax.autoscale(axis='y')
 
 
-    def showEkin(self, subtractBg=False):  
-        self._singleFig()
-        self.plotEkin(self.ax, subtractBg=subtractBg)        
-        self.addTextFileId(self.ax)
-        self.addTextClusterId(self.ax, textPos='right')        
+    def show_ekin(self, subtractBg=False):  
+        self._single_fig_output()
+        self.plot_ekin(self.ax, subtractBg=subtractBg)        
+        self.addtext_file_id(self.ax)
+        self.addtext_cluster_id(self.ax, textPos='right')        
         self.fig.show()
 
 
-    def plotEbin(self, ax, showGauged=False, subtractBg=False):
+    def plot_ebin(self, ax, showGauged=False, subtractBg=False):
         ax.set_xlabel(r'E$_{bin}$ (eV)')
         ax.set_ylabel('Intensity (a.u.)')
         ax.set_xlim(0,self.spec.photonEnergy(self.spec.mdata.data('waveLength')))
@@ -159,9 +159,9 @@ class ViewPes(View):
         else:
             ebinKey = 'ebin'
         if subtractBg:
-            intensityKey = 'jacobyIntensitySub'
+            intensityKey = 'jIntensitySub'
         else:
-            intensityKey = 'jacobyIntensity'   
+            intensityKey = 'jIntensity'
         ax.plot(self.spec.xdata[ebinKey], self.spec.ydata[intensityKey], color='black')
         ax.relim()
         ax.autoscale(axis='y')
@@ -169,20 +169,20 @@ class ViewPes(View):
         return gauged
 
 
-    def showEbin(self, showGauged=True, subtractBg=False):
-        self._singleFig()
-        gauged = self.plotEbin(self.ax, showGauged=showGauged, subtractBg=subtractBg)
+    def show_ebin(self, showGauged=True, subtractBg=False):
+        self._single_fig_output()
+        gauged = self.plot_ebin(self.ax, showGauged=showGauged, subtractBg=subtractBg)
         if gauged:
-            self.addTextGaugeMarker(self.ax)        
-        self.addTextFileId(self.ax)
-        self.addTextClusterId(self.ax)             
+            self.addtext_gaugemarker(self.ax)        
+        self.addtext_file_id(self.ax)
+        self.addtext_cluster_id(self.ax)             
         self.fig.show()
         
         
-    def showGaugeRef(self):
+    def show_gaugeref(self):
         gaugeRef = self.spec.mdata.data('gaugeRef')
-        gaugeSpec = load.loadPickle(self.spec.cfg, gaugeRef)
-        gaugeSpec.view.showEbinFit()
+        gaugeSpec = load.load_pickle(self.spec.cfg, gaugeRef)
+        gaugeSpec.view.show_ebin_fit()
         
 
 
@@ -191,7 +191,7 @@ class ViewPt(ViewPes):
         ViewPes.__init__(self, spec)
         
     
-    def addTextGaugePar(self, ax, textPos='left', fitPar='fitParTof'):
+    def addtext_gauge_par(self, ax, textPos='left', fitPar='fitParTof'):
         if textPos == 'left':
             pos_x, pos_y = 0.05, 0.6
         elif textPos == 'right':
@@ -205,7 +205,7 @@ class ViewPt(ViewPes):
         ax.text(pos_x, pos_y-0.1, 'l$_{scale}$: %.3f'%(self.spec.mdata.data(fitPar)[-1]),
                 transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=textPos)
                
-    def plotEbinFit(self, ax, fitPar):
+    def plot_ebin_fit(self, ax, fitPar):
         if fitPar in list(self.spec.mdata.data().keys()):
             if fitPar in ['fitPar', 'fitPar0']:        
                 ax.plot(self.spec.xdata['ebin'],
@@ -226,17 +226,17 @@ class ViewPt(ViewPes):
             raise ValueError('Spectrum not gauged. Gauge first by running <Spec instance>.gauge(specType, offset=0).')
     
     
-    def showEbinFit(self, fitPar='fitPar'):
-        self._singleFig()
-        self.plotEbin(self.ax)
-        self.plotEbinFit(self.ax, fitPar)       
-        self.addTextFileId(self.ax)
-        self.addTextClusterId(self.ax)
-        self.addTextGaugePar(self.ax, fitPar=fitPar)             
+    def show_ebin_fit(self, fitPar='fitPar'):
+        self._single_fig_output()
+        self.plot_ebin(self.ax)
+        self.plot_ebin_fit(self.ax, fitPar)       
+        self.addtext_file_id(self.ax)
+        self.addtext_cluster_id(self.ax)
+        self.addtext_gauge_par(self.ax, fitPar=fitPar)             
         self.fig.show()
         
         
-    def plotTofFit(self, ax, fitPar, timeUnit):
+    def plot_tof_fit(self, ax, fitPar, timeUnit):
         if fitPar in list(self.spec.mdata.data().keys()):        
             ax.plot(self.spec.xdata['tof']/timeUnit,
                     self.spec.mGaussTrans(self.spec.xdata['tof'],self.spec.mdata.data('fitPeakPosTof'),self.spec.mdata.data(fitPar)),
@@ -247,13 +247,13 @@ class ViewPt(ViewPes):
             raise ValueError('Spectrum not gauged. Gauge first by running <Spec instance>.gauge(specType, offset=0).')
     
     
-    def showTofFit(self, fitPar='fitParTof', timeUnit=1e-6):
-        self._singleFig()
-        self.plotTof(self.ax, timeUnit=timeUnit)
-        self.plotTofFit(self.ax, fitPar, timeUnit)       
-        self.addTextFileId(self.ax)
-        self.addTextClusterId(self.ax, textPos='right')
-        self.addTextGaugePar(self.ax, textPos='right', fitPar=fitPar)             
+    def show_tof_fit(self, fitPar='fitParTof', timeUnit=1e-6):
+        self._single_fig_output()
+        self.plot_tof(self.ax, timeUnit=timeUnit)
+        self.plot_tof_fit(self.ax, fitPar, timeUnit)       
+        self.addtext_file_id(self.ax)
+        self.addtext_cluster_id(self.ax, textPos='right')
+        self.addtext_gauge_par(self.ax, textPos='right', fitPar=fitPar)             
         self.fig.show()        
 
         
@@ -263,7 +263,7 @@ class ViewWater(ViewPes):
         ViewPes.__init__(self, spec)
         
 
-    def addTextFitValues(self, ax, fitParKey, specType, timeUnit=1, textPos='left'):
+    def addtext_fitvalues(self, ax, fitParKey, specType, timeUnit=1, textPos='left'):
         'TODO: adapt units to match timeUnit'
         if specType=='ebin' and fitParKey in ['fitParTof', 'fitPar0Tof']:
             peak_values = list(self.spec.ebin(self.spec.mdata.data(fitParKey)[:-2:2]))
@@ -291,7 +291,7 @@ class ViewWater(ViewPes):
         #textScale = ax.text(0.05, 0.55, 'Scale: %s'%(round(self.spec.mdata.data('fitPar')[-2], 2)),
         #                        transform = self.spec.view.ax.transAxes, fontsize=12) 
     'TODO: implement gauging!'
-    def plotEbinFit(self, ax, fitPar):
+    def plot_ebin_fit(self, ax, fitPar):
         if fitPar in ['fitPar', 'fitPar0']:
             ax.plot(self.spec.xdata['ebin'],
                     self.spec.mGl(self.spec.xdata['ebin'], self.spec.mdata.data(fitPar)),
@@ -331,27 +331,27 @@ class ViewWater(ViewPes):
 
             
     
-    def showEbinFit(self, fitPar='fitPar'):
+    def show_ebin_fit(self, fitPar='fitPar'):
         if fitPar in list(self.spec.mdata.data().keys()):
-            self._singleFig()
+            self._single_fig_output()
             if fitPar in ['fitPar', 'fitPar0']:
-                gauged = self.plotEbin(self.ax, showGauged=self.spec.mdata.data('fitGauged'),
+                gauged = self.plot_ebin(self.ax, showGauged=self.spec.mdata.data('fitGauged'),
                                        subtractBg=self.spec.mdata.data('fitSubtractBg'))
             else:
-                gauged = self.plotEbin(self.ax, showGauged=self.spec.mdata.data('fitGaugedTof'),
+                gauged = self.plot_ebin(self.ax, showGauged=self.spec.mdata.data('fitGaugedTof'),
                                        subtractBg=self.spec.mdata.data('fitSubtractBgTof'))
-            self.plotEbinFit(self.ax, fitPar)
-            self.addTextFileId(self.ax)
-            self.addTextClusterId(self.ax)
-            self.addTextFitValues(self.ax, fitParKey=fitPar, specType='ebin')
+            self.plot_ebin_fit(self.ax, fitPar)
+            self.addtext_file_id(self.ax)
+            self.addtext_cluster_id(self.ax)
+            self.addtext_fitvalues(self.ax, fitParKey=fitPar, specType='ebin')
             if gauged:        
-                self.addTextGaugeMarker(self.ax)
+                self.addtext_gaugemarker(self.ax)
             self.fig.show()
         else:
             raise ValueError('Spectrum not yet fitted. Fit first.')            
 
 
-    def plotTofFit(self, ax, fitPar, timeUnit):
+    def plot_tof_fit(self, ax, fitPar, timeUnit):
         xdata = self.spec.xdata['tof']/timeUnit
         ax.plot(xdata,
                 self.spec.mGlTrans(self.spec.xdata['tof'], self.spec.mdata.data(fitPar)),
@@ -371,18 +371,18 @@ class ViewWater(ViewPes):
 
 
 
-    def showTofFit(self, fitPar='fitParTof', timeUnit=1e-6):
+    def show_tof_fit(self, fitPar='fitParTof', timeUnit=1e-6):
         if fitPar in list(self.spec.mdata.data().keys()):
-            self._singleFig()
-            gauged = self.plotTof(self.ax, showGauged=self.spec.mdata.data('fitGaugedTof'),
+            self._single_fig_output()
+            gauged = self.plot_tof(self.ax, showGauged=self.spec.mdata.data('fitGaugedTof'),
                                    subtractBg=self.spec.mdata.data('fitSubtractBgTof'),
                                    timeUnit=timeUnit)
-            self.plotTofFit(self.ax, fitPar, timeUnit=timeUnit)
-            self.addTextFileId(self.ax)
-            self.addTextClusterId(self.ax, textPos='right')
-            self.addTextFitValues(self.ax, fitParKey=fitPar, specType='tof', timeUnit=timeUnit, textPos='right')
+            self.plot_tof_fit(self.ax, fitPar, timeUnit=timeUnit)
+            self.addtext_file_id(self.ax)
+            self.addtext_cluster_id(self.ax, textPos='right')
+            self.addtext_fitvalues(self.ax, fitParKey=fitPar, specType='tof', timeUnit=timeUnit, textPos='right')
             if gauged:        
-                self.addTextGaugeMarker(self.ax)
+                self.addtext_gaugemarker(self.ax)
             self.fig.show()      
         else:
             raise ValueError('Spectrum not yet fitted. Fit first.')
@@ -394,7 +394,7 @@ class ViewMs(View):
         View.__init__(self, spec)   
         
         
-    def plotMs(self, ax, massKey):
+    def plot_ms(self, ax, massKey):
         if massKey == 'ms':
             ax.set_xlabel('Cluster Size (#%s)'%self.spec.mdata.data('clusterBaseUnit'))
         else:
@@ -405,11 +405,11 @@ class ViewMs(View):
         ax.autoscale()
         
         
-    def showMs(self, massKey='ms'):
-        self._singleFig()
-        self.plotMs(ax=self.ax, massKey=massKey)
-        self.addTextFileId(self.ax)
-        self.addTextClusterId(self.ax, ms=True)
+    def show_ms(self, massKey='ms'):
+        self._single_fig_output()
+        self.plot_ms(ax=self.ax, massKey=massKey)
+        self.addtext_file_id(self.ax)
+        self.addtext_cluster_id(self.ax, ms=True)
         self.fig.show()
         
         

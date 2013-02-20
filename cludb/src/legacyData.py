@@ -5,7 +5,7 @@ import os
 import re
 import time
 import hashlib
-import MdataUtils
+from mdata import Mdata
 from ase.atoms import Atoms
 #import config
 
@@ -22,24 +22,24 @@ class LegacyData(object):
         self.data = []
         
         
-        self.parseFile(fileToImport)
-        self.evalHeader()
-        self.addSha1()
-        self.getRecTime()
-        self.mdataBasics()
-        self.evalCfgFile()
-        self.parseDirStructure()
+        self.parse_file(fileToImport)
+        self.eval_header()
+        self.get_sha1()
+        self.get_recTime()
+        self.get_basic_mdata()
+        self.eval_cfgfile()
+        self.parse_dir_structure()
         if self.metadata['specType'] in ['ms']:
-            self.parseDatFileName()
+            self.parse_datfile_name()
             self.metadata['clusterBaseUnitMass'] = Atoms(self.metadata['clusterBaseUnit']).get_masses().sum()
         # convert metadata to Mdata object
-        self.mdata = MdataUtils.Mdata(self.metadata, self.cfg)
+        self.mdata = Mdata(self.metadata, self.cfg)
         if len(commonMdata) > 0:
             #print 'Importing commonMdata', commonMdata
             self.mdata.add(commonMdata)
-        self.mdata.checkIfComplete()
+        self.mdata.check_completeness()
     
-    def parseFile(self, fileToImport):
+    def parse_file(self, fileToImport):
         """Reads from a file and generates a header list and a data
         ndarray.
         """
@@ -56,7 +56,7 @@ class LegacyData(object):
         else:
             self.data = np.array(self.data[:-1]) # last point has sometimes a strange value like 32768. Skip it!
             
-    def evalHeader(self, min_line_count=250):
+    def eval_header(self, min_line_count=250):
         """Checks and makes a very basic analysis of header for key words:
             'Wellenlaenge:' -> pes
             'Trigger_Offset[s]' -> ms
@@ -85,14 +85,14 @@ class LegacyData(object):
     
         
         
-    def addSha1(self):
+    def get_sha1(self):
         with open(self.metadata['datFileOrig'], 'rb') as f:
             sha1 = hashlib.sha1(f.read()).hexdigest()
         
         self.metadata['sha1'] = sha1
     
     
-    def getRecTime(self):
+    def get_recTime(self):
         '''
         Checks the recording time from time stamp against filename. 
         pes, ms data files only (for now).
@@ -125,7 +125,7 @@ class LegacyData(object):
 
     
     
-    def mdataBasics(self):
+    def get_basic_mdata(self):
         """Adds to the mdata dictionary some basic data: 
            tags, recTime ...
         """
@@ -143,7 +143,7 @@ class LegacyData(object):
         self.metadata['pickleFile'] = os.path.join(pickleFileDir, pickleFileName)
 
 
-    def findCfgFile(self):
+    def find_cfgfile(self):
         """Gets the date and number out of the pes dat filename and searches
         for the associated cfg file: *ddmmyy_nn.cfg. Or searches for a cfg
         file with the same basename as the ms dat file.
@@ -153,32 +153,32 @@ class LegacyData(object):
         if self.metadata['specType'] == 'pes':
             pattern_groups = re.compile(r'(\d{6})_(\d+)')
             dat_fileDate, dat_fileNumber = pattern_groups.search(dat_file_name).groups()
-            cfg_file = glob.glob(os.path.join(dat_file_dir,'*' + '_' + 
+            cfgfile = glob.glob(os.path.join(dat_file_dir,'*' + '_' + 
                                               dat_fileNumber + '_' + dat_fileDate 
                                               + '.cfg'))
-            if len(cfg_file) == 0:
-                cfg_file = glob.glob(os.path.join(dat_file_dir,'*' + dat_fileDate 
+            if len(cfgfile) == 0:
+                cfgfile = glob.glob(os.path.join(dat_file_dir,'*' + dat_fileDate 
                                                   + '_' + dat_fileNumber + '.cfg'))
         elif self.metadata['specType'] == 'ms':
             dat_fileShortname = os.path.splitext(dat_file_name)[0]
-            cfg_file = glob.glob(os.path.join(dat_file_dir, dat_fileShortname + '.cfg'))
+            cfgfile = glob.glob(os.path.join(dat_file_dir, dat_fileShortname + '.cfg'))
         else:
             raise ValueError('No specType specified.')
             
-        if len(cfg_file) == 1:
-            self.metadata['cfgFileOrig'] = cfg_file[0]
-        elif len(cfg_file) == 0 and self.metadata['specType'] == 'ms':
+        if len(cfgfile) == 1:
+            self.metadata['cfgFileOrig'] = cfgfile[0]
+        elif len(cfgfile) == 0 and self.metadata['specType'] == 'ms':
             print('No cfg. But for ms it is not vital. Skipping...')
             self.metadata['tags'].append('Could not find cfg file')
-        elif len(cfg_file) == 0 and self.metadata['specType'] == 'pes':
+        elif len(cfgfile) == 0 and self.metadata['specType'] == 'pes':
             raise ValueError('Could not find cfg file.')
         else:
-            self.metadata['tags'].append('Several cfg files: ' + str(cfg_file))
+            self.metadata['tags'].append('Several cfg files: ' + str(cfgfile))
             raise ValueError('Found more than 1 cfg file.')
      
     
-    def parseCfgFile(self, cfg_file):
-        """Extracts all information of cfg_file and its filename.
+    def parse_cfgfile(self, cfgfile):
+        """Extracts all information of cfgfile and its filename.
         """
         cfg_data_map = ['ch1Tstart', 'ch1Tstop', 'ch2Tstart', 'ch2Tstop',
                         'ch3Tstart', 'ch3Tstop', 'ch4Tstart', 'ch4Tstop',
@@ -186,7 +186,7 @@ class LegacyData(object):
                         'ch7Tstart', 'ch7Tstop', 'ch8Tstart', 'ch8Tstop',
                         'clusterBaseUnitNumber']
         try:
-            with open(cfg_file) as cfg:
+            with open(cfgfile) as cfg:
                 cfg_data = cfg.readlines()[0].split()
         except IOError as e:
             print("I/O error({0}): {1}".format(e.errno, e.strerror))
@@ -204,33 +204,33 @@ class LegacyData(object):
                 if self.metadata['specType'] in ['pes']:
                     self.metadata[cfg_data_map[-1]] = int(cfg_data[-1])
             else:
-                raise ValueError('{} does not contain valid data.'.format(cfg_file))
+                raise ValueError('{} does not contain valid data.'.format(cfgfile))
                     
             """Get information from file name (pes only)
             """
             if self.metadata['specType'] in ['pes']:
-                cfg_file_name_map = ['clusterBaseUnit', 'clusterBaseUnitNumber',
+                cfgfile_name_map = ['clusterBaseUnit', 'clusterBaseUnitNumber',
                               'cfgFileNumber', 'cfgFileDate.cfg']
-                cfg_file_name = os.path.basename(self.metadata['cfgFileOrig'])
-                if len(cfg_file_name.split('_')) == 4:
-                    cfg_file_nameData = dict([(cfg_file_name_map[i], cfg_file_name.split('_')[i])
-                                              for i in range(len(cfg_file_name_map))])
-                    self.metadata['clusterBaseUnit'] = cfg_file_nameData['clusterBaseUnit']
+                cfgfile_name = os.path.basename(self.metadata['cfgFileOrig'])
+                if len(cfgfile_name.split('_')) == 4:
+                    cfgfile_nameData = dict([(cfgfile_name_map[i], cfgfile_name.split('_')[i])
+                                              for i in range(len(cfgfile_name_map))])
+                    self.metadata['clusterBaseUnit'] = cfgfile_nameData['clusterBaseUnit']
                     """Test if cluster size in file and file name differs"""
-                    if self.metadata['clusterBaseUnitNumber'] != int(cfg_file_nameData['clusterBaseUnitNumber']):
-                        self.metadata['clusterBaseUnitNumberFromFileName'] = int(cfg_file_nameData['clusterBaseUnitNumber'])
+                    if self.metadata['clusterBaseUnitNumber'] != int(cfgfile_nameData['clusterBaseUnitNumber']):
+                        self.metadata['clusterBaseUnitNumberFromFileName'] = int(cfgfile_nameData['clusterBaseUnitNumber'])
                         self.metadata['tags'].append('clusterBaseUnitNumber ambiguous')
                 else:
-                    raise ValueError('Unexpected file name: ' + cfg_file_name)
+                    raise ValueError('Unexpected file name: ' + cfgfile_name)
 
     
-    def evalCfgFile(self):
+    def eval_cfgfile(self):
         """Tries to find corresponding cfg files and adds unambiguous data to mdata
         """
         try:
-            self.findCfgFile()
+            self.find_cfgfile()
             if 'cfgFileOrig' in self.metadata.keys():
-                self.parseCfgFile(self.metadata['cfgFileOrig'])
+                self.parse_cfgfile(self.metadata['cfgFileOrig'])
         except:
             raise #ValueError('Importing cfg file failed.')
         else:
@@ -240,7 +240,7 @@ class LegacyData(object):
                                                         os.path.basename(self.metadata['cfgFileOrig']))
     
     
-    def parseDirStructure(self):
+    def parse_dir_structure(self):
         '''
         If the the full filepath contains self.metadata['machine'], try to extract some metadata
         from the dir structure and add it to mdata
@@ -265,7 +265,7 @@ class LegacyData(object):
                     self.metadata['tags'].append(splitted_path[4].replace('_', ' '))
 
                     
-    def parseDatFileName(self):
+    def parse_datfile_name(self):
         fname_parts = os.path.splitext(os.path.basename(self.metadata['datFileOrig']))[0].split('_')
         if len(fname_parts) == 4:
             self.metadata['clusterBaseUnitNumberStart'] = fname_parts[2].split('-')[0]
@@ -419,9 +419,9 @@ class LegacyData(object):
 #            mdata = mdata_basics(dat_file_name, dat_file_dir, mdata)
 #            if mdata['specType'] == 'pes':
 #                mdata = verify_recTime(mdata)
-#                mdata = find_cfg_file(mdata['datFileName'],mdata['datFileDir'], mdata)
+#                mdata = find_cfgfile(mdata['datFileName'],mdata['datFileDir'], mdata)
 #                if 'cfgFileName' in mdata:
-#                    mdata = parse_cfg_file(mdata['cfgFileName'],mdata['cfgFileDir'], mdata)
+#                    mdata = parse_cfgfile(mdata['cfgFileName'],mdata['cfgFileDir'], mdata)
 #            mdata = parse_dir_structure(mdata)
 #            mdata = set_common_values(mdata, common_values)
 #            mdata = complete_mdata(mdata)
@@ -444,10 +444,10 @@ class LegacyData(object):
 #    mdata = mdata_basics(dat_file_name, dat_file_dir)
 #    raw_mdata, spectrum = strip_file(mdata['datFile'])
 #    mdata = eval_dat_file(raw_mdata, mdata)
-#    mdata = find_cfg_file(mdata['datFileName'], 
+#    mdata = find_cfgfile(mdata['datFileName'], 
 #                             mdata['datFileDir'], mdata)
 #    if 'cfgFileName' in mdata:
-#        mdata = parse_cfg_file(mdata['cfgFileName'],
+#        mdata = parse_cfgfile(mdata['cfgFileName'],
 #                                  mdata['cfgFileDir'], mdata)
 #    mdata = complete_mdata(mdata)
 #    mdata['spectrum'] = spectrum

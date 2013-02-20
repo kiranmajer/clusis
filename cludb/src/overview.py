@@ -58,12 +58,12 @@ class OverView(object):
                 row = plot_list.pop()
                 #print 'type row is:', type(row)
                 pf = row['pickleFile']
-                currentspec = load.loadPickle(self.cfg, pf)
+                currentspec = load.load_pickle(self.cfg, pf)
                 currentax = fig.add_subplot(5,4,idx_list[plotidx])
                 currentspec.view.plotEbin(currentax)
                 currentspec.view.addTextFileId(currentax)
                 currentspec.view.addTextClusterId(currentax, fontsize=16)
-                #self.plotEkin(currentspec, currentax)
+                #self.plot_ekin(currentspec, currentax)
                 self.format_overview_plot(currentax,currentspec)
                 plotidx += 1
             if pdf:
@@ -72,11 +72,11 @@ class OverView(object):
             
         pdf_file.close()
         
-    def plotEkin(self, spec, ax):
+    def plot_ekin(self, spec, ax):
         #self.ax.set_xlabel(r'E$_{kin}$ (eV)')
         #self.ax.set_ylabel('Intensity (a.u.)')
         ax.set_xlim(0,spec.photonEnergy(spec.mdata.data('waveLength')))
-        ax.plot(spec.xdata['ebin'], spec.ydata['jacobyIntensity'], color='black')
+        ax.plot(spec.xdata['ebin'], spec.ydata['jIntensity'], color='black')
         ax.relim()
         ax.autoscale(axis='y')
         ax.set_ylim(bottom=0)

@@ -4,12 +4,12 @@ import re
 class Mdata(object):
     
     
-    def __init__(self, mdataDict, cfg):
-        self.__reference = cfg.mdataReference[mdataDict['machine']]
+    def __init__(self, mdataDict, mdataReference):
+        self.__reference = mdataReference
         self.__mdata = mdataDict
     
      
-    def __keyValid(self, key):
+    def __key_isvalid(self, key):
         '''
         True if key is a valid mdata key for this spec type.
         '''
@@ -19,7 +19,7 @@ class Mdata(object):
             return False
      
      
-    def __validValue(self, key, value):
+    def __validate_value(self, key, value):
         '''
         Returns a valid value or raises an error.
         '''
@@ -41,7 +41,7 @@ class Mdata(object):
     
     
     
-    def __askForKeyValue(self, key):
+    def __ask_for_key_value(self, key):
         value = input('Value of %s is missing or has wrong type. Please insert: ' % (key))
         return {key: value}
      
@@ -56,7 +56,7 @@ class Mdata(object):
             return self.__mdata[key]
      
      
-    def checkIfComplete(self):
+    def check_completeness(self):
         '''
         '''
         ref = self.__reference
@@ -68,21 +68,21 @@ class Mdata(object):
                     if mdata['specType'] in v[1] and v[2]:
                         if k in mdata:
                             try:
-                                mdata[k] = self.__validValue(k, mdata[k])
+                                mdata[k] = self.__validate_value(k, mdata[k])
                                 hasChanged = False
                             except:
-                                mdata.update(self.__askForKeyValue(k))
+                                mdata.update(self.__ask_for_key_value(k))
                                 hasChanged = True
                                 
                         else:
-                            mdata.update(self.__askForKeyValue(k))
+                            mdata.update(self.__ask_for_key_value(k))
                             hasChanged = True
                                   
         else:
             raise ValueError('No specType: Can not perform sanity check.')
         
     
-    def addTag(self, tag):
+    def add_tag(self, tag):
         'TODO: make more robust, e.g. check if tag is str.'
         l = self.__mdata['tags']
         if l.count(tag) == 0:
@@ -90,11 +90,11 @@ class Mdata(object):
         else:
             print('Tag already exists.')
     
-    def renameTag(self, parents, tag, newTag):
+    def rename_tag(self, parents, tag, newTag):
         l = self.__mdata['tags']
         self.__mdata['tags'] = [t.replace(tag,newTag) if re.search('(^|/)%s/?%s(/|$)'%(parents,tag), t) is not None else t for t in l]
        
-    def removeTag(self, tag):    
+    def remove_tag(self, tag):    
         'TODO: add method remove a whole tag tree at once.'
         l = self.__mdata['tags']
         if tag in l:
@@ -114,25 +114,25 @@ class Mdata(object):
             mdataToAdd = dict(newMdata) # make a copy so we can use popitem()
             while len(mdataToAdd) > 0:
                 k,v = mdataToAdd.popitem()
-                if self.__keyValid(k): 
+                if self.__key_isvalid(k): 
                     if k not in mdata:
-                        mdata[k]=self.__validValue(k, v)
+                        mdata[k]=self.__validate_value(k, v)
                     elif k == 'tags': # special case tags
                         if type(v) is list:
                             for t in v:
-                                self.addTag(t)
+                                self.add_tag(t)
                         else:
-                            self.addTag(v)
+                            self.add_tag(v)
                     elif update: #key exists, is not tags
-                        mdata[k]=self.__validValue(k, v)
+                        mdata[k]=self.__validate_value(k, v)
                     else:
-                        v = self.__validValue(k, v)
+                        v = self.__validate_value(k, v)
                         overwrite=''
                         while overwrite not in ['y', 'n']:
                             q = 'Key "%s" already exists. Overwrite "%s" with "%s"? [y|n]: ' % (k, str(mdata[k]), str(v))
                             overwrite = input(q)
                         if overwrite == 'y':# else keep
-                            mdata[k]=self.__validValue(k, v)
+                            mdata[k]=self.__validate_value(k, v)
                 else:
                     print('Failed to add "%s: %s". Key not allowed.' % (k, str(v)))
           

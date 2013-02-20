@@ -1,7 +1,7 @@
-
 from spec import *
+from legacyData import LegacyData
 #import config
-#import MdataUtils
+#import mdata
 #import pickle
 #import os
 #import numpy as np
@@ -10,7 +10,7 @@ from spec import *
 #def sha1Unique(mdata):
 #    return db.tableHas(mdata['specType'], ['sha1', mdata['sha1']])
 
-def fileStoragePossible(mdata):
+def is_filestorage_possible(mdata):
     paths = [mdata['datFile'], mdata['pickleFile']]
     if 'cfgFile' in mdata:
         paths.append(mdata['cfgFile'])
@@ -27,7 +27,7 @@ def fileStoragePossible(mdata):
     finally:
         return filestoragepossible
     
-def absPath(cfg, p):
+def abs_path(cfg, p):
     if not os.path.isabs(p):
         p = os.path.join(cfg.path['base'], p)
         
@@ -38,8 +38,8 @@ def archive(cfg, mdata):
     """Move raw data file(s) *.dat (and *.cfg) to raw data archive.
     Update mdata with file location.
     """
-    old_file = absPath(cfg, mdata['datFileOrig'])
-    new_file = absPath(cfg, mdata['datFile'])
+    old_file = abs_path(cfg, mdata['datFileOrig'])
+    new_file = abs_path(cfg, mdata['datFile'])
     if not os.path.exists(os.path.dirname(new_file)):
         os.mkdir(os.path.dirname(new_file))
     '''TODO: catch io exceptions'''
@@ -48,8 +48,8 @@ def archive(cfg, mdata):
         
     
     if 'cfgFileOrig' in mdata:
-        old_cfg = absPath(cfg, mdata['cfgFileOrig'])
-        new_cfg = absPath(cfg, mdata['cfgFile'])
+        old_cfg = abs_path(cfg, mdata['cfgFileOrig'])
+        new_cfg = abs_path(cfg, mdata['cfgFile'])
         if not os.path.exists(os.path.dirname(new_cfg)):
             os.mkdir(os.path.dirname(new_cfg))
         os.rename(old_cfg, new_cfg)
@@ -58,12 +58,12 @@ def archive(cfg, mdata):
     return movedFiles
 
 
-def moveBack(movedFiles):
+def move_back(movedFiles):
     for pair in movedFiles:
         os.rename(pair[0], pair[1])
 
 
-def lsRecursive(rootdir, suffix='.dat'):
+def ls_recursive(rootdir, suffix='.dat'):
     '''
     Populates a list with the full path of all files recursively found
     under rootdir with corresponding suffix.
@@ -71,7 +71,7 @@ def lsRecursive(rootdir, suffix='.dat'):
     Returns: list.
     '''
     fileList = []
-    rootdir = os.path.abspath(rootdir)
+    rootdir = os.path.abs_path(rootdir)
     if os.path.exists(rootdir):
         for root, subFolders, files in os.walk(rootdir):
             for f in files:
@@ -82,7 +82,7 @@ def lsRecursive(rootdir, suffix='.dat'):
     return fileList
 
  
-def importLegacyData(cfg, datFiles, commonMdata={}):
+def import_LegacyData(cfg, datFiles, commonMdata={}):
     '''Build a list, so we can work with lists only'''
     datFileList = []
     if type(datFiles) is list:
@@ -91,7 +91,7 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
         datFileList.append(datFiles)
     
     '''Build a list of spec objects'''
-    specMap = {'ms': mSpec, 'pes': peSpec, 'pfs': pfSpec}
+    specMap = {'ms': SpecMs, 'pes': SpecPe, 'pfs': SpecPf}
     specList = []
     movedFiles =[]
     failedImports = []
@@ -108,11 +108,11 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
             failedImports.append([datFile, 'LegacyData creation failed: %s'%e])
             #raise
             continue
-        if not db.tableHasSha1(mi.mdata.data('specType'), mi.mdata.data('sha1')) and mi.mdata.data('sha1') not in sha1ToImport:
+        if not db.table_has_sha1(mi.mdata.data('specType'), mi.mdata.data('sha1')) and mi.mdata.data('sha1') not in sha1ToImport:
             '''TODO: handle special files with identical sha1 (e.g. "flat line"-spectra).
             It might be interesting to have them in the db. Allow fake sha1 = sha1+unix 
             time stamp?'''
-            if fileStoragePossible(mi.mdata.data()):
+            if is_filestorage_possible(mi.mdata.data()):
                 print(os.path.basename(datFile), '''ready to convert ...
                 ''')
                 try:
@@ -131,7 +131,7 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
                     except Exception as e:
                         print('%s failed to import:'%datFile, e)
                         failedImports.append([datFile, 'Import error: %s.'%e])
-                        moveBack(moved)
+                        move_back(moved)
                     else:
                         movedFiles.extend(moved)
                         spec.mdata.rm('datFileOrig')
@@ -153,7 +153,7 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
     except Exception as e:
         print('Db population failed:', e)
         # remove all files in our data dir, from this import
-        moveBack(movedFiles)
+        move_back(movedFiles)
         for spec in specList:
             pickleFile = os.path.join(cfg.path['base'], spec.mdata.data('pickleFile'))
             os.remove(pickleFile)
@@ -170,16 +170,16 @@ def importLegacyData(cfg, datFiles, commonMdata={}):
     
 
             
-def loadPickle(cfg, pickleFile):
+def load_pickle(cfg, pickleFile):
     if not os.path.isabs(pickleFile):
         pickleFile = os.path.join(cfg.path['base'], pickleFile)
-    specMap = {'ms': mSpec, 'pes': peSpec, 'pfs': pfSpec}
+    specMap = {'ms': SpecMs, 'pes': SpecPe, 'pfs': SpecPf}
     with open(pickleFile, 'rb') as f:
             mdata, xdata, ydata = pickle.load(f)
     if mdata['clusterBaseUnit'] == 'Pt' and mdata['specType'] == 'pes':
-        spectrum = ptSpec(mdata, xdata, ydata, cfg)
+        spectrum = SpecPePt(mdata, xdata, ydata, cfg)
     elif mdata['clusterBaseUnit'] in ['H2O', 'D2O'] and mdata['specType'] == 'pes':
-        spectrum = waterSpec(mdata, xdata, ydata, cfg)
+        spectrum = SpecPeWater(mdata, xdata, ydata, cfg)
     else:
         spectrum = specMap[mdata['specType']](mdata, xdata, ydata, cfg)
     
@@ -203,7 +203,7 @@ def loadPickle(cfg, pickleFile):
 #    legacyDataSpecs = []
 #    for item in loadList:
 #        if type(item) is str: # should be path to pickle file
-#            spec = loadPickle(item)
+#            spec = load_pickle(item)
 #            pickleSpecs.append(spec)
 #        else:
 #            spec = loadLegacyData(item)

@@ -1,7 +1,10 @@
-from legacyData import *
+#from legacyData import *
 import scipy.constants as constants
+import numpy as np
+from mdata import Mdata
+import os.path
 #from plotlibs import *
-from dbshell import *
+from dbshell import Db
 #from recursive_import import *
 #from pes_sheet import *
 #from msplot import *
@@ -17,19 +20,23 @@ import load
 
 class Spec(object):
     def __init__(self, mdata, xdata, ydata, cfg):
-        self.mdata = MdataUtils.Mdata(mdata, cfg)
+        self.mdataReference = cfg.mdataReference['spec']
+        self.mdata = Mdata(mdata, self.mdataReference)
         self.xdata = xdata
         self.ydata = ydata
         self.cfg = cfg
         
     
+    def update_mdata_reference(self, specTypeClass, cfg):
+        self.mdataReference.update(cfg.mdataReference[specTypeClass])
     
-    def commitDb(self, update=True):
+    
+    def commit_db(self, update=True):
         with Db(self.mdata.data('machine'), self.cfg) as db:
             db.add(self, update=update)
         
         
-    def commitPickle(self):
+    def commit_pickle(self):
         '''
         Stores the self.mdata.data(), self.xdata, self.ydata dicts in a pickle file under the path:
         config.path['data']/<year>/<recTime>_<sha1>.pickle
@@ -43,22 +50,21 @@ class Spec(object):
             
             
     def commit(self, update=True):
-        self.commitPickle()
-        self.commitDb(update=update)
+        self.commit_pickle()
+        self.commit_db(update=update)
         
     '''TODO: make privat'''    
-    def calcTof(self):
+    def calc_tof(self):
         self.xdata['tof'] = self.xdata['idx']*self.mdata.data('timePerPoint')-self.mdata.data('triggerOffset')-self.mdata.data('timeOffset')
 
-    def photonEnergy(self, waveLength):
+    def photon_energy(self, waveLength):
         """Calculates photon energy in eV for a given wave length.
         
         Returns: float."""
-        photonEnergy = constants.h*constants.c/(constants.e*waveLength)
+        photon_energy = constants.h*constants.c/(constants.e*waveLength)
+        return photon_energy
         
-        return photonEnergy
-        
-    def _fixNegIntensities(self, ydataKey='rawIntensity', newKey='intensity'):
+    def _fix_neg_intensities(self, ydataKey='rawIntensity', newKey='intensity'):
         """
         The Oscilloscope sets the value for bins without counts to the value of the frame of display.
         So it's safe to set them to 0. 
@@ -66,36 +72,37 @@ class Spec(object):
         fixedIntensity = (self.ydata[ydataKey] + np.abs(self.ydata[ydataKey]))/2
         self.ydata[newKey] = fixedIntensity
     
-    def __calcSubIntensities(self, bgSpec):
+    def __calc_sub_intensities(self, bgSpec):
         self.ydata['intensitySubRaw'] = self.ydata['intensity'] - bgSpec.ydata['intensity']
-        self._fixNegIntensities('intensitySubRaw', 'intensitySub')
+        self._fix_neg_intensities('intensitySubRaw', 'intensitySub')
     
-    def subtractBg(self, bgFile, isUpDown=False):
+    def subtract_bg(self, bgFile, isUpDown=False):
         bgSpec = load.loadPickle(self.cfg, bgFile)
         if not self.mdata.data('specType') == bgSpec.mdata.data('specType'):
             raise ValueError('Background file has different spec type.')
-        self.mdata.update({'subtractBgBgFile': bgFile})
-        'TODO: tag managment. Right now the same tag(s) is(are) added, each time subtractBg is called.'
+        self.mdata.update({'subtract_bgBgFile': bgFile})
+        'TODO: tag managment. Right now the same tag(s) is(are) added, each time subtract_bg is called.'
         if isUpDown:
-            bgSpec.mdata.update({'tags': ['background', 'up/down'], 'subtractBgSpecFile': self.mdata.data('pickleFile')})
+            bgSpec.mdata.update({'tags': ['background', 'up/down'], 'subtract_bgSpecFile': self.mdata.data('pickleFile')})
             self.mdata.update({'tags': ['up/down']})
         else:
-            bgSpec.mdata.update({'tags': ['background'], 'subtractBgSpecFile': self.mdata.data('pickleFile')})
-        self.__calcSubIntensities(bgSpec)
+            bgSpec.mdata.update({'tags': ['background'], 'subtract_bgSpecFile': self.mdata.data('pickleFile')})
+        self.__calc_sub_intensities(bgSpec)
         self.commit()
         bgSpec.commit()
 
 
         
 
-class peSpec(Spec):
+class SpecPe(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
-        print('__init__: Init peSpec')
+        print('__init__: Init SpecPe')
         Spec.__init__(self, mdata, xdata, ydata, cfg)
+        self.update_mdata_reference(mdata['specTypeClass'], cfg)
         self._pFactor = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength'))**2
-        self._hv = self.photonEnergy(self.mdata.data('waveLength'))
+        self._hv = self.photon_energy(self.mdata.data('waveLength'))
         if len(self.xdata) == 1:
-            self.calcSpec()
+            self.calc_spec_data()
         #print 'Assigning view.ViewPes'
         self.view = view.ViewPes(self)
         
@@ -105,38 +112,38 @@ class peSpec(Spec):
     def ekin(self, t, gauge_scale=1, gauge_offset=0):
         return self._hv - self.ebin(t, gauge_scale, gauge_offset)
         
-    def tGauged(self, t, gauge_scale, gauge_offset):
+    def calc_tof_gauged(self, t, gauge_scale, gauge_offset):
         return np.sqrt(self._pFactor/self.ekin(t, gauge_scale, gauge_offset))
         
-    def jTrans(self, intensity, t):
+    def jtrans(self, intensity, t):
         return intensity*t**3/(2*self._pFactor)
     
-    def jTransInv(self, intensity, t):
+    def jtrans_inv(self, intensity, t):
         return intensity*2*self._pFactor/t**3
     
     
-    def __calcEkin(self, newKey='ekin', gauge_scale=1, gauge_offset=0):
+    def __calc_ekin(self, newKey='ekin', gauge_scale=1, gauge_offset=0):
         self.xdata[newKey] = self.ekin(self.xdata['tof'], gauge_scale, gauge_offset) 
         #self.xdata['ekin'] = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength')/self.xdata['tof'])**2
     
-    def __calcEbin(self, newKey='ebin', gauge_scale=1, gauge_offset=0):
+    def __calc_ebin(self, newKey='ebin', gauge_scale=1, gauge_offset=0):
         self.xdata[newKey] = self.ebin(self.xdata['tof'], gauge_scale, gauge_offset)
-        #self.xdata['ebin'] = self.photonEnergy(self.mdata.data('waveLength')) - self.xdata['ekin']
+        #self.xdata['ebin'] = self.photon_energy(self.mdata.data('waveLength')) - self.xdata['ekin']
         
-    def __calcJacobyIntensity(self, newKey='jacobyIntensity', intensityKey='intensity', tofKey='tof'):
-        self.ydata[newKey] = self.jTrans(self.ydata[intensityKey], self.xdata[tofKey])
+    def __calc_jacoby_intensity(self, newKey='jIntensity', intensityKey='intensity', tofKey='tof'):
+        self.ydata[newKey] = self.jtrans(self.ydata[intensityKey], self.xdata[tofKey])
         #self.ydata[newKey] = self.ydata[ydataKey]/(2*self.xdata['ekin']/self.xdata['tof'])
         
 #    def __calcEbinGauged(self):
 #        self.xdata['ebinGauged'] = (self.xdata['ebin'] - self.mdata.data('gaugePar')['offset'])/self.mdata.data('gaugePar')['scale']
         
     
-    def calcSpec(self):
-        self.calcTof()
-        self.__calcEkin()
-        self.__calcEbin()
-        self._fixNegIntensities()
-        self.__calcJacobyIntensity()
+    def calc_spec_data(self):
+        self.calc_tof()
+        self.__calc_ekin()
+        self.__calc_ebin()
+        self._fix_neg_intensities()
+        self.__calc_jacoby_intensity()
         
         
     def gauge(self, gaugeRef):
@@ -145,63 +152,64 @@ class peSpec(Spec):
         scale, offset = gaugeSpec.mdata.data('fitPar')[-2:]
         self.mdata.update({'gaugePar': {'scale': scale, 'offset': offset}})
         # calc xdata gauged
-        self.__calcEbin(newKey='ebinGauged', gauge_scale=scale, gauge_offset=offset)
-        self.__calcEkin(newKey='ekinGauged', gauge_scale=scale, gauge_offset=offset)
-        self.xdata['tofGauged'] = self.tGauged(self.xdata['tof'], gauge_scale=scale, gauge_offset=offset)
+        self.__calc_ebin(newKey='ebinGauged', gauge_scale=scale, gauge_offset=offset)
+        self.__calc_ekin(newKey='ekinGauged', gauge_scale=scale, gauge_offset=offset)
+        self.xdata['tofGauged'] = self.calc_tof_gauged(self.xdata['tof'], gauge_scale=scale, gauge_offset=offset)
         # calc ydata gauged
-        self.__calcJacobyIntensity(newKey='jacobyIntensityGauged', intensityKey='intensity', tofKey='tofGauged')
-        if 'jacobyIntensitySub' in list(self.ydata.keys()):
-            self.__calcJacobyIntensity(newKey='jacobyIntensityGaugedSub',
+        self.__calc_jacoby_intensity(newKey='jIntensityGauged', intensityKey='intensity', tofKey='tofGauged')
+        if 'jIntensitySub' in list(self.ydata.keys()):
+            self.__calc_jacoby_intensity(newKey='jIntensityGaugedSub',
                                        intensityKey='intensitySub', tofKey='tofGauged')
-        self.commitPickle()
+        self.commit_pickle()
         del gaugeSpec
         
-    def subtractBg(self, bgFile, isUpDown=True):
-        Spec.subtractBg(self, bgFile, isUpDown=isUpDown)
-        self.__calcJacobyIntensity(newKey='jacobyIntensitySub', intensityKey='intensitySub')
+    def subtract_bg(self, bgFile, isUpDown=True):
+        Spec.subtract_bg(self, bgFile, isUpDown=isUpDown)
+        self.__calc_jacoby_intensity(newKey='jIntensitySub', intensityKey='intensitySub')
         if 'gaugePar' in list(self.mdata.data().keys()):
-            self.__calcJacobyIntensity(newKey='jacobyIntensityGaugedSub',
+            self.__calc_jacoby_intensity(newKey='jIntensityGaugedSub',
                                        intensityKey='intensitySub', tofKey='tofGauged')
             
-        self.commitPickle()
+        self.commit_pickle()
         
         
-class ptSpec(peSpec):
+class SpecPePt(SpecPe):
     def __init__(self, mdata, xdata, ydata, cfg):
-        peSpec.__init__(self, mdata, xdata, ydata, cfg)
+        SpecPe.__init__(self, mdata, xdata, ydata, cfg)
+        self.update_mdata_reference(mdata['specTypeClass'], cfg)
         self.view = view.ViewPt(self)
              
         
-    def __fitPeakPos(self, peakPar):
+    def __fit_peak_pos(self, peakPar):
         return [p[0] for p in peakPar]
     
     
-    def __fitPeakPosTrans(self, peakPar):
+    def __fit_peak_pos_trans(self, peakPar):
         return [np.sqrt(self._pFactor/(self._hv-p[0])) for p in peakPar]
     
     
-    def __fitParInit(self, peakPar, yscale, scale, offset):
+    def __fit_par_init(self, peakPar, yscale, scale, offset):
         l = [i for p in peakPar if p[0] for i in [p[1]*yscale,p[2]]]
         l.extend([scale,offset])
         #l.extend([scale,offset])
         return np.array(l)
 
 
-    def __fitParInitTrans(self, peakPar, yscale, Eoff, toff, lscale):
+    def __fit_par_init_trans(self, peakPar, yscale, Eoff, toff, lscale):
         l = [i for p in peakPar if p[0] for i in [p[1]*yscale,p[2]]]
-        #l = [i for p in peakPar if p[0] for i in [self.jTransInv(p[1]*yscale, np.sqrt(self._pFactor/(self._hv-p[0]))),p[2]]]
+        #l = [i for p in peakPar if p[0] for i in [self.jtrans_inv(p[1]*yscale, np.sqrt(self._pFactor/(self._hv-p[0]))),p[2]]]
         l.extend([Eoff, toff, lscale])
         #print(l)
         return np.array(l)
     
     
-    def __getScale(self, xdata, ydata, xcenter, xinterval):
+    def __get_y_scale(self, xdata, ydata, xcenter, xinterval):
         xlb = np.abs(xdata-(xcenter-xinterval/2)).argmin()
         xub = np.abs(xdata-(xcenter+xinterval/2)).argmin()
         return ydata[xlb:xub].max()
     
     
-    def mGauss(self, x, peak_pos, parList):
+    def multi_gauss(self, x, peak_pos, parList):
         plist = list(parList)
         xlist = list(peak_pos)
         gauss = lambda x, m,A,sigma,scale,offset: A*np.exp(-(x-(scale*m+offset))**2/(2*sigma**2))
@@ -216,7 +224,7 @@ class ptSpec(peSpec):
         return mgauss
     
     
-    def mGaussTrans(self, t, peak_pos, parList):
+    def multi_gauss_trans(self, t, peak_pos, parList):
         plist = list(parList)
         xlist = list(peak_pos)
         #gaussTrans = lambda t,m,A,s,toff,Eoff: A*np.exp(-(self._hv - self._pFactor*(1/(t + toff)**2 + 1/Eoff**2) - m)**2/(2*s**2))*2*self._pFactor/(t + toff)**3
@@ -236,25 +244,25 @@ class ptSpec(peSpec):
         return mgaussTrans
     
     
-    def __err_mGauss(self, p,x,y,peak_pos):
-        return self.mGauss(x, peak_pos, p)-y
+    def __err_multi_gauss(self, p,x,y,peak_pos):
+        return self.multi_gauss(x, peak_pos, p)-y
     
     
-    def __err_mGaussTrans(self, p,t,y,peak_pos, constrain_par, constrain):
+    def __err_multi_gauss_trans(self, p,t,y,peak_pos, constrain_par, constrain):
         'TODO: move to cfg or specify, when called.'
         c_par = constrain_par # -1: lscale, -2: toff, -3: Eoff
         c = constrain
         if c[0]<p[c_par]<c[1]: # only allow fits with toff (47-5)ns +- 5ns
         #if 1.0<p[-1]<1.007: # limit effective flight length to a maximum +0.007% 
-            return self.mGaussTrans(t, peak_pos, p)-y
+            return self.multi_gauss_trans(t, peak_pos, p)-y
         else:
             return 1e6
-#        return self.mGaussTrans(t, peak_pos, p)-y
+#        return self.multi_gauss_trans(t, peak_pos, p)-y
     
     
-    def __fitMgauss(self, peakParRef, scale, offset, rel_y_min, cutoff):
+    def __fit_multi_gauss(self, peakParRef, scale, offset, rel_y_min, cutoff):
         xdata = self.xdata['ebin']
-        ydata = self.ydata['jacobyIntensity']
+        ydata = self.ydata['jIntensity']
         if cutoff == None:
             ebin_max = self.xdata['ebin'].max()
         elif 0 < cutoff < self.xdata['ebin'].max():
@@ -262,17 +270,17 @@ class ptSpec(peSpec):
         else:
             raise ValueError('cutoff must be between 0 and %.2f'%(self.xdata['ebin'].max()))
         peakPar = [p for p in peakParRef if p[0]<ebin_max and p[1]>rel_y_min]
-        fitValues = {'fitPeakPos': self.__fitPeakPos(peakPar)}
+        fitValues = {'fitPeakPos': self.__fit_peak_pos(peakPar)}
         xcenter = fitValues['fitPeakPos'][0]
-        yscale = self.__getScale(xdata, ydata, xcenter, 0.2)
-        fitValues['fitPar0'] = self.__fitParInit(peakPar, yscale, scale, offset)
+        yscale = self.__get_y_scale(xdata, ydata, xcenter, 0.2)
+        fitValues['fitPar0'] = self.__fit_par_init(peakPar, yscale, scale, offset)
         p, covar, info, mess, ierr = leastsq(self.__err_mGauss, fitValues['fitPar0'],args=(xdata,ydata,fitValues['fitPeakPos']), full_output=True)
         fitValues.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
         
         return fitValues
 
 
-    def __fitMgaussTrans(self, peakParRef, Eoff, toff, lscale, rel_y_min, cutoff, constrain_par, constrain):
+    def __fit_multi_gauss_trans(self, peakParRef, Eoff, toff, lscale, rel_y_min, cutoff, constrain_par, constrain):
         xdata = self.xdata['tof']
         ydata = self.ydata['intensity']
         if cutoff == None:
@@ -282,10 +290,10 @@ class ptSpec(peSpec):
         else:
             raise ValueError('cutoff must be between 0 and %.2f. Got %.1f instead.'%(self.xdata['tof'].max(), cutoff))
         peakPar = [p for p in peakParRef if np.sqrt(self._pFactor/(self._hv-p[0]))<tof_max and p[1]>rel_y_min]
-        fitValues = {'fitPeakPosTof': self.__fitPeakPosTrans(peakPar)}
+        fitValues = {'fitPeakPosTof': self.__fit_peak_pos_trans(peakPar)}
         xcenter = peakParRef[0][0]
-        yscale = self.__getScale(self.xdata['ebin'], self.ydata['jacobyIntensity'], xcenter, 0.4)
-        fitValues['fitPar0Tof'] = self.__fitParInitTrans(peakPar, yscale, Eoff, toff, lscale)
+        yscale = self.__get_y_scale(self.xdata['ebin'], self.ydata['jIntensity'], xcenter, 0.4)
+        fitValues['fitPar0Tof'] = self.__fit_par_init_trans(peakPar, yscale, Eoff, toff, lscale)
         try:
             p, covar, info, mess, ierr = leastsq(self.__err_mGaussTrans, fitValues['fitPar0Tof'], 
                                                  args=(xdata,ydata,
@@ -310,14 +318,14 @@ class ptSpec(peSpec):
         Fits a multiple gauss to the pes.
         constrain_par: which parameter to constrain:  -1: lscale, -2: toff, -3: Eoff
         offset, scale: fit parameter
-        rel_y_min: minimum peak height of reference peaks (cfg.ptPeakPar) to be included in the fit.
+        rel_y_min: minimum peak height of reference peaks (cfg.pt_peakpar) to be included in the fit.
         '''
-        peakParRef = self.cfg.ptPeakPar[self.mdata.data('waveLength')]
+        peakParRef = self.cfg.pt_peakpar[self.mdata.data('waveLength')]
         try:
             if specType == 'ebin':
-                fitValues = self.__fitMgauss(peakParRef, scale, offset, rel_y_min, cutoff)
+                fitValues = self.__fit_multi_gauss(peakParRef, scale, offset, rel_y_min, cutoff)
             elif specType == 'tof':
-                fitValues = self.__fitMgaussTrans(peakParRef, Eoff, toff, lscale, rel_y_min, cutoff,
+                fitValues = self.__fit_multi_gauss_trans(peakParRef, Eoff, toff, lscale, rel_y_min, cutoff,
                                                   constrain_par, constrain)
             else:
                 raise ValueError('specType must be one of: "tof" or "ebin".')                
@@ -326,13 +334,14 @@ class ptSpec(peSpec):
             raise
         else:
             self.mdata.update(fitValues)
-            self.mdata.addTag('gauged')
+            self.mdata.add_tag('gauged')
 
 
 
-class waterSpec(peSpec):
+class SpecPeWater(SpecPe):
     def __init__(self, mdata, xdata, ydata, cfg):
-        peSpec.__init__(self, mdata, xdata, ydata, cfg)
+        SpecPe.__init__(self, mdata, xdata, ydata, cfg)
+        self.update_mdata_reference(mdata['specTypeClass'], cfg)
         self.view = view.ViewWater(self)
 
 
@@ -343,10 +352,10 @@ class waterSpec(peSpec):
         return y
     
 
-    def __glTrans(self, t, tmax, At, sg, sl):
+    def __gl_trans(self, t, tmax, At, sg, sl):
         y = np.zeros(t.shape)
         q = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength'))**2
-        hv = self.photonEnergy(self.mdata.data('waveLength'))
+        hv = self.photon_energy(self.mdata.data('waveLength'))
         ebin = lambda t: hv - q/t**2
         xmax = ebin(tmax)
         A = At*tmax/(2*(hv-xmax))
@@ -355,7 +364,7 @@ class waterSpec(peSpec):
         return y
     
     
-    def mGl(self, x, par):
+    def multi_gl(self, x, par):
         plist = list(par)
         mgl = 0
         sl =plist.pop()
@@ -366,7 +375,7 @@ class waterSpec(peSpec):
             mgl+=self.__gl(x, xmax, A, sg, sl)
         return mgl
     
-    def mGlTrans(self, x, par):
+    def multi_gl_trans(self, x, par):
         plist = list(par)
         mgl = 0
         sl =plist.pop()
@@ -374,27 +383,27 @@ class waterSpec(peSpec):
         while len(plist) > 0:
             A = plist.pop()
             xmax = plist.pop()
-            mgl+=self.__glTrans(x, xmax, A, sg, sl)
+            mgl+=self.__gl_trans(x, xmax, A, sg, sl)
         return mgl    
     
     
-    def __err_mGl(self, par, x, y):
-        return self.mGl(x, par)-y
+    def __err_multi_gl(self, par, x, y):
+        return self.multi_gl(x, par)-y
     
-    def __err_mGlTrans(self, par, x, y):
-        return self.mGlTrans(x, par)-y    
+    def __err_multi_gl_trans(self, par, x, y):
+        return self.multi_gl_trans(x, par)-y    
     
     
-    def __fitGl(self, fitPar0, cutoff, subtractBg, gauged):
+    def __fit_gl(self, fitPar0, cutoff, subtract_bg, gauged):
         if gauged:
             ebin_key = 'ebinGauged'
         else:
             ebin_key = 'ebin'
             
-        if subtractBg:
-            int_key = 'jacobyIntensitySub'
+        if subtract_bg:
+            int_key = 'jIntensitySub'
         else:
-            int_key = 'jacobyIntensity'
+            int_key = 'jIntensity'
             
         if type(cutoff) in [int,float]:
             xdata = self.xdata[ebin_key][self.xdata[ebin_key]<cutoff]
@@ -405,20 +414,20 @@ class waterSpec(peSpec):
         else:
             raise ValueError('Cutoff must be int or float')
         
-        fitValues = {'fitPar0': fitPar0, 'fitCutoff': cutoff, 'fitGauged': gauged, 'fitSubtractBg': subtractBg}
-        p, covar, info, mess, ierr = leastsq(self.__err_mGl, fitPar0, args=(xdata,ydata), full_output=True)
+        fitValues = {'fitPar0': fitPar0, 'fitCutoff': cutoff, 'fitGauged': gauged, 'fitsubtract_bg': subtract_bg}
+        p, covar, info, mess, ierr = leastsq(self.__err_multi_gl, fitPar0, args=(xdata,ydata), full_output=True)
         fitValues.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
         
         return fitValues
  
  
-    def __fitGlTrans(self, fitPar0, cutoff, subtractBg, gauged):
+    def __fit_gl_trans(self, fitPar0, cutoff, subtract_bg, gauged):
         if gauged:
             tof_key = 'tofGauged'
         else:
             tof_key = 'tof'
             
-        if subtractBg:
+        if subtract_bg:
             int_key = 'intensitySub'
         else:
             int_key = 'intensity'
@@ -432,21 +441,21 @@ class waterSpec(peSpec):
         else:
             raise ValueError('Cutoff must be int or float')
         
-        fitValues = {'fitPar0Tof': fitPar0, 'fitCutoffTof': cutoff, 'fitGaugedTof': gauged, 'fitSubtractBgTof': subtractBg}
-        p, covar, info, mess, ierr = leastsq(self.__err_mGlTrans, fitPar0, args=(xdata,ydata), full_output=True)
+        fitValues = {'fitPar0Tof': fitPar0, 'fitCutoffTof': cutoff, 'fitGaugedTof': gauged, 'fitsubtract_bgTof': subtract_bg}
+        p, covar, info, mess, ierr = leastsq(self.__err_multi_gl_trans, fitPar0, args=(xdata,ydata), full_output=True)
         fitValues.update({'fitParTof': p, 'fitCovarTof': covar, 'fitInfoTof': [info, mess, ierr]})
         
         return fitValues 
     
     
-    def fit(self, specType, fitPar0, cutoff=None, subtractBg=None, gauged=None):
+    def fit(self, specType, fitPar0, cutoff=None, subtract_bg=None, gauged=None):
         fitPar0 = np.array(fitPar0)
-        '''If subtractBg and/or gauged are None, try to find useful defaults.'''
-        if subtractBg == None:
-            if 'subtractBgBgFile' in list(self.mdata.data().keys()):
-                subtractBg = True
+        '''If subtract_bg and/or gauged are None, try to find useful defaults.'''
+        if subtract_bg == None:
+            if 'subtract_bgBgFile' in list(self.mdata.data().keys()):
+                subtract_bg = True
             else:
-                subtractBg = False
+                subtract_bg = False
         if gauged == None:
             if 'gaugeRef' in list(self.mdata.data().keys()):
                 gauged = True
@@ -455,9 +464,9 @@ class waterSpec(peSpec):
         
         try:
             if specType == 'ebin':
-                fitValues = self.__fitGl(fitPar0, cutoff, subtractBg, gauged)
+                fitValues = self.__fit_gl(fitPar0, cutoff, subtract_bg, gauged)
             elif specType == 'tof':
-                fitValues = self.__fitGlTrans(fitPar0, cutoff, subtractBg, gauged)
+                fitValues = self.__fit_gl_trans(fitPar0, cutoff, subtract_bg, gauged)
             else:
                 raise ValueError('specType must be one of: "tof" or "ebin".')
         except:
@@ -468,13 +477,13 @@ class waterSpec(peSpec):
             self.mdata.update(fitValues)
 
 
-#    def fitTof(self, fitPar0, cutoff=None, subtractBg=None, gauged=None):
-#        '''If subtractBg and/or gauged are None, try to find useful defaults.'''
-#        if subtractBg == None:
-#            if 'subtractBgBgFile' in self.mdata.data().keys():
-#                subtractBg = True
+#    def fitTof(self, fitPar0, cutoff=None, subtract_bg=None, gauged=None):
+#        '''If subtract_bg and/or gauged are None, try to find useful defaults.'''
+#        if subtract_bg == None:
+#            if 'subtract_bgBgFile' in self.mdata.data().keys():
+#                subtract_bg = True
 #            else:
-#                subtractBg = False
+#                subtract_bg = False
 #        if gauged == None:
 #            if 'gaugeRef' in self.mdata.data().keys():
 #                gauged = True
@@ -482,7 +491,7 @@ class waterSpec(peSpec):
 #                gauged =False
 #        
 #        try:
-#            fitValues = self.__fitGlTrans(fitPar0, cutoff, subtractBg, gauged)
+#            fitValues = self.__fit_gl_trans(fitPar0, cutoff, subtract_bg, gauged)
 #        except:
 #            #self.mdata.update(fitValues)
 #            raise
@@ -492,16 +501,17 @@ class waterSpec(peSpec):
 
 
 
-class mSpec(Spec):
+class SpecMs(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
-        print('__init__: Init mSpec')
+        print('__init__: Init SpecMs')
         Spec.__init__(self, mdata, xdata, ydata, cfg)
+        self.update_mdata_reference(mdata['specTypeClass'], cfg)
         if len(self.xdata) == 1:
-            self.calcSpec() 
+            self.calc_spec_data() 
         self.view = view.ViewMs(self)
         
         
-    def calcMs(self, xkey='amu', clusterBaseUnitMass=1):
+    def calc_ms(self, xkey='amu', clusterBaseUnitMass=1):
 #        self.xdata[xkey] = ((self.xdata['tof']/
 #                             (self.mdata.data('referenceTime') - self.mdata.data('timeOffset'))
 #                             )**2)*self.mdata.data('referenceMass')/clusterBaseUnitMass
@@ -509,11 +519,11 @@ class mSpec(Spec):
                              self.mdata.data('referenceTime'))**2)*self.mdata.data('referenceMass')/clusterBaseUnitMass
         
     
-    def calcSpec(self):
-        self.calcTof()
-        self._fixNegIntensities()
-        self.calcMs()
-        self.calcMs(xkey='ms', clusterBaseUnitMass=self.mdata.data('clusterBaseUnitMass'))
+    def calc_spec_data(self):
+        self.calc_tof()
+        self._fix_neg_intensities()
+        self.calc_ms()
+        self.calc_ms(xkey='ms', clusterBaseUnitMass=self.mdata.data('clusterBaseUnitMass'))
         
         
     def gauge(self, unit='cluster'):
@@ -529,7 +539,7 @@ class mSpec(Spec):
         t_off = lambda n,dn,t1,t2: (np.sqrt(1-float(dn)/n)*t2 - t1)/(np.sqrt(1-float(dn)/n)-1)
         t_ref = lambda m_unit,dn,t1,t2,t_off: np.sqrt(193.96/(m_unit*dn)*((t2-t_off)**2 - (t1-t_off)**2))
         self.mdata.update({'timeOffset':0, 'referenceTime':0})
-        self.calcTof()
+        self.calc_tof()
         self.view.showTof()
         # Ask for t1,t2,dn
         no_valid_input = True
@@ -553,14 +563,14 @@ class mSpec(Spec):
         to = t_off(n, dn, t1, t2)
         tr = t_ref(m_unit,dn,t1,t2,to)
         self.mdata.update({'timeOffset': to, 'referenceTime': tr})
-        self.calcSpec()
+        self.calc_spec_data()
         
         
         
 
-class pfSpec(Spec):
-    def calcSpec(self):
-        self.__calcTof()
+class SpecPf(Spec):
+    def calc_spec_data(self):
+        self.__calc_tof()
 
 
 

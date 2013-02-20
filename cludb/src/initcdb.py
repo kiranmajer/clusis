@@ -6,42 +6,42 @@ import config
 
 
 
-def checkPath(p):
+def ensure_path(p):
     if not os.path.exists(p):
         os.makedirs(p)
     elif not os.access(p, os.W_OK):
         raise IOError('%s not accessible.' % p)
         
 
-def listAdapter(l):
+def list_adapter(l):
     return '<|>'.join(l)
 
-def listConverter(s):
+def list_converter(s):
     '''Not sure why we get byte out while put str in.'''
     s = s.decode('utf-8')
     return s.split('<|>')
 
-def prepSql():
-    sqlite3.register_adapter(list, listAdapter)
-    sqlite3.register_converter('LIST', listConverter)
+def setup_sqlite3():
+    sqlite3.register_adapter(list, list_adapter)
+    sqlite3.register_converter('LIST', list_converter)
  
         
-def initDb(cfg):
+def init_db(cfg):
     for dbName, dbProps in cfg.db.items():
-        checkPath(dbProps['path'])
+        ensure_path(dbProps['path'])
         dbFileName = '%s.db' % dbName
         dbFile = os.path.join(dbProps['path'],dbFileName)
         if not os.path.exists(dbFile):
             with Db(dbName, cfg) as db:
                 for specType in dbProps['layout'].keys():
-                    db.createTable(specType)
+                    db.create_table(specType)
             
     
         
         
-def initCludb(userStorageDir):
+def init_cludb(user_storage_dir):
     'TODO: provide global cfg object.'
-    cfg = config.Cfg(userStorageDir)
+    cfg = config.Cfg(user_storage_dir)
 #    cfg = ConfigParser.SafeConfigParser()
 #    "set base path where all cludb files live"
 #    if mainStorageDir == config.mainStorageDir:
@@ -57,13 +57,13 @@ def initCludb(userStorageDir):
 #    config.mainStorageDir = mainStorageDir
     for p in cfg.path.values():
         if os.path.isabs(p):
-            checkPath(p)
+            ensure_path(p)
         else:
             p = os.path.join(cfg.path['base'], p)
-            checkPath(p)
+            ensure_path(p)
     
-    prepSql()
-    initDb(cfg)
+    setup_sqlite3()
+    init_db(cfg)
     
     return cfg
                 

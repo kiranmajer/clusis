@@ -3,7 +3,7 @@ import load
 import time
 import os
 
-def updateMdata(specList, mdataDict, cfg):
+def update_mdata(specList, mdataDict, cfg):
     'TODO: open db only once'
     for entry in specList:
         print(entry[str('pickleFile')])
@@ -21,11 +21,11 @@ def updateMdata(specList, mdataDict, cfg):
         del cs
     
 
-def removeTag(specList, tag, cfg):
+def remove_tag(specList, tag, cfg):
     for entry in specList:
         cs =  load.loadPickle(cfg, entry[str('pickleFile')])
         try:
-            cs.mdata.removeTag(tag)
+            cs.mdata.remove_tag(tag)
         except:
             raise
         else:
@@ -34,7 +34,7 @@ def removeTag(specList, tag, cfg):
         del cs
         
         
-def listMdata(specList, items, cfg):
+def list_mdata(specList, items, cfg):
     mdataList = [items]
     rowCount = 1
     for s in specList:
@@ -53,11 +53,11 @@ def listMdata(specList, items, cfg):
 
 
 
-def listMdataPtFit(specList, cfg):
-    def formatRecTime(unixtime):
+def list_mdata_ptfit(specList, cfg):
+    def format_recTime(unixtime):
         return time.strftime('%d.%m.%Y', time.localtime(unixtime))
     
-    def formatDatFile(datfile):
+    def format_datFile(datfile):
         return os.path.basename(datfile)
     
     items = ['recTime', 'datFile', 'fitParTof']
@@ -80,17 +80,17 @@ def listMdataPtFit(specList, cfg):
     print('E_off [meV]'.ljust(6))
     lastDate = ''
     for row in mdataList:
-        if not formatRecTime(row[0]) == lastDate:
+        if not format_recTime(row[0]) == lastDate:
             print('-'*70)
-        print(formatRecTime(row[0]).ljust(10+3), end=' ')
-        print(formatDatFile(row[1]).ljust(13+3), end=' ')
+        print(format_recTime(row[0]).ljust(10+3), end=' ')
+        print(format_datFile(row[1]).ljust(13+3), end=' ')
         print(str(round(row[2][-1],3)).ljust(7+3), end=' ')
         print(str(round(row[2][-2]*1e9,2)).ljust(10+3), end=' ')
         print(str(round(row[2][-3]*1e3,2)).ljust(6))
-        lastDate = formatRecTime(row[0])
+        lastDate = format_recTime(row[0])
         
         
-def regaugePt(specList,cfg):
+def regauge_pt(specList,cfg):
     for s in specList:
         cs = load.loadPickle(cfg,s[str('pickleFile')])
         try:
@@ -104,10 +104,10 @@ def regaugePt(specList,cfg):
         else:
             cs.commit()
         del cs
-    listMdataPtFit(specList,cfg)
+    list_mdata_ptfit(specList,cfg)
     
     
-def showAll(specList,cfg):
+def show_all(specList,cfg):
     sl=[]
     for s in specList:
         cs = load.loadPickle(cfg,s[str('pickleFile')])
@@ -115,7 +115,7 @@ def showAll(specList,cfg):
         sl.append(cs)
     return sl
 
-def specList(slist,cfg):
+def list_of_specs(slist,cfg):
     sl=[]
     for s in slist:
         cs = load.loadPickle(cfg,s[str('pickleFile')])
