@@ -17,7 +17,8 @@ class LegacyData(object):
         self.datfile_orig = os.path.abspath(fileToImport)
         self.metadata = {'datFileOrig': os.path.abspath(fileToImport),
                          'tags': [],
-                         'machine': machine}
+                         'machine': machine,
+                         'info': ''}
         self.cfg = cfg
         self.header = []
         self.data = []

@@ -61,6 +61,8 @@ class View(object):
         
     
     def set_xlabel_time(self, ax, label, time_unit):
+        if time_unit not in [1, 1e-3, 1e-6, 1e-9]:
+            raise ValueError('time_unit must be one of: 1, 1e-3, 1e-6, 1e-9.')
         prefix_map = ['', 'm', '\mu ', 'n']
         prefix = prefix_map[int(abs(log10(time_unit)/3))]
         ax.set_xlabel(r'{0} (${1}s$)'.format(label, prefix))
@@ -68,52 +70,65 @@ class View(object):
         
 
     def plot_idx(self, ax, subtractBg=False):
-        ax.set_xlabel('Index')
-        ax.set_ylabel('Intensity (a.u.)')
-        ax.set_xlim(0,self.spec.xdata['idx'][-1])
         if subtractBg:
             intensityKey = 'intensitySub'
         else:
             intensityKey = 'intensity'
-        ax.plot(self.spec.xdata['idx'], self.spec.ydata[intensityKey], color='black')
-        ax.relim()
-        ax.autoscale(axis='y')       
+        ax.plot(self.spec.xdata['idx'], self.spec.ydata[intensityKey], color='black')      
             
             
     def show_idx(self, subtractBg=False):
         self._single_fig_output()
         self.plot_idx(self.ax, subtractBg=subtractBg)
+        self.ax.set_xlabel('Index')
+        self.ax.set_ylabel('Intensity (a.u.)')
+        self.ax.set_xlim(0,self.spec.xdata['idx'][-1])
+        self.ax.relim()
+        self.ax.autoscale(axis='y')         
         self.addtext_file_id(self.ax)
         self.fig.show()
         
         
-    def plot_tof(self, ax, showGauged=False, subtractBg=False,
+    def plot_tof(self, ax, show_gauged=False, subtractBg=False,
                  time_label='Flight Time', timeUnit=1e-6,
                  xlim=['auto', 'auto']):
-        'TODO: adapt for more time units'
-        if xlim[0] == 'auto':
-            xlim[0] = self.spec.xdata['tof'][0]/timeUnit
-        if xlim[1] == 'auto':
-            xlim[1] = self.spec.xdata['tof'][-1]/timeUnit
-        self.set_xlabel_time(ax, label=time_label, time_unit=timeUnit)
-        ax.set_ylabel('Intensity (a.u.)')
-        ax.set_xlim(xlim[0],xlim[1])
+        print('plot_tof called with xlim =', xlim)
+        # set ydata_key
         if subtractBg:
-            intensityKey = 'intensitySub'
+            ydata_key = 'intensitySub'
         else:
-            intensityKey = 'intensity'        
-        ax.plot(self.spec.xdata['tof']/timeUnit, self.spec.ydata[intensityKey], color='black')
+            ydata_key = 'intensity'
+        # set xdat_key
+        if show_gauged:
+            xdata_key = 'tofGauged'
+        else:
+            xdata_key = 'tof'
+        ax.plot(self.spec.xdata[xdata_key]/timeUnit, self.spec.ydata[ydata_key], color='black')
+        x_lim = [0,1]
+        if xlim[0] == 'auto':
+            x_lim[0] = self.spec.xdata[xdata_key][0]/timeUnit
+        else:
+            x_lim[0] = xlim[0]
+        if xlim[1] == 'auto':
+            x_lim[1] = self.spec.xdata[xdata_key][-1]/timeUnit
+        else:
+            x_lim[1] = xlim[1]
+        ax.set_xlim(x_lim[0], x_lim[1])
         ax.relim()
-        ax.autoscale(axis='x')
         ax.autoscale(axis='y')
 
 
-    def show_tof(self, subtractBg=False, time_label='Time',
+    def show_tof(self, show_gauged=False, subtractBg=False, time_label='Time',
                  timeUnit=1e-6, xlim=['auto', 'auto']):
+        print('show_tof called with xlim =', xlim)
         self._single_fig_output()
-        self.plot_tof(self.ax, subtractBg=subtractBg, time_label=time_label,
-                      timeUnit=timeUnit, xlim=xlim)        
+        self.plot_tof(self.ax, show_gauged=show_gauged, subtractBg=subtractBg,
+                      time_label=time_label, timeUnit=timeUnit, xlim=xlim)
+        self.set_xlabel_time(self.ax, label=time_label, time_unit=timeUnit)
+        self.ax.set_ylabel('Intensity (a.u.)')
         self.addtext_file_id(self.ax)
+        if show_gauged:
+            self.addtext_gaugemarker(self.ax)
         self.fig.show()
         
         
@@ -157,18 +172,18 @@ class ViewPes(View):
         self.fig.show()
 
 
-    def plot_ebin(self, ax, showGauged=False, subtractBg=False):
+    def plot_ebin(self, ax, show_gauged=False, subtractBg=False):
         ax.set_xlabel(r'E$_{bin}$ (eV)')
         ax.set_ylabel('Intensity (a.u.)')
         ax.set_xlim(0,self.spec.photonEnergy(self.spec.mdata.data('waveLength')))
         gauged = False
         if 'ebinGauged' in list(self.spec.xdata.keys()):
-            if showGauged:
+            if show_gauged:
                 ebinKey = 'ebinGauged'
                 gauged = True
             else:
                 ebinKey = 'ebin'
-        elif showGauged and self.spec.mdata.data('clusterBaseUnit') not in ['Pt']:
+        elif show_gauged and self.spec.mdata.data('clusterBaseUnit') not in ['Pt']:
             print('Spec is not gauged! Plotting normal spectrum instead.')
             ebinKey = 'ebin'
         else:
@@ -184,9 +199,9 @@ class ViewPes(View):
         return gauged
 
 
-    def show_ebin(self, showGauged=True, subtractBg=False):
+    def show_ebin(self, show_gauged=True, subtractBg=False):
         self._single_fig_output()
-        gauged = self.plot_ebin(self.ax, showGauged=showGauged, subtractBg=subtractBg)
+        gauged = self.plot_ebin(self.ax, show_gauged=show_gauged, subtractBg=subtractBg)
         if gauged:
             self.addtext_gaugemarker(self.ax)        
         self.addtext_file_id(self.ax)
@@ -350,10 +365,10 @@ class ViewWater(ViewPes):
         if fitPar in list(self.spec.mdata.data().keys()):
             self._single_fig_output()
             if fitPar in ['fitPar', 'fitPar0']:
-                gauged = self.plot_ebin(self.ax, showGauged=self.spec.mdata.data('fitGauged'),
+                gauged = self.plot_ebin(self.ax, show_gauged=self.spec.mdata.data('fitGauged'),
                                        subtractBg=self.spec.mdata.data('fitSubtractBg'))
             else:
-                gauged = self.plot_ebin(self.ax, showGauged=self.spec.mdata.data('fitGaugedTof'),
+                gauged = self.plot_ebin(self.ax, show_gauged=self.spec.mdata.data('fitGaugedTof'),
                                        subtractBg=self.spec.mdata.data('fitSubtractBgTof'))
             self.plot_ebin_fit(self.ax, fitPar)
             self.addtext_file_id(self.ax)
@@ -389,7 +404,7 @@ class ViewWater(ViewPes):
     def show_tof_fit(self, fitPar='fitParTof', timeUnit=1e-6):
         if fitPar in list(self.spec.mdata.data().keys()):
             self._single_fig_output()
-            gauged = self.plot_tof(self.ax, showGauged=self.spec.mdata.data('fitGaugedTof'),
+            gauged = self.plot_tof(self.ax, show_gauged=self.spec.mdata.data('fitGaugedTof'),
                                    subtractBg=self.spec.mdata.data('fitSubtractBgTof'),
                                    timeUnit=timeUnit)
             self.plot_tof_fit(self.ax, fitPar, timeUnit=timeUnit)
