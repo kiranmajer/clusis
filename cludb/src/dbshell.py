@@ -200,7 +200,7 @@ class Db(object):
             waves = []
             wavesQuery = ''
             'TODO: adapt for variable machine type.'
-            refWaves = self.__cfg.mdataReference['casi']['waveLength'][0]
+            refWaves = self.__cfg.waveLengths
             print(refWaves)
             if type(waveLength) is list:
                 waves.extend(waveLength)
@@ -229,27 +229,32 @@ class Db(object):
             
         # build select part
         sql = "SELECT * "
-        whereItems = []
-        for v in q.values():
-            #print 'processing: ', k, v
-            if v[1] is not None:
-                whereItems.append(v[0](v[1]))
-        if len(whereItems) == 0:
-            raise ValueError('Nothing to query.')
-        sql = sql.rstrip(', ')
+        #if len(whereItems) == 0:
+        #    raise ValueError('Nothing to query.')
+        #sql = sql.rstrip(', ')
+        
         # build from part
         if specType in list(self.__dbProps['layout'].keys()):
             sql += ' FROM %s '%specType
         else:
             raise ValueError('Unknown specType: %s'%specType)
+        
         # build where part
-        sql += 'WHERE '
-        for i in whereItems:
-            sql += i
-        sql = sql.rstrip(' AND ')
+        whereItems = []
+        for v in q.values():
+            #print 'processing: ', k, v
+            if v[1] is not None:
+                whereItems.append(v[0](v[1]))
+        if len(whereItems) > 0:
+            sql += 'WHERE '
+            for i in whereItems:
+                sql += i
+            sql = sql.rstrip(' AND ')
+        
         # build order part
-        orderResults = {'pes': ' ORDER BY clusterBaseUnit, clusterBaseUnitNumber, recTime',
-                        'ms': ' ORDER BY clusterBaseUnit, recTime'}
+        orderResults = {'pes': ' ORDER BY clusterBaseUnit, clusterBaseUnitNumber, recTime, datFile',
+                        'ms': ' ORDER BY clusterBaseUnit, recTime, datFile',
+                        'generic': 'ORDER BY recTime, datFile'}
         sql += orderResults[specType]
         
 
@@ -269,24 +274,13 @@ class Db(object):
             
             def print_head_pes():
                 print('Idx'.rjust(6),
-                              'element'.ljust(7+3),
-                              'size'.ljust(4+3),
-                              'waveLength'.ljust(10+3),
-                              'recTime'.ljust(12),
-                              'datFile'.ljust(16),
-                              'tags')
+                      'element'.ljust(7+3),
+                      'size'.ljust(4+3),
+                      'waveLength'.ljust(10+3),
+                      'recTime'.ljust(12),
+                      'datFile'.ljust(16),
+                      'tags')
                 
-            def print_head_ms():
-                print('Idx'.rjust(6),
-                              'element'.ljust(7+3),
-                              'recTime'.ljust(12),
-                              'datFile'.ljust(16),
-                              'tags')
-                
-            printHead = {'pes': print_head_pes,
-                         'ms': print_head_ms
-                         }            
-            
             def print_data_pes(row):
                 print(('%s  '%idx).rjust(6),
                       row['clusterBaseUnit'].ljust(7+3),
@@ -295,7 +289,13 @@ class Db(object):
                       format_RecTime(row['recTime']).ljust(12),
                       format_DatFile(row['datFile']).ljust(16),
                       end=" "
-                      )
+                      )                
+                
+            def print_head_ms():
+                print('Idx'.rjust(6),
+                      'recTime'.ljust(12),
+                      'datFile'.ljust(16),
+                      'tags')
                 
             def print_data_ms(row):
                 print(('%s  '%idx).rjust(6),
@@ -303,11 +303,28 @@ class Db(object):
                       format_RecTime(row['recTime']).ljust(12),
                       format_DatFile(row['datFile']).ljust(16),
                       end=" "
-                      )
+                      )            
                 
+            def print_head_generic():
+                print('Idx'.rjust(6),
+                      'recTime'.ljust(12),
+                      'datFile'.ljust(16),
+                      'tags')               
+             
+            def print_data_generic(row):
+                print(('%s  '%idx).rjust(6),   
+                      format_RecTime(row['recTime']).ljust(12),
+                      format_DatFile(row['datFile']).ljust(16),
+                      end=" "
+                      )                
+            
+            printHead = {'pes': print_head_pes,
+                         'ms': print_head_ms,
+                         'generic': print_head_generic}
+                           
             printData = {'pes': print_data_pes,
-                         'ms': print_data_ms
-                         } 
+                         'ms': print_data_ms,
+                         'generic': print_data_generic}
             
             
             printHead[specType]()

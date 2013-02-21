@@ -4,19 +4,16 @@ import re
 class Mdata(object):
     
     
-    def __init__(self, mdataDict, mdataReference):
-        self.__reference = mdataReference
+    def __init__(self, mdataDict, mdata_ref):
+        self.__reference = mdata_ref
         self.__mdata = mdataDict
     
      
-    def __key_isvalid(self, key):
-        '''
-        True if key is a valid mdata key for this spec type.
-        '''
-        if key in list(self.__reference.keys()) and self.__mdata['specType'] in self.__reference[key][1]:
-            return True
-        else:
-            return False
+#    def __key_isvalid(self, key):
+#        '''
+#        True if key is a valid mdata key for this spec type.
+#        '''
+#        return key in self.__reference.keys()
      
      
     def __validate_value(self, key, value):
@@ -42,7 +39,7 @@ class Mdata(object):
     
     
     def __ask_for_key_value(self, key):
-        value = input('Value of %s is missing or has wrong type. Please insert: ' % (key))
+        value = input('Value of {} is missing or has wrong type. Please insert: '.format(key))
         return {key: value}
      
      
@@ -61,25 +58,22 @@ class Mdata(object):
         '''
         ref = self.__reference
         mdata = self.__mdata
-        if 'specType' in mdata:
-            hasChanged = True
-            while hasChanged:
-                for k, v in ref.items():
-                    if mdata['specType'] in v[1] and v[2]:
-                        if k in mdata:
-                            try:
-                                mdata[k] = self.__validate_value(k, mdata[k])
-                                hasChanged = False
-                            except:
-                                mdata.update(self.__ask_for_key_value(k))
-                                hasChanged = True
-                                
-                        else:
+        hasChanged = True
+        while hasChanged:
+            for k, v in ref.items():
+                if v[1]: # obligatory?
+                    if k in mdata:
+                        try:
+                            mdata[k] = self.__validate_value(k, mdata[k])
+                            hasChanged = False
+                        except:
                             mdata.update(self.__ask_for_key_value(k))
                             hasChanged = True
-                                  
-        else:
-            raise ValueError('No specType: Can not perform sanity check.')
+                            
+                    else:
+                        mdata.update(self.__ask_for_key_value(k))
+                        hasChanged = True
+
         
     
     def add_tag(self, tag):
@@ -114,9 +108,9 @@ class Mdata(object):
             mdataToAdd = dict(newMdata) # make a copy so we can use popitem()
             while len(mdataToAdd) > 0:
                 k,v = mdataToAdd.popitem()
-                if self.__key_isvalid(k): 
-                    if k not in mdata:
-                        mdata[k]=self.__validate_value(k, v)
+                if k in self.__reference.keys(): 
+                    if k not in mdata.keys():
+                        mdata[k] = self.__validate_value(k, v)
                     elif k == 'tags': # special case tags
                         if type(v) is list:
                             for t in v:

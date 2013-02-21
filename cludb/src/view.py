@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import os.path
+from numpy import log10
+
 import load
 
 class View(object):
@@ -57,6 +59,13 @@ class View(object):
                
         ax.text(pos_x, pos_y, clusterId, transform = ax.transAxes, fontsize=fontsize, horizontalalignment=textPos)
         
+    
+    def set_xlabel_time(self, ax, label, time_unit):
+        prefix_map = ['', 'm', '\mu ', 'n']
+        prefix = prefix_map[int(abs(log10(time_unit)/3))]
+        ax.set_xlabel(r'{0} (${1}s$)'.format(label, prefix))
+        
+        
 
     def plot_idx(self, ax, subtractBg=False):
         ax.set_xlabel('Index')
@@ -78,13 +87,15 @@ class View(object):
         self.fig.show()
         
         
-    def plot_tof(self, ax, showGauged=False, subtractBg=False, timeUnit=1e-6, xlim=['auto', 'auto']):
+    def plot_tof(self, ax, showGauged=False, subtractBg=False,
+                 time_label='Flight Time', timeUnit=1e-6,
+                 xlim=['auto', 'auto']):
         'TODO: adapt for more time units'
         if xlim[0] == 'auto':
             xlim[0] = self.spec.xdata['tof'][0]/timeUnit
         if xlim[1] == 'auto':
             xlim[1] = self.spec.xdata['tof'][-1]/timeUnit
-        ax.set_xlabel(r'Flight Time ($\mu s$)')
+        self.set_xlabel_time(ax, label=time_label, time_unit=timeUnit)
         ax.set_ylabel('Intensity (a.u.)')
         ax.set_xlim(xlim[0],xlim[1])
         if subtractBg:
@@ -93,12 +104,15 @@ class View(object):
             intensityKey = 'intensity'        
         ax.plot(self.spec.xdata['tof']/timeUnit, self.spec.ydata[intensityKey], color='black')
         ax.relim()
+        ax.autoscale(axis='x')
         ax.autoscale(axis='y')
 
 
-    def show_tof(self, subtractBg=False, timeUnit=1e-6, xlim=['auto', 'auto']):
+    def show_tof(self, subtractBg=False, time_label='Time',
+                 timeUnit=1e-6, xlim=['auto', 'auto']):
         self._single_fig_output()
-        self.plot_tof(self.ax, subtractBg=subtractBg, timeUnit=timeUnit, xlim=xlim)        
+        self.plot_tof(self.ax, subtractBg=subtractBg, time_label=time_label,
+                      timeUnit=timeUnit, xlim=xlim)        
         self.addtext_file_id(self.ax)
         self.fig.show()
         
@@ -115,8 +129,9 @@ class ViewPes(View):
         self.fig.show()
 
         
-    def show_tof(self, subtractBg=False, timeUnit=1e-6, xlim=[0, 'auto']):
-        View.show_tof(self, subtractBg=subtractBg, timeUnit=timeUnit, xlim=xlim)
+    def show_tof(self, subtractBg=False, time_label='Flight Time', timeUnit=1e-6, xlim=[0, 'auto']):
+        View.show_tof(self, subtractBg=subtractBg, time_label=time_label, 
+                      timeUnit=timeUnit, xlim=xlim)
         self.addtext_cluster_id(self.ax, textPos='right')        
         self.fig.show()
         

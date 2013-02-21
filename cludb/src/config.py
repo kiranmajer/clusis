@@ -70,14 +70,15 @@ class Cfg():
         '''
         Mdata reference: 'key': [type|value list, obligatory]
         Only keys listed are allowed in mdata. Should prevent mdata from being tainted with typos.
-        
-        When modified -> increase mdata_version! 
         '''
-        'TODO: mdata version, status key for gauged, fitted, subtracted?'
+        self.wavelengths = [157e-9, 193e-9, 248e-9, 308e-9, 800e-9] # 193.35e-9, 248.4e-9
+        'When modified -> increase mdata_version!'
         self.mdata_version = 0.1
-        self.mdata_ref = {'spec': {'info': [str, False],
+        self.mdata_ref = {'spec': {'datFile': [str, True],
+                                   'info': [str, True],
                                    'machine': [['casi'], True],
                                    'mdataVersion': [[self.mdata_version], True],
+                                   'pickleFile': [str, True],
                                    'recTime': [float, True],
                                    'sha1': [str, True],
                                    'specType': [['ms', 'pes', 'pfs', 'generic'], True],
@@ -86,7 +87,24 @@ class Cfg():
                                    'timePerPoint': [float, True],
                                    'triggerOffset': [float, True],
                                    },
-                          'specMs': {'clusterBaseUnit': [str, True],
+                          'specMs': {'cfgFile': [str, False],
+                                     'ch1Tstart': [float, False],
+                                     'ch1Tstop': [float, False],
+                                     'ch2Tstart': [float, False],
+                                     'ch2Tstop': [float, False],
+                                     'ch3Tstart': [float, False],
+                                     'ch3Tstop': [float, False],
+                                     'ch4Tstart': [float, False],
+                                     'ch4Tstop': [float, False],
+                                     'ch5Tstart': [float, False],
+                                     'ch5Tstop': [float, False],
+                                     'ch6Tstart': [float, False],
+                                     'ch6Tstop': [float, False],
+                                     'ch7Tstart': [float, False],
+                                     'ch7Tstop': [float, False],
+                                     'ch8Tstart': [float, False],
+                                     'ch8Tstop': [float, False],
+                                     'clusterBaseUnit': [str, True],
                                      'clusterBaseUnitMass': [float, True],
                                      'clusterBaseUnitNumberStart': [int, True],
                                      'clusterBaseUnitNumberEnd': [int, True],
@@ -103,7 +121,24 @@ class Cfg():
                                      'timeOffset': [float, True],
                                      'trapTemp': [float, False],
                                      },
-                          'specPe': {'clusterBaseUnit': [str, True],
+                          'specPe': {'cfgFile': [str, False],
+                                     'ch1Tstart': [float, False],
+                                     'ch1Tstop': [float, False],
+                                     'ch2Tstart': [float, False],
+                                     'ch2Tstop': [float, False],
+                                     'ch3Tstart': [float, False],
+                                     'ch3Tstop': [float, False],
+                                     'ch4Tstart': [float, False],
+                                     'ch4Tstop': [float, False],
+                                     'ch5Tstart': [float, False],
+                                     'ch5Tstop': [float, False],
+                                     'ch6Tstart': [float, False],
+                                     'ch6Tstop': [float, False],
+                                     'ch7Tstart': [float, False],
+                                     'ch7Tstop': [float, False],
+                                     'ch8Tstart': [float, False],
+                                     'ch8Tstop': [float, False],
+                                     'clusterBaseUnit': [str, True],
                                      'clusterBaseUnitNumber': [int, True],
                                      'clusterDopant': [str, True],
                                      'clusterDopantNumber': [int, True],
@@ -117,7 +152,7 @@ class Cfg():
                                      'subtractBgSpecFile': [str, False],
                                      'timeOffset': [float, True],
                                      'trapTemp': [float, False],
-                                     'waveLength': [[157e-9, 193e-9, 248e-9, 308e-9, 800e-9], True], # 193.35e-9
+                                     'waveLength': [self.wavelengths, True],
                                      },
                           'specPePt': {'isFitted': [[True, False], True],
                                        'fitCovar': [np.ndarray, False],
@@ -138,7 +173,23 @@ class Cfg():
                                           'fitXdataKey': [['tof', 'tofGauged', 'ebin', 'ebinGauged'], False],
                                           'fitYdataKey': [['intensity', 'intensitySub', 'jIntensity', 'jIntensitySub'], False]
                                           },
-                          'specPf': {'clusterBaseUnit': [str, True],
+                          'specPf': {'cfgFile': [str, False],
+                                     'ch1Tstop': [float, False],
+                                     'ch2Tstart': [float, False],
+                                     'ch2Tstop': [float, False],
+                                     'ch3Tstart': [float, False],
+                                     'ch3Tstop': [float, False],
+                                     'ch4Tstart': [float, False],
+                                     'ch4Tstop': [float, False],
+                                     'ch5Tstart': [float, False],
+                                     'ch5Tstop': [float, False],
+                                     'ch6Tstart': [float, False],
+                                     'ch6Tstop': [float, False],
+                                     'ch7Tstart': [float, False],
+                                     'ch7Tstop': [float, False],
+                                     'ch8Tstart': [float, False],
+                                     'ch8Tstop': [float, False],
+                                     'clusterBaseUnit': [str, True],
                                      'clusterBaseUnitMass': [float, True],
                                      'clusterBaseUnitNumber': [int, True],
                                      'clusterDopant': [str, True],
@@ -151,7 +202,7 @@ class Cfg():
                                      'subtractBgSpecFile': [str, False],
                                      'timeOffset': [float, True],
                                      'trapTemp': [float, False],
-                                     'waveLength': [[157e-9, 193e-9, 248e-9, 308e-9, 800e-9], True], # 193.35e-9, 248.4e-9
+                                     'waveLength': [self.wavelengths, True],
                                      },
                           }
 
@@ -175,7 +226,7 @@ class Cfg():
         
         self.defaults = {'casi': {'pes': {'flightLength': 1.6,
                                           'mdataVersion': self.mdata_version,
-                                          'timeOffset': 0, # old pes 63e-9 (better derived by gauging)
+                                          #'timeOffset': 0, # old pes 63e-9 (better derived by gauging)
                                           'timePerPoint': 2e-9,
                                           'triggerOffset': 0,
                                           },

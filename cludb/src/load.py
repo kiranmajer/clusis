@@ -12,7 +12,7 @@ from legacyData import LegacyData
 
 def is_filestorage_possible(mdata):
     paths = [mdata['datFile'], mdata['pickleFile']]
-    if 'cfgFile' in mdata:
+    if 'cfgFile' in mdata.keys():
         paths.append(mdata['cfgFile'])
     
     try:
@@ -47,7 +47,7 @@ def archive(cfg, mdata):
     movedFiles = [[new_file, old_file]]
         
     
-    if 'cfgFileOrig' in mdata:
+    if 'cfgFileOrig' in mdata and mdata['specTypeClass'] not in ['spec']:
         old_cfg = abs_path(cfg, mdata['cfgFileOrig'])
         new_cfg = abs_path(cfg, mdata['cfgFile'])
         if not os.path.exists(os.path.dirname(new_cfg)):
@@ -71,7 +71,7 @@ def ls_recursive(rootdir, suffix='.dat'):
     Returns: list.
     '''
     fileList = []
-    rootdir = os.path.abs_path(rootdir)
+    rootdir = os.path.abspath(rootdir)
     if os.path.exists(rootdir):
         for root, subFolders, files in os.walk(rootdir):
             for f in files:
@@ -82,7 +82,7 @@ def ls_recursive(rootdir, suffix='.dat'):
     return fileList
 
  
-def import_LegacyData(cfg, datFiles, commonMdata={}):
+def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}):
     '''Build a list, so we can work with lists only'''
     datFileList = []
     if type(datFiles) is list:
@@ -91,7 +91,12 @@ def import_LegacyData(cfg, datFiles, commonMdata={}):
         datFileList.append(datFiles)
     
     '''Build a list of spec objects'''
-    specMap = {'ms': SpecMs, 'pes': SpecPe, 'pfs': SpecPf}
+    typeclass_map = {'spec': Spec,
+                     'specMs': SpecMs,
+                     'specPe': SpecPe,
+                     'specPePt': SpecPePt,
+                     'specPeWater': SpecPeWater,
+                     'specPf': SpecPf}
     specList = []
     movedFiles =[]
     failedImports = []
@@ -102,7 +107,7 @@ def import_LegacyData(cfg, datFiles, commonMdata={}):
     for datFile in datFileList:
         print('Importing: '+datFile+' with ', commonMdata)
         try:
-            mi = LegacyData(datFile, cfg, commonMdata)
+            mi = LegacyData(datFile, cfg, spectype, commonMdata)
         except Exception as e:
             print('LegacyData creation failed:', e)
             failedImports.append([datFile, 'LegacyData creation failed: %s'%e])
@@ -116,7 +121,7 @@ def import_LegacyData(cfg, datFiles, commonMdata={}):
                 print(os.path.basename(datFile), '''ready to convert ...
                 ''')
                 try:
-                    moved = archive(cfg, mi.mdata.data())
+                    moved = archive(cfg, mi.metadata) # ! use metadata dict here since it has '...FileOrig' entries
                 except Exception as e:
                     print('%s: Failed to archive raw data:'%datFile, e)
                     failedImports.append([datFile, 'Import error: Archive failed: %s.'%e])
@@ -125,19 +130,16 @@ def import_LegacyData(cfg, datFiles, commonMdata={}):
                         # init spec obj
                         mdata = mi.mdata.data()
                         ydata = {'rawIntensity': mi.data}
-                        xdata = {'idx': np.arange(0,len(ydata['rawIntensity']))}
-                        spec = specMap[mdata['specType']](mdata, xdata, ydata, cfg)
-                        spec.commitPickle()
+                        xdata = {'idx': np.arange(0,len(ydata['rawIntensity']))+1/2} # intensity for [i,i+1] will be displayed at i+0.5
+                        spec = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
+                        spec.commit_pickle()
                     except Exception as e:
                         print('%s failed to import:'%datFile, e)
                         failedImports.append([datFile, 'Import error: %s.'%e])
                         move_back(moved)
                     else:
                         movedFiles.extend(moved)
-                        spec.mdata.rm('datFileOrig')
-                        if 'cfgFileOrig' in spec.mdata.data().keys():
-                            spec.mdata.rm('cfgFileOrig')
-                        spec.commitPickle()
+                        spec.commit_pickle()
                         specList.append(spec)
                         sha1ToImport.append(mi.mdata.data('sha1'))
             else:
@@ -173,15 +175,20 @@ def import_LegacyData(cfg, datFiles, commonMdata={}):
 def load_pickle(cfg, pickleFile):
     if not os.path.isabs(pickleFile):
         pickleFile = os.path.join(cfg.path['base'], pickleFile)
-    specMap = {'ms': SpecMs, 'pes': SpecPe, 'pfs': SpecPf}
+    typeclass_map = {'spec': Spec,
+                 'specMs': SpecMs,
+                 'specPe': SpecPe,
+                 'specPePt': SpecPePt,
+                 'specPeWater': SpecPeWater,
+                 'specPf': SpecPf}
     with open(pickleFile, 'rb') as f:
             mdata, xdata, ydata = pickle.load(f)
-    if mdata['clusterBaseUnit'] == 'Pt' and mdata['specType'] == 'pes':
-        spectrum = SpecPePt(mdata, xdata, ydata, cfg)
-    elif mdata['clusterBaseUnit'] in ['H2O', 'D2O'] and mdata['specType'] == 'pes':
-        spectrum = SpecPeWater(mdata, xdata, ydata, cfg)
-    else:
-        spectrum = specMap[mdata['specType']](mdata, xdata, ydata, cfg)
+#    if mdata['clusterBaseUnit'] == 'Pt' and mdata['specType'] == 'pes':
+#        spectrum = SpecPePt(mdata, xdata, ydata, cfg)
+#    elif mdata['clusterBaseUnit'] in ['H2O', 'D2O'] and mdata['specType'] == 'pes':
+#        spectrum = SpecPeWater(mdata, xdata, ydata, cfg)
+#    else:
+    spectrum = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
     
     return spectrum
 

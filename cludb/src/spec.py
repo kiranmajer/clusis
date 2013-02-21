@@ -20,15 +20,16 @@ import load
 
 class Spec(object):
     def __init__(self, mdata, xdata, ydata, cfg):
-        self.mdataReference = cfg.mdataReference['spec']
-        self.mdata = Mdata(mdata, self.mdataReference)
+        self.mdata_ref = cfg.mdata_ref['spec']
+        self.mdata = Mdata(mdata, self.mdata_ref)
         self.xdata = xdata
         self.ydata = ydata
         self.cfg = cfg
+        self.view = view.View(self)        
         
     
     def update_mdata_reference(self, specTypeClass, cfg):
-        self.mdataReference.update(cfg.mdataReference[specTypeClass])
+        self.mdata_ref.update(cfg.mdata_ref[specTypeClass])
     
     
     def commit_db(self, update=True):
@@ -54,8 +55,8 @@ class Spec(object):
         self.commit_db(update=update)
         
     '''TODO: make privat'''    
-    def calc_tof(self):
-        self.xdata['tof'] = self.xdata['idx']*self.mdata.data('timePerPoint')-self.mdata.data('triggerOffset')-self.mdata.data('timeOffset')
+    def calc_tof(self, time_offset=0):
+        self.xdata['tof'] = self.xdata['idx']*self.mdata.data('timePerPoint')-self.mdata.data('triggerOffset')-time_offset
 
     def photon_energy(self, waveLength):
         """Calculates photon energy in eV for a given wave length.
@@ -77,7 +78,7 @@ class Spec(object):
         self._fix_neg_intensities('intensitySubRaw', 'intensitySub')
     
     def subtract_bg(self, bgFile, isUpDown=False):
-        bgSpec = load.loadPickle(self.cfg, bgFile)
+        bgSpec = load.load_pickle(self.cfg, bgFile)
         if not self.mdata.data('specType') == bgSpec.mdata.data('specType'):
             raise ValueError('Background file has different spec type.')
         self.mdata.update({'subtract_bgBgFile': bgFile})
@@ -139,7 +140,7 @@ class SpecPe(Spec):
         
     
     def calc_spec_data(self):
-        self.calc_tof()
+        self.calc_tof(self.mdata.data('timeOffset'))
         self.__calc_ekin()
         self.__calc_ebin()
         self._fix_neg_intensities()
@@ -148,7 +149,7 @@ class SpecPe(Spec):
         
     def gauge(self, gaugeRef):
         self.mdata.update({'gaugeRef': gaugeRef})
-        gaugeSpec = load.loadPickle(self.cfg, gaugeRef)
+        gaugeSpec = load.load_pickle(self.cfg, gaugeRef)
         scale, offset = gaugeSpec.mdata.data('fitPar')[-2:]
         self.mdata.update({'gaugePar': {'scale': scale, 'offset': offset}})
         # calc xdata gauged
@@ -520,7 +521,7 @@ class SpecMs(Spec):
         
     
     def calc_spec_data(self):
-        self.calc_tof()
+        self.calc_tof(self.mdata.data('timeOffset'))
         self._fix_neg_intensities()
         self.calc_ms()
         self.calc_ms(xkey='ms', clusterBaseUnitMass=self.mdata.data('clusterBaseUnitMass'))
@@ -539,7 +540,7 @@ class SpecMs(Spec):
         t_off = lambda n,dn,t1,t2: (np.sqrt(1-float(dn)/n)*t2 - t1)/(np.sqrt(1-float(dn)/n)-1)
         t_ref = lambda m_unit,dn,t1,t2,t_off: np.sqrt(193.96/(m_unit*dn)*((t2-t_off)**2 - (t1-t_off)**2))
         self.mdata.update({'timeOffset':0, 'referenceTime':0})
-        self.calc_tof()
+        self.calc_tof(self.mdata.data('timeOffset'))
         self.view.showTof()
         # Ask for t1,t2,dn
         no_valid_input = True
