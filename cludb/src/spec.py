@@ -84,6 +84,7 @@ class Spec(object):
         self.mdata.update({'subtract_bgBgFile': bgFile})
         'TODO: tag managment. Right now the same tag(s) is(are) added, each time subtract_bg is called.'
         if isUpDown:
+        fix mdata keys and tag handling!!!
             bgSpec.mdata.update({'tags': ['background', 'up/down'], 'subtract_bgSpecFile': self.mdata.data('pickleFile')})
             self.mdata.update({'tags': ['up/down']})
         else:

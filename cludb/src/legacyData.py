@@ -17,7 +17,10 @@ class LegacyData(object):
         self.datfile_orig = os.path.abspath(fileToImport)
         self.metadata = {'datFileOrig': os.path.abspath(fileToImport),
                          'tags': [],
+                         'systemTags': [],
+                         'userTags': [],
                          'machine': machine,
+                         'delayTimings': {},
                          'info': ''}
         self.cfg = cfg
         self.header = []
@@ -30,9 +33,9 @@ class LegacyData(object):
         print('Setting up meta data ...')
         self.get_sha1()
         self.get_recTime()
-        self.get_basic_mdata()
         print('Evaluating cfg file ...')
         self.eval_cfgfile()
+        self.set_storage_paths()
         print('Setting specType ...')
         self.set_spectype(spectype)
         self.add_default_mdata()
@@ -134,29 +137,10 @@ class LegacyData(object):
                 self.metadata['recTime'] = timeStamp
             else:
                 self.metadata['recTime'] = dayStarts
-                self.metadata['tags'].append('Import warning: Invalid time stamp')
+                self.metadata['userTags'].append('Import warning: Invalid time stamp')
                 print('Warning: %s has invalid time stamp. Got recTime from filename.' % (datFileName))
         else:
             self.metadata['recTime'] = timeStamp
-
-    
-    
-    def get_basic_mdata(self):
-        """Adds to the mdata dictionary some basic data: 
-           tags, recTime ...
-        """
-        self.metadata['datFile'] = os.path.join(self.cfg.path['archive'],
-                                                self.metadata['machine'],
-                                                os.path.basename(self.metadata['datFileOrig']))
-        #self.metadata['tags'] = []
-        ''' build pickle file name and path according following scheme:
-        config.path['data']/<year>/<recTime>_<sha1>.pickle'''
-        y = str(time.localtime(self.metadata['recTime']).tm_year)
-        m = str(time.localtime(self.metadata['recTime']).tm_mon)
-        d = str(time.localtime(self.metadata['recTime']).tm_mday)
-        pickleFileName = '%s-%s-%s_%s.pickle' % (y,m,d,self.metadata['sha1'])
-        pickleFileDir = os.path.join(self.cfg.path['data'], y)
-        self.metadata['pickleFile'] = os.path.join(pickleFileDir, pickleFileName)
 
 
     def find_cfgfile(self):
@@ -185,22 +169,22 @@ class LegacyData(object):
             self.metadata['cfgFileOrig'] = cfgfile[0]
         elif len(cfgfile) == 0 and self.datafile_type == 'ms':
             print('No cfg. But for ms it is not vital. Skipping...')
-            self.metadata['tags'].append('Could not find cfg file')
+            self.metadata['userTags'].append('Could not find cfg file')
         elif len(cfgfile) == 0 and self.datafile_type == 'pes':
             raise ValueError('Could not find cfg file.')
         else:
-            self.metadata['tags'].append('Several cfg files: ' + str(cfgfile))
+            self.metadata['userTags'].append('Several cfg files: ' + str(cfgfile))
             raise ValueError('Found more than 1 cfg file.')
      
     
     def parse_cfgfile(self, cfgfile):
         """Extracts all information of cfgfile and its filename.
         """
-        cfg_data_map = ['ch1Tstart', 'ch1Tstop', 'ch2Tstart', 'ch2Tstop',
-                        'ch3Tstart', 'ch3Tstop', 'ch4Tstart', 'ch4Tstop',
-                        'ch5Tstart', 'ch5Tstop', 'ch6Tstart', 'ch6Tstop',
-                        'ch7Tstart', 'ch7Tstop', 'ch8Tstart', 'ch8Tstop',
-                        'clusterBaseUnitNumber']
+#        cfg_data_map = ['ch1Tstart', 'ch1Tstop', 'ch2Tstart', 'ch2Tstop',
+#                        'ch3Tstart', 'ch3Tstop', 'ch4Tstart', 'ch4Tstop',
+#                        'ch5Tstart', 'ch5Tstop', 'ch6Tstart', 'ch6Tstop',
+#                        'ch7Tstart', 'ch7Tstop', 'ch8Tstart', 'ch8Tstop',
+#                        'clusterBaseUnitNumber']
         try:
             with open(cfgfile) as cfg:
                 cfg_data = cfg.readlines()[0].split()
@@ -208,17 +192,22 @@ class LegacyData(object):
             print("I/O error({0}): {1}".format(e.errno, e.strerror))
         else: # cfg file exist and is readable
             if len(cfg_data) == 17: # normal case
-                try:
-                    for i in range(len(cfg_data)-1):
-                        self.metadata[cfg_data_map[i]] = int(cfg_data[i]) * 20e-9
-                except:
-                    raise
-                else:
-                    if self.datafile_type in ['pes']:
-                        self.metadata[cfg_data_map[-1]] = int(cfg_data[-1])
+                self.metadata['clusterBaseUnitNumber'] = int(cfg_data.pop())
+                ch_idx=1
+                for pair in list(zip(cfg_data[::2],cfg_data[1::2])):
+                    self.metadata['delayTimings']['ch{}'.format(ch_idx)] = [int(pair[0]*20e-9),
+                                                                            (int(pair[1])-int(pair[0]))*20e-9]
+                    ch_idx+=1
+
+#                for i in range(len(cfg_data)-1):
+#                    self.metadata[cfg_data_map[i]] = int(cfg_data[i])*20e-9
+#                    
+#                if self.datafile_type in ['pes']:
+#                    self.metadata[cfg_data_map[-1]] = int(cfg_data[-1])
             elif len(cfg_data) == 1: # sometimes it contains only the cluster size
-                if self.datafile_type in ['pes']:
-                    self.metadata[cfg_data_map[-1]] = int(cfg_data[-1])
+                self.metadata['clusterBaseUnitNumber'] = int(cfg_data.pop())              
+#                if self.datafile_type in ['pes']:
+#                    self.metadata[cfg_data_map[-1]] = int(cfg_data[-1])
             else:
                 raise ValueError('{} does not contain valid data.'.format(cfgfile))
                     
@@ -235,7 +224,7 @@ class LegacyData(object):
                     """Test if cluster size in file and file name differs"""
                     if self.metadata['clusterBaseUnitNumber'] != int(cfgfile_nameData['clusterBaseUnitNumber']):
                         self.metadata['clusterBaseUnitNumberFromFileName'] = int(cfgfile_nameData['clusterBaseUnitNumber'])
-                        self.metadata['tags'].append('clusterBaseUnitNumber ambiguous')
+                        self.metadata['userTags'].append('clusterBaseUnitNumber ambiguous')
                 else:
                     raise ValueError('Unexpected file name: ' + cfgfile_name)
 
@@ -243,17 +232,40 @@ class LegacyData(object):
     def eval_cfgfile(self):
         """Tries to find corresponding cfg files and adds unambiguous data to mdata
         """
-        try:
-            self.find_cfgfile()
-            if 'cfgFileOrig' in self.metadata.keys():
-                self.parse_cfgfile(self.metadata['cfgFileOrig'])
-        except:
-            raise #ValueError('Importing cfg file failed.')
-        else:
-            if 'cfgFileOrig' in self.metadata.keys():
-                self.metadata['cfgFile'] = os.path.join(self.cfg.path['archive'],
-                                                        self.metadata['machine'],
-                                                        os.path.basename(self.metadata['cfgFileOrig']))
+        self.find_cfgfile()
+        if 'cfgFileOrig' in self.metadata.keys():
+            self.parse_cfgfile(self.metadata['cfgFileOrig'])
+
+    
+    
+    def set_storage_paths(self):
+        """
+        Adds data storage paths for *.dat, *.cfg, and *.pickle files to metadata
+        """
+        year = str(time.localtime(self.metadata['recTime']).tm_year)
+        month = str(time.localtime(self.metadata['recTime']).tm_mon)
+        day = str(time.localtime(self.metadata['recTime']).tm_mday)
+        # dir for dat, cfg files
+        archive_dir = os.path.join(self.cfg.path['archive'],
+                                   self.metadata['machine'],
+                                   self.metadata['specType'],
+                                   year)
+        self.metadata['datFile'] = os.path.join(archive_dir,
+                                                os.path.basename(self.metadata['datFileOrig']))
+        #self.metadata['userTags'] = []
+        ''' build pickle file name and path according following scheme:
+        config.path['data']/<year>/<recTime>_<sha1>.pickle'''
+
+        pickleFileName = '{}-{}-{}_{}.pickle'.format(year, month, day, self.metadata['sha1'])
+        pickleFileDir = os.path.join(self.cfg.path['data'],
+                                     self.metadata['machine'],
+                                     self.metadata['specType'],
+                                     year)
+        self.metadata['pickleFile'] = os.path.join(pickleFileDir, pickleFileName)
+        if 'cfgFileOrig' in self.metadata.keys():
+            self.metadata['cfgFile'] = os.path.join(archive_dir,
+                                                    os.path.basename(self.metadata['cfgFileOrig']))
+
     
     
     def set_spectype(self, spectype):
@@ -287,8 +299,8 @@ class LegacyData(object):
                     else:
                         self.metadata['clusterDopantNumber'] = 1 
                 self.datafile_type = splitted_path[3]
-                if len(splitted_path) == 6 and splitted_path[4].replace('_', ' ') not in self.metadata['tags']:
-                    self.metadata['tags'].append(splitted_path[4].replace('_', ' '))
+                if len(splitted_path) == 6 and splitted_path[4].replace('_', ' ') not in self.metadata['userTags']:
+                    self.metadata['userTags'].append(splitted_path[4].replace('_', ' '))
 
                     
     def parse_datfile_name(self):
@@ -299,7 +311,7 @@ class LegacyData(object):
             self.metadata['trapTemp'] = int(fname_parts[3].split('K')[0])
         else:
             print('Warning: Could not parse file name (%s).'%(os.path.basename(self.metadata['datFileOrig'])))
-            self.metadata['tags'].append('Import warning: Could not parse file name.')
+            self.metadata['userTags'].append('Import warning: Could not parse file name.')
 
 
     def set_spectype_class(self):

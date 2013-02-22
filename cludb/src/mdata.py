@@ -76,25 +76,31 @@ class Mdata(object):
 
         
     
-    def add_tag(self, tag):
-        'TODO: make more robust, e.g. check if tag is str.'
-        l = self.__mdata['tags']
-        if l.count(tag) == 0:
-            l.append(tag)
+    def add_tag(self, tag, tagkey='userTags'):
+        tag = str(tag)
+        current_tags = self.__mdata[tagkey]
+        if current_tags.count(tag) == 0:
+            current_tags.append(tag)
         else:
             print('Tag already exists.')
     
-    def rename_tag(self, parents, tag, newTag):
-        l = self.__mdata['tags']
-        self.__mdata['tags'] = [t.replace(tag,newTag) if re.search('(^|/)%s/?%s(/|$)'%(parents,tag), t) is not None else t for t in l]
+    def rename_tag(self, parents, tag, newTag, tagkey='userTags'):
+        'TODO: better parent handling.'
+        current_tags = self.__mdata[tagkey]
+        self.__mdata[tagkey] = [t.replace(tag,newTag) if re.search('(^|/)%s/?%s(/|$)'%(parents,tag), t) is not None else t for t in current_tags]
        
-    def remove_tag(self, tag):    
+    def remove_tag(self, tag, tagkey='userTags'):    
         'TODO: add method remove a whole tag tree at once.'
-        l = self.__mdata['tags']
-        if tag in l:
-            l.remove(tag)
+        tag = str(tag)
+        current_tags = self.__mdata[tagkey]
+        if tag in current_tags:
+            current_tags.remove(tag)
         else:
-            raise ValueError('Tag does not exist: %s'%(str(tag)))
+            raise ValueError('Tag does not exist: {}'.format(tag))
+        
+    def __update_tags(self):
+        'Merges userTags and systemTags'
+        self.__mdata['tags'] = list(set(self.__mdata.data['systemTags'])|set(self.__mdata.data['tags']))
             
     
     def add(self, newMdata, update=False):
@@ -111,7 +117,7 @@ class Mdata(object):
                 if k in self.__reference.keys(): 
                     if k not in mdata.keys():
                         mdata[k] = self.__validate_value(k, v)
-                    elif k == 'tags': # special case tags
+                    elif k in ['tags', 'userTags']: # special case userTags, 'tags' is treated like 'userTags' 
                         if type(v) is list:
                             for t in v:
                                 self.add_tag(t)
