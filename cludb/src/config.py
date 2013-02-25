@@ -116,17 +116,22 @@ class Cfg():
                                      'clusterDopant': [str, True],
                                      'clusterDopantNumber': [int, True],
                                      'delayTimings': [dict, False],
+                                     'energyOffset': [float, False],
+                                     'energyOffsetImport': [float, True],
                                      'flightLength': [[1.6], True],
-                                     'gaugePar': [dict, False],
+                                     'flightLengthScale': [float, False],
+                                     'flightLengthScaleImport': [float, True],
                                      'gaugeRef': [str, False],
                                      'ionType': [['+','-'], True],
                                      'subtractBgBgFile': [str, False],
                                      'subtractBgSpecFile': [str, False],
-                                     'timeOffset': [float, True],
+                                     'timeOffset': [float, False],
+                                     'timeOffsetImport': [float, True],
                                      'trapTemp': [float, False],
                                      'waveLength': [self.wavelengths, True],
                                      },
                           'specPePt': {'fitCovar': [np.ndarray, False],
+                                       'fitConstrains': [dict, False],
                                        'fitCutoff': [float, False],
                                        'fitInfo': [list, False],
                                        'fitPar': [np.ndarray, False],
@@ -177,10 +182,12 @@ class Cfg():
 #                    'fitSubtractBgTof': [[True,False], ['pes'], False], 
                     
         
-        
-        self.defaults = {'casi': {'pes': {'flightLength': 1.6,
+        ''' Values used when importing legacy data'''
+        self.defaults = {'casi': {'pes': {'energyOffsetImport': 0,
+                                          'flightLength': 1.6,
+                                          'flightLengthScaleImport': 1.0,
                                           'mdataVersion': self.mdata_version,
-                                          #'timeOffset': 0, # old pes 63e-9 (better derived by gauging)
+                                          'timeOffsetImport': 63e-9, # previously used for all pes (better derived by gauging)
                                           'timePerPoint': 2e-9,
                                           'triggerOffset': 0,
                                           },

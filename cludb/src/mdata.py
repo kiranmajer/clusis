@@ -81,6 +81,7 @@ class Mdata(object):
         current_tags = self.__mdata[tagkey]
         if current_tags.count(tag) == 0:
             current_tags.append(tag)
+            self.__update_tags()
         else:
             print('Tag already exists.')
     
@@ -88,6 +89,7 @@ class Mdata(object):
         'TODO: better parent handling.'
         current_tags = self.__mdata[tagkey]
         self.__mdata[tagkey] = [t.replace(tag,newTag) if re.search('(^|/)%s/?%s(/|$)'%(parents,tag), t) is not None else t for t in current_tags]
+        self.__update_tags()
        
     def remove_tag(self, tag, tagkey='userTags'):    
         'TODO: add method remove a whole tag tree at once.'
@@ -95,6 +97,7 @@ class Mdata(object):
         current_tags = self.__mdata[tagkey]
         if tag in current_tags:
             current_tags.remove(tag)
+            self.__update_tags()
         else:
             raise ValueError('Tag does not exist: {}'.format(tag))
         
@@ -135,7 +138,7 @@ class Mdata(object):
                             mdata[k]=self.__validate_value(k, v)
                 else:
                     print('Failed to add "%s: %s". Key not allowed.' % (k, str(v)))
-          
+                self.__update_tags()
         else:
             raise ValueError('Expected a dict. Got a %s instead.'%(type(newMdata).__name__))
 

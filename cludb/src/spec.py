@@ -28,7 +28,7 @@ class Spec(object):
         self.view = view.View(self)        
         
     
-    def update_mdata_reference(self, specTypeClass, cfg):
+    def _update_mdata_reference(self, specTypeClass, cfg):
         self.mdata_ref.update(cfg.mdata_ref[specTypeClass])
     
     
@@ -55,8 +55,9 @@ class Spec(object):
         self.commit_db(update=update)
         
     '''TODO: make privat'''    
-    def calc_tof(self, time_offset=0):
-        self.xdata['tof'] = self.xdata['idx']*self.mdata.data('timePerPoint')-self.mdata.data('triggerOffset')-time_offset
+    def _calc_time_data(self, time_per_point, trigger_offset, time_offset=0):
+        #self.xdata['tof'] = self.xdata['idx']*self.mdata.data('timePerPoint')-self.mdata.data('triggerOffset')-time_offset
+        self.xdata['tof'] = self.xdata['idx']*time_per_point-trigger_offset - time_offset
 
     def photon_energy(self, waveLength):
         """Calculates photon energy in eV for a given wave length.
@@ -81,15 +82,14 @@ class Spec(object):
         bgSpec = load.load_pickle(self.cfg, bgFile)
         if not self.mdata.data('specType') == bgSpec.mdata.data('specType'):
             raise ValueError('Background file has different spec type.')
-        self.mdata.update({'subtract_bgBgFile': bgFile})
-        'TODO: tag managment. Right now the same tag(s) is(are) added, each time subtract_bg is called.'
+        self.mdata.update({'subtract_bgBgFile': bgSpec.mdata.data('pickleFile')})
+        bgSpec.mdata.update({'subtract_bgSpecFile': self.mdata.data('pickleFile')})
+        bgSpec.mdata.add_tag('background', tagkey='systemTags')
         if isUpDown:
-        fix mdata keys and tag handling!!!
-            bgSpec.mdata.update({'tags': ['background', 'up/down'], 'subtract_bgSpecFile': self.mdata.data('pickleFile')})
-            self.mdata.update({'tags': ['up/down']})
-        else:
-            bgSpec.mdata.update({'tags': ['background'], 'subtract_bgSpecFile': self.mdata.data('pickleFile')})
+            bgSpec.mdata.add_tag('up/down', tagkey='systemTags')
+            self.mdata.add_tag('up/down', tagkey='systemTags')
         self.__calc_sub_intensities(bgSpec)
+        self.mdata.add_tag('subtracted', tagkey='systemTags')
         self.commit()
         bgSpec.commit()
 
@@ -100,7 +100,7 @@ class SpecPe(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
         print('__init__: Init SpecPe')
         Spec.__init__(self, mdata, xdata, ydata, cfg)
-        self.update_mdata_reference(mdata['specTypeClass'], cfg)
+        self._update_mdata_reference(mdata['specTypeClass'], cfg)
         self._pFactor = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength'))**2
         self._hv = self.photon_energy(self.mdata.data('waveLength'))
         if len(self.xdata) == 1:
@@ -108,31 +108,33 @@ class SpecPe(Spec):
         #print 'Assigning view.ViewPes'
         self.view = view.ViewPes(self)
         
-    def ebin(self, t, gauge_scale=1, gauge_offset=0):
-        return (self._hv-self._pFactor/t**2 - gauge_offset)/gauge_scale
-
-    def ekin(self, t, gauge_scale=1, gauge_offset=0):
-        return self._hv - self.ebin(t, gauge_scale, gauge_offset)
+    def ekin(self, t, lscale, Eoff, toff):
+        return self._pFactor/(lscale**2*(t + toff)**2) - Eoff
+        #return self._hv - self.ebin(t, gauge_scale, gauge_offset)
         
-    def calc_tof_gauged(self, t, gauge_scale, gauge_offset):
-        return np.sqrt(self._pFactor/self.ekin(t, gauge_scale, gauge_offset))
+    def ebin(self, t, lscale, Eoff, toff):
+        return self._hv - (self._pFactor/(lscale**2*(t + toff)**2) - Eoff)
+        #return (self._hv-self._pFactor/t**2 - gauge_offset)/gauge_scale
         
     def jtrans(self, intensity, t):
         return intensity*t**3/(2*self._pFactor)
     
     def jtrans_inv(self, intensity, t):
         return intensity*2*self._pFactor/t**3
+        
+    def _calc_time_data(self, time_per_point, trigger_offset, lscale, Eoff, toff):
+        return 1/(lscale*np.sqrt(1/(self.xdata['idx']*time_per_point - trigger_offset)**2 - Eoff/self._pFactor)) - toff
+        #return np.sqrt(self._pFactor/self.ekin(t, gauge_scale, gauge_offset))    
     
-    
-    def __calc_ekin(self, newKey='ekin', gauge_scale=1, gauge_offset=0):
-        self.xdata[newKey] = self.ekin(self.xdata['tof'], gauge_scale, gauge_offset) 
+    def _calc_ekin(self, newKey='ekin', lscale, Eoff, toff):
+        self.xdata[newKey] = self.ekin(self.xdata['tof'], lscale, Eoff, toff) 
         #self.xdata['ekin'] = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength')/self.xdata['tof'])**2
     
-    def __calc_ebin(self, newKey='ebin', gauge_scale=1, gauge_offset=0):
-        self.xdata[newKey] = self.ebin(self.xdata['tof'], gauge_scale, gauge_offset)
+    def _calc_ebin(self, newKey='ebin', lscale, Eoff, toff):
+        self.xdata[newKey] = self.ebin(self.xdata['tof'], lscale, Eoff, toff)
         #self.xdata['ebin'] = self.photon_energy(self.mdata.data('waveLength')) - self.xdata['ekin']
         
-    def __calc_jacoby_intensity(self, newKey='jIntensity', intensityKey='intensity', tofKey='tof'):
+    def _calc_jacoby_intensity(self, newKey='jIntensity', intensityKey='intensity', tofKey='tof'):
         self.ydata[newKey] = self.jtrans(self.ydata[intensityKey], self.xdata[tofKey])
         #self.ydata[newKey] = self.ydata[ydataKey]/(2*self.xdata['ekin']/self.xdata['tof'])
         
@@ -140,36 +142,46 @@ class SpecPe(Spec):
 #        self.xdata['ebinGauged'] = (self.xdata['ebin'] - self.mdata.data('gaugePar')['offset'])/self.mdata.data('gaugePar')['scale']
         
     
-    def calc_spec_data(self):
-        self.calc_tof(self.mdata.data('timeOffset'))
-        self.__calc_ekin()
-        self.__calc_ebin()
+    def calc_spec_data(self, time_per_point=self.mdata.data('timePerPoint'),
+                             trigger_offset=self.mdata.data('triggerOffset'),
+                             lscale=self.mdata.data('flightLengthScale'),
+                             Eoff=self.mdata.data('energyOffset'),
+                             toff=self.mdata.data('timeOffset')):
+        self._calc_time_data(time_per_point=self.mdata.data('timePerPoint'),
+                             trigger_offset=self.mdata.data('triggerOffset'),
+                             lscale=self.mdata.data('flightLengthScale'),
+                             Eoff=self.mdata.data('energyOffset'),
+                             toff=self.mdata.data('timeOffset'))
+        self._calc_ekin()
+        self._calc_ebin()
         self._fix_neg_intensities()
-        self.__calc_jacoby_intensity()
+        self._calc_jacoby_intensity()
         
         
     def gauge(self, gaugeRef):
-        self.mdata.update({'gaugeRef': gaugeRef})
         gaugeSpec = load.load_pickle(self.cfg, gaugeRef)
+        self.mdata.update({'gaugeRef': gaugeSpec.mdata.data('pickleFile')})
+        
+        
         scale, offset = gaugeSpec.mdata.data('fitPar')[-2:]
         self.mdata.update({'gaugePar': {'scale': scale, 'offset': offset}})
         # calc xdata gauged
-        self.__calc_ebin(newKey='ebinGauged', gauge_scale=scale, gauge_offset=offset)
-        self.__calc_ekin(newKey='ekinGauged', gauge_scale=scale, gauge_offset=offset)
-        self.xdata['tofGauged'] = self.calc_tof_gauged(self.xdata['tof'], gauge_scale=scale, gauge_offset=offset)
+        self._calc_ebin(newKey='ebinGauged', gauge_scale=scale, gauge_offset=offset)
+        self._calc_ekin(newKey='ekinGauged', gauge_scale=scale, gauge_offset=offset)
+        self.xdata['tofGauged'] = self.calc_tof(self.xdata['tof'], gauge_scale=scale, gauge_offset=offset)
         # calc ydata gauged
-        self.__calc_jacoby_intensity(newKey='jIntensityGauged', intensityKey='intensity', tofKey='tofGauged')
+        self._calc_jacoby_intensity(newKey='jIntensityGauged', intensityKey='intensity', tofKey='tofGauged')
         if 'jIntensitySub' in list(self.ydata.keys()):
-            self.__calc_jacoby_intensity(newKey='jIntensityGaugedSub',
+            self._calc_jacoby_intensity(newKey='jIntensityGaugedSub',
                                        intensityKey='intensitySub', tofKey='tofGauged')
         self.commit_pickle()
         del gaugeSpec
         
     def subtract_bg(self, bgFile, isUpDown=True):
         Spec.subtract_bg(self, bgFile, isUpDown=isUpDown)
-        self.__calc_jacoby_intensity(newKey='jIntensitySub', intensityKey='intensitySub')
+        self._calc_jacoby_intensity(newKey='jIntensitySub', intensityKey='intensitySub')
         if 'gaugePar' in list(self.mdata.data().keys()):
-            self.__calc_jacoby_intensity(newKey='jIntensityGaugedSub',
+            self._calc_jacoby_intensity(newKey='jIntensityGaugedSub',
                                        intensityKey='intensitySub', tofKey='tofGauged')
             
         self.commit_pickle()
@@ -178,23 +190,23 @@ class SpecPe(Spec):
 class SpecPePt(SpecPe):
     def __init__(self, mdata, xdata, ydata, cfg):
         SpecPe.__init__(self, mdata, xdata, ydata, cfg)
-        self.update_mdata_reference(mdata['specTypeClass'], cfg)
+        self._update_mdata_reference(mdata['specTypeClass'], cfg)
         self.view = view.ViewPt(self)
              
         
-    def __fit_peak_pos(self, peakPar):
-        return [p[0] for p in peakPar]
+#    def __fit_peak_pos(self, peakPar):
+#        return [p[0] for p in peakPar]
     
     
     def __fit_peak_pos_trans(self, peakPar):
         return [np.sqrt(self._pFactor/(self._hv-p[0])) for p in peakPar]
     
     
-    def __fit_par_init(self, peakPar, yscale, scale, offset):
-        l = [i for p in peakPar if p[0] for i in [p[1]*yscale,p[2]]]
-        l.extend([scale,offset])
-        #l.extend([scale,offset])
-        return np.array(l)
+#    def __fit_par_init(self, peakPar, yscale, scale, offset):
+#        l = [i for p in peakPar if p[0] for i in [p[1]*yscale,p[2]]]
+#        l.extend([scale,offset])
+#        #l.extend([scale,offset])
+#        return np.array(l)
 
 
     def __fit_par_init_trans(self, peakPar, yscale, Eoff, toff, lscale):
@@ -211,19 +223,19 @@ class SpecPePt(SpecPe):
         return ydata[xlb:xub].max()
     
     
-    def multi_gauss(self, x, peak_pos, parList):
-        plist = list(parList)
-        xlist = list(peak_pos)
-        gauss = lambda x, m,A,sigma,scale,offset: A*np.exp(-(x-(scale*m+offset))**2/(2*sigma**2))
-        offset = plist.pop()
-        scale = plist.pop()
-        mgauss = 0
-        while len(plist) > 0:
-            sigma = plist.pop()
-            A = plist.pop()
-            m = xlist.pop()
-            mgauss += gauss(x, m, A, sigma, scale, offset)
-        return mgauss
+#    def multi_gauss(self, x, peak_pos, parList):
+#        plist = list(parList)
+#        xlist = list(peak_pos)
+#        gauss = lambda x, m,A,sigma,scale,offset: A*np.exp(-(x-(scale*m+offset))**2/(2*sigma**2))
+#        offset = plist.pop()
+#        scale = plist.pop()
+#        mgauss = 0
+#        while len(plist) > 0:
+#            sigma = plist.pop()
+#            A = plist.pop()
+#            m = xlist.pop()
+#            mgauss += gauss(x, m, A, sigma, scale, offset)
+#        return mgauss
     
     
     def multi_gauss_trans(self, t, peak_pos, parList):
@@ -246,8 +258,8 @@ class SpecPePt(SpecPe):
         return mgaussTrans
     
     
-    def __err_multi_gauss(self, p,x,y,peak_pos):
-        return self.multi_gauss(x, peak_pos, p)-y
+#    def __err_multi_gauss(self, p,x,y,peak_pos):
+#        return self.multi_gauss(x, peak_pos, p)-y
     
     
     def __err_multi_gauss_trans(self, p,t,y,peak_pos, constrain_par, constrain):
@@ -262,88 +274,88 @@ class SpecPePt(SpecPe):
 #        return self.multi_gauss_trans(t, peak_pos, p)-y
     
     
-    def __fit_multi_gauss(self, peakParRef, scale, offset, rel_y_min, cutoff):
-        xdata = self.xdata['ebin']
-        ydata = self.ydata['jIntensity']
-        if cutoff == None:
-            ebin_max = self.xdata['ebin'].max()
-        elif 0 < cutoff < self.xdata['ebin'].max():
-            ebin_max =cutoff
-        else:
-            raise ValueError('cutoff must be between 0 and %.2f'%(self.xdata['ebin'].max()))
-        peakPar = [p for p in peakParRef if p[0]<ebin_max and p[1]>rel_y_min]
-        fitValues = {'fitPeakPos': self.__fit_peak_pos(peakPar)}
-        xcenter = fitValues['fitPeakPos'][0]
-        yscale = self.__get_y_scale(xdata, ydata, xcenter, 0.2)
-        fitValues['fitPar0'] = self.__fit_par_init(peakPar, yscale, scale, offset)
-        p, covar, info, mess, ierr = leastsq(self.__err_mGauss, fitValues['fitPar0'],args=(xdata,ydata,fitValues['fitPeakPos']), full_output=True)
-        fitValues.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
-        
-        return fitValues
+#    def __fit_multi_gauss(self, peakParRef, scale, offset, rel_y_min, cutoff):
+#        xdata = self.xdata['ebin']
+#        ydata = self.ydata['jIntensity']
+#        if cutoff == None:
+#            ebin_max = self.xdata['ebin'].max()
+#        elif 0 < cutoff < self.xdata['ebin'].max():
+#            ebin_max =cutoff
+#        else:
+#            raise ValueError('cutoff must be between 0 and %.2f'%(self.xdata['ebin'].max()))
+#        peakPar = [p for p in peakParRef if p[0]<ebin_max and p[1]>rel_y_min]
+#        fitValues = {'fitPeakPos': self.__fit_peak_pos(peakPar)}
+#        xcenter = fitValues['fitPeakPos'][0]
+#        yscale = self.__get_y_scale(xdata, ydata, xcenter, 0.2)
+#        fitValues['fitPar0'] = self.__fit_par_init(peakPar, yscale, scale, offset)
+#        p, covar, info, mess, ierr = leastsq(self.__err_mGauss, fitValues['fitPar0'],args=(xdata,ydata,fitValues['fitPeakPos']), full_output=True)
+#        fitValues.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
+#        
+#        return fitValues
 
 
-    def __fit_multi_gauss_trans(self, peakParRef, Eoff, toff, lscale, rel_y_min, cutoff, constrain_par, constrain):
-        xdata = self.xdata['tof']
-        ydata = self.ydata['intensity']
+    def __fit_multi_gauss_trans(self, xdata_key, ydata_key, peakParRef, Eoff, toff, lscale, rel_y_min, cutoff, constrain_par, constrain):
+        xdata = self.xdata[xdata_key]
+        ydata = self.ydata[ydata_key]
+        constrain_par_map = {'lscale': -1, 'toff': -2,'Eoff': -3}
         if cutoff == None:
-            tof_max = self.xdata['tof'].max()
-        elif 0 < cutoff < self.xdata['tof'].max():
+            tof_max = xdata.max()
+        elif 0 < cutoff < xdata.max():
             tof_max =cutoff
         else:
-            raise ValueError('cutoff must be between 0 and %.2f. Got %.1f instead.'%(self.xdata['tof'].max(), cutoff))
+            raise ValueError('cutoff must be between 0 and %.2f. Got %.1f instead.'%(xdata.max(), cutoff))
         peakPar = [p for p in peakParRef if np.sqrt(self._pFactor/(self._hv-p[0]))<tof_max and p[1]>rel_y_min]
-        fitValues = {'fitPeakPosTof': self.__fit_peak_pos_trans(peakPar)}
+        fitValues = {'fitPeakPos': self.__fit_peak_pos_trans(peakPar),
+                     'fitXdataKey': xdata_key, 'fitYdataKey': ydata_key,
+                     'fitConstrains': {constrain_par: constrain},
+                     'fitCutoff': cutoff}
         xcenter = peakParRef[0][0]
-        yscale = self.__get_y_scale(self.xdata['ebin'], self.ydata['jIntensity'], xcenter, 0.4)
-        fitValues['fitPar0Tof'] = self.__fit_par_init_trans(peakPar, yscale, Eoff, toff, lscale)
+        yscale = self.__get_y_scale(self.xdata['ebin'], self.ydata['jIntensity'], xcenter, 0.4) # better use actual intensity values
+        fitValues['fitPar0'] = self.__fit_par_init_trans(peakPar, yscale, Eoff, toff, lscale)
         try:
-            p, covar, info, mess, ierr = leastsq(self.__err_mGaussTrans, fitValues['fitPar0Tof'], 
+            p, covar, info, mess, ierr = leastsq(self.__err_multi_gauss_trans, fitValues['fitPar0'], 
                                                  args=(xdata,ydata,
-                                                       fitValues['fitPeakPosTof'],
-                                                       constrain_par, constrain),
+                                                       fitValues['fitPeakPos'],
+                                                       constrain_par_map[constrain_par],
+                                                       constrain),
                                                  full_output=True)
         except:
             return fitValues
             raise
         else:
-            fitValues.update({'fitParTof': p, 'fitCovarTof': covar, 'fitInfoTof': [info, mess, ierr]})
+            fitValues.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
         
             return fitValues
        
 
-    def gauge(self, specType,
-              offset=0, rel_y_min=0, scale=1,
-              lscale=1, Eoff=0, toff=42e-9, constrain_par=-2, constrain=[37e-9, 47e-9], 
+    def gauge(self, xdata_key=None, ydata_key=None, rel_y_min=0, lscale=1, Eoff=0, toff=42e-9, constrain_par='toff', constrain=[37e-9, 47e-9], 
               cutoff=None):
-        'TODO: consistency of parameters.'
         '''
         Fits a multiple gauss to the pes.
-        constrain_par: which parameter to constrain:  -1: lscale, -2: toff, -3: Eoff
-        offset, scale: fit parameter
+        data_key: which xy-data to use for the fit
+        constrain_par: which parameter to constrain:  lscale, toff, Eoff
+        constrain: [constrain_par_min, constrain_par_min]
         rel_y_min: minimum peak height of reference peaks (cfg.pt_peakpar) to be included in the fit.
         '''
+        # choose data_keys if not given
+        if xdata_key is None:
+            xdata_key = 'tof'
+        if ydata_key is None and 'subtracted' in self.mdata.data('systemTags'):
+            ydata_key = 'intensitySub'
+        elif ydata_key is None:
+            ydata_key = 'intensity'
         peakParRef = self.cfg.pt_peakpar[self.mdata.data('waveLength')]
-        try:
-            if specType == 'ebin':
-                fitValues = self.__fit_multi_gauss(peakParRef, scale, offset, rel_y_min, cutoff)
-            elif specType == 'tof':
-                fitValues = self.__fit_multi_gauss_trans(peakParRef, Eoff, toff, lscale, rel_y_min, cutoff,
+        fitValues = self.__fit_multi_gauss_trans(xdata_key, ydata_key, peakParRef, Eoff, toff, lscale, rel_y_min, cutoff,
                                                   constrain_par, constrain)
-            else:
-                raise ValueError('specType must be one of: "tof" or "ebin".')                
-        except:
-            #self.mdata.update(fitValues)
-            raise
-        else:
-            self.mdata.update(fitValues)
-            self.mdata.add_tag('gauged')
+        self.mdata.update(fitValues)
+        self.mdata.add_tag('gauged', tagkey='systemTags')
 
 
 
 class SpecPeWater(SpecPe):
     def __init__(self, mdata, xdata, ydata, cfg):
         SpecPe.__init__(self, mdata, xdata, ydata, cfg)
-        self.update_mdata_reference(mdata['specTypeClass'], cfg)
+        self._update_mdata_reference(mdata['specTypeClass'], cfg)
         self.view = view.ViewWater(self)
 
 
@@ -507,7 +519,7 @@ class SpecMs(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
         print('__init__: Init SpecMs')
         Spec.__init__(self, mdata, xdata, ydata, cfg)
-        self.update_mdata_reference(mdata['specTypeClass'], cfg)
+        self._update_mdata_reference(mdata['specTypeClass'], cfg)
         if len(self.xdata) == 1:
             self.calc_spec_data() 
         self.view = view.ViewMs(self)
@@ -522,7 +534,9 @@ class SpecMs(Spec):
         
     
     def calc_spec_data(self):
-        self.calc_tof(self.mdata.data('timeOffset'))
+        self._calc_time_data(self.mdata.data('timePerPoint'),
+                             self.mdata.data('triggerOffset'),
+                             self.mdata.data('timeOffset'))
         self._fix_neg_intensities()
         self.calc_ms()
         self.calc_ms(xkey='ms', clusterBaseUnitMass=self.mdata.data('clusterBaseUnitMass'))
@@ -541,7 +555,9 @@ class SpecMs(Spec):
         t_off = lambda n,dn,t1,t2: (np.sqrt(1-float(dn)/n)*t2 - t1)/(np.sqrt(1-float(dn)/n)-1)
         t_ref = lambda m_unit,dn,t1,t2,t_off: np.sqrt(193.96/(m_unit*dn)*((t2-t_off)**2 - (t1-t_off)**2))
         self.mdata.update({'timeOffset':0, 'referenceTime':0})
-        self.calc_tof(self.mdata.data('timeOffset'))
+        self._calc_time_data(self.mdata.data('timePerPoint'),
+                             self.mdata.data('triggerOffset'),
+                             self.mdata.data('timeOffset'))
         self.view.showTof()
         # Ask for t1,t2,dn
         no_valid_input = True
