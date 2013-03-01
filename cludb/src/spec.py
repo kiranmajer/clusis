@@ -29,15 +29,16 @@ class Spec(object):
         
     
     def _update_mdata_reference(self, specTypeClass, cfg):
+        'Adapts mdata reference to the spec type class'
         self.mdata_ref.update(cfg.mdata_ref[specTypeClass])
     
     
-    def commit_db(self, update=True):
+    def _commit_db(self, update=True):
         with Db(self.mdata.data('machine'), self.cfg) as db:
             db.add(self, update=update)
         
         
-    def commit_pickle(self):
+    def _commit_pickle(self):
         '''
         Stores the self.mdata.data(), self.xdata, self.ydata dicts in a pickle file under the path:
         config.path['data']/<year>/<recTime>_<sha1>.pickle
@@ -51,44 +52,65 @@ class Spec(object):
             
             
     def commit(self, update=True):
-        self.commit_pickle()
-        self.commit_db(update=update)
+        self._commit_pickle()
+        self._commit_db(update=update)
         
-    '''TODO: make privat'''    
-    def _calc_time_data(self, time_per_point, trigger_offset, time_offset=0):
+    def _idx2time(self, idx, time_per_point, trigger_offset, time_offset=0):
         #self.xdata['tof'] = self.xdata['idx']*self.mdata.data('timePerPoint')-self.mdata.data('triggerOffset')-time_offset
-        self.xdata['tof'] = self.xdata['idx']*time_per_point-trigger_offset - time_offset
+        return idx*time_per_point-trigger_offset - time_offset
+    
+    def _calc_time_data(self, time_data_key='tof', time_offset=0):
+        self.xdata[time_data_key] = self._idx2time(idx=self.xdata['idx'],
+                                                   time_per_point=self.mdata.data('timePerPoint'),
+                                                   trigger_offset=self.mdata.data('triggerOffset'),
+                                                   time_offset=time_offset)
 
-    def photon_energy(self, waveLength):
-        """Calculates photon energy in eV for a given wave length.
-        
-        Returns: float."""
-        photon_energy = constants.h*constants.c/(constants.e*waveLength)
-        return photon_energy
-        
-    def _fix_neg_intensities(self, ydataKey='rawIntensity', newKey='intensity'):
+    def _photon_energy(self, waveLength):
+        """
+        Calculates photon energy in eV for a given wave length.
+        """
+        return constants.h*constants.c/(constants.e*waveLength)
+
+    def _set_neg_int_zero(self, int_data):
+        return (int_data + np.abs(int_data))/2
+    
+    def _calc_fixed_intensities(self, int_key='rawIntensity', new_int_key='intensity'):
         """
         The Oscilloscope sets the value for bins without counts to the value of the frame of display.
         So it's safe to set them to 0. 
         """
-        fixedIntensity = (self.ydata[ydataKey] + np.abs(self.ydata[ydataKey]))/2
-        self.ydata[newKey] = fixedIntensity
+        self.ydata[new_int_key] = self._set_neg_int_zero(self.ydata[int_key])
     
-    def __calc_sub_intensities(self, bgSpec):
-        self.ydata['intensitySubRaw'] = self.ydata['intensity'] - bgSpec.ydata['intensity']
-        self._fix_neg_intensities('intensitySubRaw', 'intensitySub')
+#    def _subtract_intensities(self, background_spec):
+#        self.ydata['intensitySubRaw'] = self.ydata['intensity'] - background_spec.ydata['intensity']
+#        self._fix_neg_intensities('intensitySubRaw', 'intensitySub')
     
     def subtract_bg(self, bgFile, isUpDown=False):
+        '''
+        Subtracts one ydata-vector from another.
+        
+        Warning: This implies, that the corresponding xdata of both data sets has the 
+        same gauge factors, that means the same toff, lscale, Eoff, trigger_offset,
+        time_per_point etc.
+        This is usually given, when spectra are measured in a time range, where one would
+        apply the same gauge reference.
+        
+        In all other cases one needs to adjust both xdata and ydata sets to match a common 
+        time range before subtraction!  
+        '''
         bgSpec = load.load_pickle(self.cfg, bgFile)
-        if not self.mdata.data('specType') == bgSpec.mdata.data('specType'):
-            raise ValueError('Background file has different spec type.')
-        self.mdata.update({'subtract_bgBgFile': bgSpec.mdata.data('pickleFile')})
-        bgSpec.mdata.update({'subtract_bgSpecFile': self.mdata.data('pickleFile')})
+        if not self.mdata.data('specTypeClass') == bgSpec.mdata.data('specTypeClass'):
+            raise ValueError('Background file has different spec type class.')
+        self.mdata.update({'subtractBgRef': bgSpec.mdata.data('pickleFile')})
+        bgSpec.mdata.update({'subtractBgRef': self.mdata.data('pickleFile')})
         bgSpec.mdata.add_tag('background', tagkey='systemTags')
         if isUpDown:
             bgSpec.mdata.add_tag('up/down', tagkey='systemTags')
             self.mdata.add_tag('up/down', tagkey='systemTags')
-        self.__calc_sub_intensities(bgSpec)
+        # subtract background
+        #self._subtract_intensities(bgSpec)
+        self.ydata['intensitySubRaw'] = self.ydata['intensity'] - bgSpec.ydata['intensity']
+        self._calc_fixed_intensities('intensitySubRaw', 'intensitySub')        
         self.mdata.add_tag('subtracted', tagkey='systemTags')
         self.commit()
         bgSpec.commit()
@@ -102,12 +124,17 @@ class SpecPe(Spec):
         Spec.__init__(self, mdata, xdata, ydata, cfg)
         self._update_mdata_reference(mdata['specTypeClass'], cfg)
         self._pFactor = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength'))**2
-        self._hv = self.photon_energy(self.mdata.data('waveLength'))
+        self._hv = self._photon_energy(self.mdata.data('waveLength'))
         if len(self.xdata) == 1:
             self.calc_spec_data()
         #print 'Assigning view.ViewPes'
         self.view = view.ViewPes(self)
-        
+    
+    # basic methods    
+    def _idx2time(self, idx, time_per_point, trigger_offset, lscale, Eoff, toff):
+        return 1/(lscale*np.sqrt(1/(idx*time_per_point - trigger_offset)**2 - Eoff/self._pFactor)) - toff
+        #return np.sqrt(self._pFactor/self.ekin(t, gauge_scale, gauge_offset))
+    
     def ekin(self, t, lscale, Eoff, toff):
         return self._pFactor/(lscale**2*(t + toff)**2) - Eoff
         #return self._hv - self.ebin(t, gauge_scale, gauge_offset)
@@ -122,69 +149,75 @@ class SpecPe(Spec):
     def jtrans_inv(self, intensity, t):
         return intensity*2*self._pFactor/t**3
         
-    def _calc_time_data(self, time_per_point, trigger_offset, lscale, Eoff, toff):
-        return 1/(lscale*np.sqrt(1/(self.xdata['idx']*time_per_point - trigger_offset)**2 - Eoff/self._pFactor)) - toff
-        #return np.sqrt(self._pFactor/self.ekin(t, gauge_scale, gauge_offset))    
+    # recursive methods        
+    def _calc_time_data(self, timedata_key='tof', lscale, Eoff, toff):
+        self.xdata[timedata_key] = self._idx2time(idx=self.xdata['idx'],
+                                                  time_per_point=self.mdata.data('timePerPoint'),
+                                                  trigger_offset=self.mdata.data('triggerOffset'),
+                                                  lscale=lscale,
+                                                  Eoff=Eoff,
+                                                  toff=toff)           
     
-    def _calc_ekin(self, newKey='ekin', lscale, Eoff, toff):
-        self.xdata[newKey] = self.ekin(self.xdata['tof'], lscale, Eoff, toff) 
+    def _calc_ekin(self, new_key='ekin', timedata_key='tof', lscale, Eoff, toff):
+        self.xdata[new_key] = self.ekin(self.xdata[timedata_key], lscale, Eoff, toff) 
         #self.xdata['ekin'] = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength')/self.xdata['tof'])**2
     
-    def _calc_ebin(self, newKey='ebin', lscale, Eoff, toff):
-        self.xdata[newKey] = self.ebin(self.xdata['tof'], lscale, Eoff, toff)
-        #self.xdata['ebin'] = self.photon_energy(self.mdata.data('waveLength')) - self.xdata['ekin']
+    def _calc_ebin(self, new_key='ebin', timedata_key='tof', lscale, Eoff, toff):
+        self.xdata[new_key] = self.ebin(self.xdata[timedata_key], lscale, Eoff, toff)
+        #self.xdata['ebin'] = self._photon_energy(self.mdata.data('waveLength')) - self.xdata['ekin']
         
-    def _calc_jacoby_intensity(self, newKey='jIntensity', intensityKey='intensity', tofKey='tof'):
-        self.ydata[newKey] = self.jtrans(self.ydata[intensityKey], self.xdata[tofKey])
-        #self.ydata[newKey] = self.ydata[ydataKey]/(2*self.xdata['ekin']/self.xdata['tof'])
+    def _calc_jacoby_intensity(self, new_key='jIntensity', intensity_key='intensity', timedata_key='tof'):
+        self.ydata[new_key] = self.jtrans(self.ydata[intensity_key], self.xdata[timedata_key])
+        #self.ydata[new_key] = self.ydata[ydataKey]/(2*self.xdata['ekin']/self.xdata['tof'])
         
 #    def __calcEbinGauged(self):
 #        self.xdata['ebinGauged'] = (self.xdata['ebin'] - self.mdata.data('gaugePar')['offset'])/self.mdata.data('gaugePar')['scale']
         
     
-    def calc_spec_data(self, time_per_point=self.mdata.data('timePerPoint'),
-                             trigger_offset=self.mdata.data('triggerOffset'),
-                             lscale=self.mdata.data('flightLengthScale'),
-                             Eoff=self.mdata.data('energyOffset'),
-                             toff=self.mdata.data('timeOffset')):
-        self._calc_time_data(time_per_point=self.mdata.data('timePerPoint'),
-                             trigger_offset=self.mdata.data('triggerOffset'),
-                             lscale=self.mdata.data('flightLengthScale'),
-                             Eoff=self.mdata.data('energyOffset'),
-                             toff=self.mdata.data('timeOffset'))
-        self._calc_ekin()
-        self._calc_ebin()
-        self._fix_neg_intensities()
+    def calc_spec_data(self):
+        lscale = self.mdata.data('flightLengthScaleImport')
+        Eoff = self.mdata.data('energyOffsetImport')
+        toff = self.mdata.data('timeOffsetImport')
+        self._calc_time_data(lscale=lscale, Eoff=Eoff, toff=toff)
+        self._calc_ekin(lscale=lscale, Eoff=Eoff, toff=toff)
+        self._calc_ebin(lscale=lscale, Eoff=Eoff, toff=toff)
+        self._calc_fixed_intensities()
         self._calc_jacoby_intensity()
         
         
     def gauge(self, gaugeRef):
         gaugeSpec = load.load_pickle(self.cfg, gaugeRef)
-        self.mdata.update({'gaugeRef': gaugeSpec.mdata.data('pickleFile')})
-        
-        
-        scale, offset = gaugeSpec.mdata.data('fitPar')[-2:]
-        self.mdata.update({'gaugePar': {'scale': scale, 'offset': offset}})
+        if gaugeSpec.mdata.data('specTypeClass') not in ['specPePt']:
+            raise ValueError('Gauge reference is not a Pt-spectrum.')
+        lscale = gaugeSpec.mdata.data('fitPar')[-1]
+        toff = gaugeSpec.mdata.data('fitPar')[-2]
+        Eoff = gaugeSpec.mdata.data('fitPar')[-3]
+        self.mdata.update({'gaugeRef': gaugeSpec.mdata.data('pickleFile'),
+                           'flightLengthScale': lscale,
+                           'timeOffset': toff,
+                           'energyOffset': Eoff})
+        self.mdata.add_tag('gauged', 'systemTags')
         # calc xdata gauged
-        self._calc_ebin(newKey='ebinGauged', gauge_scale=scale, gauge_offset=offset)
-        self._calc_ekin(newKey='ekinGauged', gauge_scale=scale, gauge_offset=offset)
-        self.xdata['tofGauged'] = self.calc_tof(self.xdata['tof'], gauge_scale=scale, gauge_offset=offset)
+        self._calc_time_data(timedata_key='tofGauged', lscale=lscale, Eoff=Eoff, toff=toff)
+        self._calc_ekin(new_key='ekinGauged', timedata_key='tofGauged', lscale=lscale, Eoff=Eoff, toff=toff)
+        self._calc_ebin(new_key='ebinGauged', timedata_key='tofGauged', lscale=lscale, Eoff=Eoff, toff=toff)
         # calc ydata gauged
-        self._calc_jacoby_intensity(newKey='jIntensityGauged', intensityKey='intensity', tofKey='tofGauged')
-        if 'jIntensitySub' in list(self.ydata.keys()):
-            self._calc_jacoby_intensity(newKey='jIntensityGaugedSub',
-                                       intensityKey='intensitySub', tofKey='tofGauged')
-        self.commit_pickle()
+        self._calc_jacoby_intensity(new_key='jIntensityGauged',
+                                    intensity_key='intensity', timedata_key='tofGauged')
+        if 'subtracted' in self.mdata.data('systemTags'):
+            self._calc_jacoby_intensity(new_key='jIntensityGaugedSub',
+                                        intensity_key='intensitySub', timedata_key='tofGauged')
+        self.commit()
         del gaugeSpec
         
     def subtract_bg(self, bgFile, isUpDown=True):
         Spec.subtract_bg(self, bgFile, isUpDown=isUpDown)
-        self._calc_jacoby_intensity(newKey='jIntensitySub', intensityKey='intensitySub')
-        if 'gaugePar' in list(self.mdata.data().keys()):
-            self._calc_jacoby_intensity(newKey='jIntensityGaugedSub',
-                                       intensityKey='intensitySub', tofKey='tofGauged')
-            
-        self.commit_pickle()
+        self._calc_jacoby_intensity(new_key='jIntensitySub', intensity_key='intensitySub')
+        if 'gauged' in self.mdata.data('systemTags'):
+            self._calc_jacoby_intensity(new_key='jIntensityGaugedSub',
+                                        intensity_key='intensitySub', timedata_key='tofGauged')    
+        self._commit_pickle()
+        
         
         
 class SpecPePt(SpecPe):
@@ -198,7 +231,7 @@ class SpecPePt(SpecPe):
 #        return [p[0] for p in peakPar]
     
     
-    def __fit_peak_pos_trans(self, peakPar):
+    def __fit_peakpos_trans(self, peakPar):
         return [np.sqrt(self._pFactor/(self._hv-p[0])) for p in peakPar]
     
     
@@ -209,7 +242,7 @@ class SpecPePt(SpecPe):
 #        return np.array(l)
 
 
-    def __fit_par_init_trans(self, peakPar, yscale, Eoff, toff, lscale):
+    def __fit_par0_trans(self, peakPar, yscale, Eoff, toff, lscale):
         l = [i for p in peakPar if p[0] for i in [p[1]*yscale,p[2]]]
         #l = [i for p in peakPar if p[0] for i in [self.jtrans_inv(p[1]*yscale, np.sqrt(self._pFactor/(self._hv-p[0]))),p[2]]]
         l.extend([Eoff, toff, lscale])
@@ -238,7 +271,10 @@ class SpecPePt(SpecPe):
 #        return mgauss
     
     
-    def multi_gauss_trans(self, t, peak_pos, parList):
+    def _multi_gauss_trans(self, t, peak_pos, parList):
+        '''
+        Multiple Gauss at peak_pos with parameter from parList transformed into time domain
+        '''
         plist = list(parList)
         xlist = list(peak_pos)
         #gaussTrans = lambda t,m,A,s,toff,Eoff: A*np.exp(-(self._hv - self._pFactor*(1/(t + toff)**2 + 1/Eoff**2) - m)**2/(2*s**2))*2*self._pFactor/(t + toff)**3
@@ -263,15 +299,14 @@ class SpecPePt(SpecPe):
     
     
     def __err_multi_gauss_trans(self, p,t,y,peak_pos, constrain_par, constrain):
-        'TODO: move to cfg or specify, when called.'
         c_par = constrain_par # -1: lscale, -2: toff, -3: Eoff
         c = constrain
         if c[0]<p[c_par]<c[1]: # only allow fits with toff (47-5)ns +- 5ns
         #if 1.0<p[-1]<1.007: # limit effective flight length to a maximum +0.007% 
-            return self.multi_gauss_trans(t, peak_pos, p)-y
+            return self._multi_gauss_trans(t, peak_pos, p)-y
         else:
             return 1e6
-#        return self.multi_gauss_trans(t, peak_pos, p)-y
+#        return self._multi_gauss_trans(t, peak_pos, p)-y
     
     
 #    def __fit_multi_gauss(self, peakParRef, scale, offset, rel_y_min, cutoff):
@@ -305,13 +340,13 @@ class SpecPePt(SpecPe):
         else:
             raise ValueError('cutoff must be between 0 and %.2f. Got %.1f instead.'%(xdata.max(), cutoff))
         peakPar = [p for p in peakParRef if np.sqrt(self._pFactor/(self._hv-p[0]))<tof_max and p[1]>rel_y_min]
-        fitValues = {'fitPeakPos': self.__fit_peak_pos_trans(peakPar),
+        fitValues = {'fitPeakPos': self.__fit_peakpos_trans(peakPar),
                      'fitXdataKey': xdata_key, 'fitYdataKey': ydata_key,
                      'fitConstrains': {constrain_par: constrain},
                      'fitCutoff': cutoff}
         xcenter = peakParRef[0][0]
         yscale = self.__get_y_scale(self.xdata['ebin'], self.ydata['jIntensity'], xcenter, 0.4) # better use actual intensity values
-        fitValues['fitPar0'] = self.__fit_par_init_trans(peakPar, yscale, Eoff, toff, lscale)
+        fitValues['fitPar0'] = self.__fit_par0_trans(peakPar, yscale, Eoff, toff, lscale)
         try:
             p, covar, info, mess, ierr = leastsq(self.__err_multi_gauss_trans, fitValues['fitPar0'], 
                                                  args=(xdata,ydata,
@@ -331,7 +366,7 @@ class SpecPePt(SpecPe):
     def gauge(self, xdata_key=None, ydata_key=None, rel_y_min=0, lscale=1, Eoff=0, toff=42e-9, constrain_par='toff', constrain=[37e-9, 47e-9], 
               cutoff=None):
         '''
-        Fits a multiple gauss to the pes.
+        Fits a multiple gauss to the pes in time domain.
         data_key: which xy-data to use for the fit
         constrain_par: which parameter to constrain:  lscale, toff, Eoff
         constrain: [constrain_par_min, constrain_par_min]
@@ -369,7 +404,7 @@ class SpecPeWater(SpecPe):
     def __gl_trans(self, t, tmax, At, sg, sl):
         y = np.zeros(t.shape)
         q = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength'))**2
-        hv = self.photon_energy(self.mdata.data('waveLength'))
+        hv = self._photon_energy(self.mdata.data('waveLength'))
         ebin = lambda t: hv - q/t**2
         xmax = ebin(tmax)
         A = At*tmax/(2*(hv-xmax))
@@ -524,26 +559,26 @@ class SpecMs(Spec):
             self.calc_spec_data() 
         self.view = view.ViewMs(self)
         
+    def _mass(self, t, t_ref, m_ref, m_baseunit):
+        return ((t/t_ref)**2)*m_ref/m_baseunit
         
-    def calc_ms(self, xkey='amu', clusterBaseUnitMass=1):
-#        self.xdata[xkey] = ((self.xdata['tof']/
-#                             (self.mdata.data('referenceTime') - self.mdata.data('timeOffset'))
-#                             )**2)*self.mdata.data('referenceMass')/clusterBaseUnitMass
-        self.xdata[xkey] = ((self.xdata['tof']/
-                             self.mdata.data('referenceTime'))**2)*self.mdata.data('referenceMass')/clusterBaseUnitMass
-        
+    def _calc_ms(self, mass_key='amu', time_key='tof', t_ref, m_baseunit=1):
+        self.xdata[mass_key] = self._mass(self.xdata[time_key],
+                                          t_ref=t_ref,
+                                          m_ref=self.mdata.data('referenceMass'),
+                                          m_baseunit=m_baseunit)
     
+    'TODO: use *Import mdata keys or dont?'
     def calc_spec_data(self):
-        self._calc_time_data(self.mdata.data('timePerPoint'),
-                             self.mdata.data('triggerOffset'),
-                             self.mdata.data('timeOffset'))
-        self._fix_neg_intensities()
-        self.calc_ms()
-        self.calc_ms(xkey='ms', clusterBaseUnitMass=self.mdata.data('clusterBaseUnitMass'))
+        self._calc_time_data(self.mdata.data('timeOffset'))
+        self._calc_fixed_intensities()
+        self._calc_ms()
+        self._calc_ms(mass_key='ms', m_baseunit=self.mdata.data('clusterBaseUnitMass'))
         
         
     def gauge(self, unit='cluster'):
-        '''Simple gauge function. Needs to query for t1, t2, dn.
+        '''
+        Simple gauge function. Needs to query for t1, t2, dn.
         unit: one of 'cluster' or 'amu'
         '''
         if unit == 'cluster':
@@ -554,10 +589,7 @@ class SpecMs(Spec):
             raise ValueError('unit must be one of [cluster/amu].')
         t_off = lambda n,dn,t1,t2: (np.sqrt(1-float(dn)/n)*t2 - t1)/(np.sqrt(1-float(dn)/n)-1)
         t_ref = lambda m_unit,dn,t1,t2,t_off: np.sqrt(193.96/(m_unit*dn)*((t2-t_off)**2 - (t1-t_off)**2))
-        self.mdata.update({'timeOffset':0, 'referenceTime':0})
-        self._calc_time_data(self.mdata.data('timePerPoint'),
-                             self.mdata.data('triggerOffset'),
-                             self.mdata.data('timeOffset'))
+        self._calc_time_data(time_off=0)
         self.view.showTof()
         # Ask for t1,t2,dn
         no_valid_input = True

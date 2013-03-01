@@ -90,8 +90,10 @@ class LegacyData(object):
                 self.metadata['referenceMass'] = float(self.header[4])
             if self.header[7] == 'Eichzeit[s]':
                 self.metadata['referenceTime'] = float(self.header[6])
+                self.metadata['referenceTimeImport'] = float(self.header[6])
             if self.header[9] == 'Time_Offset[s]':
                 self.metadata['timeOffset'] = float(self.header[8])
+                self.metadata['timeOffsetImport'] = float(self.header[8])
         else:
             raise ValueError('%s: Not a valid data file.'%self.metadata['datFileOrig'])
         

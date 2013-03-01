@@ -75,7 +75,7 @@ class Cfg():
         Mdata reference: 'key': [type|value list, obligatory]
         Only keys listed are allowed in mdata. Should prevent mdata from being tainted with typos.
         '''
-        self.wavelengths = [157e-9, 193e-9, 248e-9, 308e-9, 800e-9] # 193.35e-9, 248.4e-9
+        self.wavelengths = [157e-9, 193e-9, 248e-9, 308e-9, 800e-9] # 157.63e-9, 193.35e-9, 248.4e-9
         'When modified -> increase mdata_version!'
         self.mdata_version = 0.1
         self.mdata_ref = {'spec': {'datFile': [str, True],
@@ -105,9 +105,10 @@ class Cfg():
                                      'ionType': [['+','-'], True],
                                      'referenceMass': [float, True],
                                      'referenceTime': [float, True],
-                                     'subtractBgBgFile': [str, False],
-                                     'subtractBgSpecFile': [str, False],
+                                     'referenceTimeImport': [float, True],
+                                     'subtractBgRef': [str, False],
                                      'timeOffset': [float, True],
+                                     'timeOffsetImport': [float, True],
                                      'trapTemp': [float, False],
                                      },
                           'specPe': {'cfgFile': [str, False],
@@ -116,16 +117,15 @@ class Cfg():
                                      'clusterDopant': [str, True],
                                      'clusterDopantNumber': [int, True],
                                      'delayTimings': [dict, False],
-                                     'energyOffset': [float, False],
+                                     'energyOffset': [float, True],
                                      'energyOffsetImport': [float, True],
                                      'flightLength': [[1.6], True],
-                                     'flightLengthScale': [float, False],
+                                     'flightLengthScale': [float, True],
                                      'flightLengthScaleImport': [float, True],
                                      'gaugeRef': [str, False],
                                      'ionType': [['+','-'], True],
-                                     'subtractBgBgFile': [str, False],
-                                     'subtractBgSpecFile': [str, False],
-                                     'timeOffset': [float, False],
+                                     'subtractBgRef': [str, False],
+                                     'timeOffset': [float, True],
                                      'timeOffsetImport': [float, True],
                                      'trapTemp': [float, False],
                                      'waveLength': [self.wavelengths, True],
@@ -157,8 +157,7 @@ class Cfg():
                                      'clusterDopantNumber': [int, True],
                                      'delayTimings': [dict, False],
                                      'ionType': [['+','-'], True],
-                                     'subtractBgBgFile': [str, False],
-                                     'subtractBgSpecFile': [str, False],
+                                     'subtractBgRef': [str, False],
                                      'timeOffset': [float, True],
                                      'trapTemp': [float, False],
                                      'waveLength': [self.wavelengths, True],
@@ -183,10 +182,13 @@ class Cfg():
                     
         
         ''' Values used when importing legacy data'''
-        self.defaults = {'casi': {'pes': {'energyOffsetImport': 0,
+        self.defaults = {'casi': {'pes': {'energyOffset': 0,
+                                          'energyOffsetImport': 0,
                                           'flightLength': 1.6,
+                                          'flightLengthScale': 1.0,
                                           'flightLengthScaleImport': 1.0,
                                           'mdataVersion': self.mdata_version,
+                                          'timeOffset': 63e-9,
                                           'timeOffsetImport': 63e-9, # previously used for all pes (better derived by gauging)
                                           'timePerPoint': 2e-9,
                                           'triggerOffset': 0,

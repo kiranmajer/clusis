@@ -245,9 +245,9 @@ class ViewPt(ViewPes):
                         color='blue')
             else:
                 ax.plot(self.spec.xdata['ebin'],
-                        self.spec.jTrans(self.spec.mGaussTrans(self.spec.xdata['tof'],
-                                                               self.spec.mdata.data('fitPeakPosTof'),
-                                                               self.spec.mdata.data(fitPar)),
+                        self.spec.jTrans(self.spec._multi_gauss_trans(self.spec.xdata['tof'],
+                                                                      self.spec.mdata.data('fitPeakPosTof'),
+                                                                      self.spec.mdata.data(fitPar)),
                                          self.spec.xdata['tof']),
                         color='blue')    
             ax.relim()
