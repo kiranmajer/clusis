@@ -150,7 +150,7 @@ class SpecPe(Spec):
         return intensity*2*self._pFactor/t**3
         
     # recursive methods        
-    def _calc_time_data(self, timedata_key='tof', lscale, Eoff, toff):
+    def _calc_time_data(self, timedata_key, lscale, Eoff, toff):
         self.xdata[timedata_key] = self._idx2time(idx=self.xdata['idx'],
                                                   time_per_point=self.mdata.data('timePerPoint'),
                                                   trigger_offset=self.mdata.data('triggerOffset'),
@@ -158,11 +158,11 @@ class SpecPe(Spec):
                                                   Eoff=Eoff,
                                                   toff=toff)           
     
-    def _calc_ekin(self, new_key='ekin', timedata_key='tof', lscale, Eoff, toff):
+    def _calc_ekin(self, new_key, timedata_key, lscale, Eoff, toff):
         self.xdata[new_key] = self.ekin(self.xdata[timedata_key], lscale, Eoff, toff) 
         #self.xdata['ekin'] = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength')/self.xdata['tof'])**2
     
-    def _calc_ebin(self, new_key='ebin', timedata_key='tof', lscale, Eoff, toff):
+    def _calc_ebin(self, new_key, timedata_key, lscale, Eoff, toff):
         self.xdata[new_key] = self.ebin(self.xdata[timedata_key], lscale, Eoff, toff)
         #self.xdata['ebin'] = self._photon_energy(self.mdata.data('waveLength')) - self.xdata['ekin']
         
@@ -178,9 +178,9 @@ class SpecPe(Spec):
         lscale = self.mdata.data('flightLengthScaleImport')
         Eoff = self.mdata.data('energyOffsetImport')
         toff = self.mdata.data('timeOffsetImport')
-        self._calc_time_data(lscale=lscale, Eoff=Eoff, toff=toff)
-        self._calc_ekin(lscale=lscale, Eoff=Eoff, toff=toff)
-        self._calc_ebin(lscale=lscale, Eoff=Eoff, toff=toff)
+        self._calc_time_data(timedata_key='tof', lscale=lscale, Eoff=Eoff, toff=toff)
+        self._calc_ekin(new_key='ekin', timedata_key='tof', lscale=lscale, Eoff=Eoff, toff=toff)
+        self._calc_ebin(new_key='ebin', timedata_key='tof', lscale=lscale, Eoff=Eoff, toff=toff)
         self._calc_fixed_intensities()
         self._calc_jacoby_intensity()
         
@@ -562,7 +562,7 @@ class SpecMs(Spec):
     def _mass(self, t, t_ref, m_ref, m_baseunit):
         return ((t/t_ref)**2)*m_ref/m_baseunit
         
-    def _calc_ms(self, mass_key='amu', time_key='tof', t_ref, m_baseunit=1):
+    def _calc_ms(self, mass_key, time_key, t_ref, m_baseunit):
         self.xdata[mass_key] = self._mass(self.xdata[time_key],
                                           t_ref=t_ref,
                                           m_ref=self.mdata.data('referenceMass'),
@@ -572,8 +572,12 @@ class SpecMs(Spec):
     def calc_spec_data(self):
         self._calc_time_data(self.mdata.data('timeOffset'))
         self._calc_fixed_intensities()
-        self._calc_ms()
-        self._calc_ms(mass_key='ms', m_baseunit=self.mdata.data('clusterBaseUnitMass'))
+        self._calc_ms(mass_key='amu', time_key='tof',
+                      t_ref=self.mdata.data('referenceTime'),
+                      m_baseunit=1)
+        self._calc_ms(mass_key='ms', time_key='tof',
+                      t_ref=self.mdata.data('referenceTime'),
+                      m_baseunit=self.mdata.data('clusterBaseUnitMass'))
         
         
     def gauge(self, unit='cluster'):

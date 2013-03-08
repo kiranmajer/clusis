@@ -14,6 +14,7 @@ from ase.atoms import Atoms
 class LegacyData(object):
     
     def __init__(self, fileToImport, cfg, spectype=None, commonMdata={}, machine='casi'):
+        self.spectype = spectype
         self.datfile_orig = os.path.abspath(fileToImport)
         self.metadata = {'datFileOrig': os.path.abspath(fileToImport),
                          'tags': [],
@@ -32,12 +33,12 @@ class LegacyData(object):
         self.eval_header()
         print('Setting up meta data ...')
         self.get_sha1()
-        self.get_recTime()
+        self.get_recTime(self.spectype)
         print('Evaluating cfg file ...')
         self.eval_cfgfile()
-        self.set_storage_paths()
         print('Setting specType ...')
-        self.set_spectype(spectype)
+        self.set_spectype(self.spectype)
+        self.set_storage_paths()
         self.add_default_mdata()
         if self.metadata['specType'] not in ['generic']:
             print('Parsing dir structure ...')
@@ -113,36 +114,39 @@ class LegacyData(object):
         self.metadata['sha1'] = sha1
     
     
-    def get_recTime(self):
+    def get_recTime(self, spectype):
         '''
         Checks the recording time from time stamp against filename. 
         pes, ms data files only (for now).
         '''
-        datFileName = os.path.basename(self.metadata['datFileOrig'])
-        if self.datafile_type == 'pes':
-            pattern_groups = re.compile(r'(^\d{2})(\d{2})(\d{2})_')
-            day, month, year = pattern_groups.search(datFileName).groups()
-            if int(year) < 80: 
-                year = 2000 + int(year)
-            else:
-                year = 1900 + int(year)
-        elif self.datafile_type == 'ms':
-            pattern_groups = re.compile(r'(^\d{4})(\d{2})(\d{2})_')
-            year, month, day = pattern_groups.search(datFileName).groups()
-            
-        timeStamp = os.stat(self.metadata['datFileOrig']).st_mtime
-        if self.datafile_type in ['pes', 'ms']:
-            startDate = '%s %s %s' % (day, month, year)
-            dayStarts = time.mktime(time.strptime(startDate, '%d %m %Y'))
-            dayEnds = dayStarts + 86400
-            if dayStarts <= timeStamp <= dayEnds:
-                self.metadata['recTime'] = timeStamp
-            else:
-                self.metadata['recTime'] = dayStarts
-                self.metadata['userTags'].append('Import warning: Invalid time stamp')
-                print('Warning: %s has invalid time stamp. Got recTime from filename.' % (datFileName))
-        else:
+        timeStamp = os.stat(self.metadata['datFileOrig']).st_mtime        
+        if spectype in ['generic']:
             self.metadata['recTime'] = timeStamp
+        else:
+            datFileName = os.path.basename(self.metadata['datFileOrig'])
+            if self.datafile_type == 'pes':
+                pattern_groups = re.compile(r'(^\d{2})(\d{2})(\d{2})_')
+                day, month, year = pattern_groups.search(datFileName).groups()
+                if int(year) < 80: 
+                    year = 2000 + int(year)
+                else:
+                    year = 1900 + int(year)
+            elif self.datafile_type == 'ms':
+                pattern_groups = re.compile(r'(^\d{4})(\d{2})(\d{2})_')
+                year, month, day = pattern_groups.search(datFileName).groups()
+                
+            if self.datafile_type in ['pes', 'ms']:
+                startDate = '%s %s %s' % (day, month, year)
+                dayStarts = time.mktime(time.strptime(startDate, '%d %m %Y'))
+                dayEnds = dayStarts + 86400
+                if dayStarts <= timeStamp <= dayEnds:
+                    self.metadata['recTime'] = timeStamp
+                else:
+                    self.metadata['recTime'] = dayStarts
+                    self.metadata['userTags'].append('Import warning: Invalid time stamp')
+                    print('Warning: %s has invalid time stamp. Got recTime from filename.' % (datFileName))
+            else:
+                self.metadata['recTime'] = timeStamp
 
 
     def find_cfgfile(self):
