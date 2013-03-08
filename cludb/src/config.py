@@ -8,7 +8,7 @@ class Cfg():
             raise ValueError('Please enter absolute path.')
         # cfg and base dir absolute
         cfg_dir = os.path.join(os.path.expanduser('~'), '.cludb')
-        base_Dir = os.path.join(user_storage_dir, 'cludb3')
+        base_Dir = os.path.join(user_storage_dir, 'cludb3refac')
         # we keep the internal dir structure relative
         data_storage_dir = 'data'
         archive_storage_dir = 'archive'
