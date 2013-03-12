@@ -56,21 +56,25 @@ class Mdata(object):
     def check_completeness(self):
         '''
         '''
+        print('Starting mdata check ...')
         ref = self.__reference
         mdata = self.__mdata
-        hasChanged = True
-        while hasChanged:
-            for k, v in ref.items():
-                if v[1]: # obligatory?
+        for k, v in ref.items():
+            if v[1]: # obligatory?
+                print('{} is obligatory. Checking value ...'.format(k))
+                hasChanged = True
+                while hasChanged:
                     if k in mdata:
                         try:
                             mdata[k] = self.__validate_value(k, mdata[k])
                             hasChanged = False
+                            print('{}: exists and has a valid value.'.format(k))
                         except:
                             mdata.update(self.__ask_for_key_value(k))
                             hasChanged = True
                             
                     else:
+                        print('Missing obligatory mdata detected: {}'.format(k))
                         mdata.update(self.__ask_for_key_value(k))
                         hasChanged = True
 
@@ -103,7 +107,7 @@ class Mdata(object):
         
     def __update_tags(self):
         'Merges userTags and systemTags'
-        self.__mdata['tags'] = list(set(self.__mdata.data['systemTags'])|set(self.__mdata.data['tags']))
+        self.__mdata['tags'] = list(set(self.__mdata['systemTags'])|set(self.__mdata['userTags']))
             
     
     def add(self, newMdata, update=False):
@@ -138,7 +142,7 @@ class Mdata(object):
                             mdata[k]=self.__validate_value(k, v)
                 else:
                     print('Failed to add "%s: %s". Key not allowed.' % (k, str(v)))
-                self.__update_tags()
+            self.__update_tags()
         else:
             raise ValueError('Expected a dict. Got a %s instead.'%(type(newMdata).__name__))
 

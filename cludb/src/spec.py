@@ -30,6 +30,7 @@ class Spec(object):
     
     def _update_mdata_reference(self, specTypeClass, cfg):
         'Adapts mdata reference to the spec type class'
+        print('Updating ref with {}'.format(specTypeClass))
         self.mdata_ref.update(cfg.mdata_ref[specTypeClass])
     
     
@@ -46,7 +47,7 @@ class Spec(object):
         pickleFile = os.path.join(self.cfg.path['base'], self.mdata.data('pickleFile'))
         pickleDir = os.path.dirname(pickleFile)
         if not os.path.exists(pickleDir):
-            os.mkdir(pickleDir)   
+            os.makedirs(pickleDir)   
         with open(pickleFile, 'wb') as f:
             pickle.dump((self.mdata.data(), self.xdata, self.ydata), f)
             
@@ -57,7 +58,7 @@ class Spec(object):
         
     def _idx2time(self, idx, time_per_point, trigger_offset, time_offset=0):
         #self.xdata['tof'] = self.xdata['idx']*self.mdata.data('timePerPoint')-self.mdata.data('triggerOffset')-time_offset
-        return idx*time_per_point-trigger_offset - time_offset
+        return idx*time_per_point - trigger_offset - time_offset
     
     def _calc_time_data(self, time_data_key='tof', time_offset=0):
         self.xdata[time_data_key] = self._idx2time(idx=self.xdata['idx'],
@@ -80,6 +81,11 @@ class Spec(object):
         So it's safe to set them to 0. 
         """
         self.ydata[new_int_key] = self._set_neg_int_zero(self.ydata[int_key])
+        
+        
+    def calc_spec_data(self):
+        self._calc_time_data()
+        self._calc_fixed_intensities()
     
 #    def _subtract_intensities(self, background_spec):
 #        self.ydata['intensitySubRaw'] = self.ydata['intensity'] - background_spec.ydata['intensity']
@@ -122,7 +128,7 @@ class SpecPe(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
         print('__init__: Init SpecPe')
         Spec.__init__(self, mdata, xdata, ydata, cfg)
-        self._update_mdata_reference(mdata['specTypeClass'], cfg)
+        self._update_mdata_reference('specPe', cfg)
         self._pFactor = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength'))**2
         self._hv = self._photon_energy(self.mdata.data('waveLength'))
         if len(self.xdata) == 1:
@@ -174,10 +180,10 @@ class SpecPe(Spec):
 #        self.xdata['ebinGauged'] = (self.xdata['ebin'] - self.mdata.data('gaugePar')['offset'])/self.mdata.data('gaugePar')['scale']
         
     
-    def calc_spec_data(self):
-        lscale = self.mdata.data('flightLengthScaleImport')
-        Eoff = self.mdata.data('energyOffsetImport')
-        toff = self.mdata.data('timeOffsetImport')
+    def calc_spec_data(self, lscale_key='flightLengthScale', Eoff_key='energyOffset', toff_key='timeOffset'):
+        lscale = self.mdata.data(lscale_key)
+        Eoff = self.mdata.data(Eoff_key)
+        toff = self.mdata.data(toff_key)
         self._calc_time_data(timedata_key='tof', lscale=lscale, Eoff=Eoff, toff=toff)
         self._calc_ekin(new_key='ekin', timedata_key='tof', lscale=lscale, Eoff=Eoff, toff=toff)
         self._calc_ebin(new_key='ebin', timedata_key='tof', lscale=lscale, Eoff=Eoff, toff=toff)
@@ -223,7 +229,7 @@ class SpecPe(Spec):
 class SpecPePt(SpecPe):
     def __init__(self, mdata, xdata, ydata, cfg):
         SpecPe.__init__(self, mdata, xdata, ydata, cfg)
-        self._update_mdata_reference(mdata['specTypeClass'], cfg)
+        self._update_mdata_reference('specPePt', cfg)
         self.view = view.ViewPt(self)
              
         
@@ -363,8 +369,8 @@ class SpecPePt(SpecPe):
             return fitValues
        
 
-    def gauge(self, xdata_key=None, ydata_key=None, rel_y_min=0, lscale=1, Eoff=0, toff=42e-9, constrain_par='toff', constrain=[37e-9, 47e-9], 
-              cutoff=None):
+    def gauge(self, xdata_key=None, ydata_key=None, rel_y_min=0, lscale=1, Eoff=0, toff=42e-9,
+              constrain_par='toff', constrain=[37e-9, 47e-9], cutoff=None):
         '''
         Fits a multiple gauss to the pes in time domain.
         data_key: which xy-data to use for the fit

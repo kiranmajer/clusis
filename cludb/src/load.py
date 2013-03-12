@@ -41,7 +41,7 @@ def archive(cfg, mdata):
     old_file = abs_path(cfg, mdata['datFileOrig'])
     new_file = abs_path(cfg, mdata['datFile'])
     if not os.path.exists(os.path.dirname(new_file)):
-        os.mkdir(os.path.dirname(new_file))
+        os.makedirs(os.path.dirname(new_file))
     '''TODO: catch io exceptions'''
     os.rename(old_file, new_file)
     movedFiles = [[new_file, old_file]]
@@ -51,7 +51,7 @@ def archive(cfg, mdata):
         old_cfg = abs_path(cfg, mdata['cfgFileOrig'])
         new_cfg = abs_path(cfg, mdata['cfgFile'])
         if not os.path.exists(os.path.dirname(new_cfg)):
-            os.mkdir(os.path.dirname(new_cfg))
+            os.makedirs(os.path.dirname(new_cfg))
         os.rename(old_cfg, new_cfg)
         movedFiles.append([new_cfg, old_cfg])
     
@@ -110,7 +110,7 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}):
             mi = LegacyData(datFile, cfg, spectype, commonMdata)
         except Exception as e:
             print('LegacyData creation failed:', e)
-            failedImports.append([datFile, 'LegacyData creation failed: %s'%e])
+            failedImports.append([datFile, 'LegacyData creation failed: {}'.format(e)])
             #raise
             continue
         if not db.table_has_sha1(mi.mdata.data('specType'), mi.mdata.data('sha1')) and mi.mdata.data('sha1') not in sha1ToImport:
@@ -132,14 +132,15 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}):
                         ydata = {'rawIntensity': mi.data}
                         xdata = {'idx': np.arange(0,len(ydata['rawIntensity']))+1/2} # intensity for [i,i+1] will be displayed at i+0.5
                         spec = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
-                        spec.commit_pickle()
+                        spec._commit_pickle()
                     except Exception as e:
                         print('%s failed to import:'%datFile, e)
                         failedImports.append([datFile, 'Import error: %s.'%e])
                         move_back(moved)
+                        raise
                     else:
                         movedFiles.extend(moved)
-                        spec.commit_pickle()
+                        spec._commit_pickle()
                         specList.append(spec)
                         sha1ToImport.append(mi.mdata.data('sha1'))
             else:

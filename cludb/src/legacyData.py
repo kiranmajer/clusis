@@ -38,6 +38,7 @@ class LegacyData(object):
         self.eval_cfgfile()
         print('Setting specType ...')
         self.set_spectype(self.spectype)
+        print('... {}'.format(self.metadata['specType']))
         self.set_storage_paths()
         self.add_default_mdata()
         if self.metadata['specType'] not in ['generic']:
@@ -47,13 +48,19 @@ class LegacyData(object):
                 print('Parsing ms datfile name ...')
                 self.parse_datfile_name()
                 self.metadata['clusterBaseUnitMass'] = Atoms(self.metadata['clusterBaseUnit']).get_masses().sum()
+        print('Setting specTypeClass ...')
         self.set_spectype_class()
-        print('Convert metadata to Mdata object ...')
-        self.mdata = Mdata({}, self.cfg.mdata_ref[self.metadata['specTypeClass']]) 
+        print('... {}'.format(self.metadata['specTypeClass']))
+        print('Converting metadata to Mdata object ...')
+        print('Building mdata reference...')
+        self.mdata_ref = self.build_mdata_ref(self.metadata['specTypeClass'])
+        print('mdata ref.:', self.mdata_ref)
+        self.mdata = Mdata({}, self.mdata_ref) 
         self.mdata.add(self.metadata)
         if len(commonMdata) > 0:
-            #print 'Importing commonMdata', commonMdata
+            print('Importing commonMdata', commonMdata)
             self.mdata.add(commonMdata)
+            #self.metadata.update(commonMdata)
         self.mdata.check_completeness()
     
     def parse_file(self, fileToImport):
@@ -201,7 +208,7 @@ class LegacyData(object):
                 self.metadata['clusterBaseUnitNumber'] = int(cfg_data.pop())
                 ch_idx=1
                 for pair in list(zip(cfg_data[::2],cfg_data[1::2])):
-                    self.metadata['delayTimings']['ch{}'.format(ch_idx)] = [int(pair[0]*20e-9),
+                    self.metadata['delayTimings']['ch{}'.format(ch_idx)] = [int(pair[0])*20e-9,
                                                                             (int(pair[1])-int(pair[0]))*20e-9]
                     ch_idx+=1
 
@@ -331,6 +338,19 @@ class LegacyData(object):
             self.metadata['specTypeClass'] = 'specPeWater'
         else:
             self.metadata['specTypeClass'] = classtype_map[self.metadata['specType']]
+            
+    def build_mdata_ref(self, spec_type_class):
+        ref_map = {'spec': ['spec'],
+                   'specMs': ['spec', 'specMs'],
+                   'specPe': ['spec', 'specPe'],
+                   'specPePt': ['spec', 'specPe', 'specPePt'],
+                   'specPeWater': ['spec', 'specPe', 'specPeWater'],
+                   'specPf': ['spec', 'specPf']}
+        mdata_ref = {}
+        for k in ref_map[spec_type_class]:
+            mdata_ref.update(self.cfg.mdata_ref[k])
+        return mdata_ref
+        
 
 
 

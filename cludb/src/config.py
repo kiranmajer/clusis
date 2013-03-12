@@ -87,10 +87,12 @@ class Cfg():
                                    'sha1': [str, True],
                                    'specType': [['ms', 'pes', 'pfs', 'generic'], True],
                                    'specTypeClass': [['spec', 'specMs', 'specPe', 'specPePt', 'specPeWater', 'specPf'], True],
+                                   'sweeps': [int, False],
                                    'systemTags': [list, True],
                                    'tags': [list, True], # combined tags of systemTags and userTags (for db)
                                    'timePerPoint': [float, True],
                                    'triggerOffset': [float, True],
+                                   'triggerFrequency': [float, False],
                                    'userTags': [list, True],
                                    },
                           'specMs': {'cfgFile': [str, False],

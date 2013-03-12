@@ -154,7 +154,7 @@ class ViewPes(View):
     def plot_ekin(self, ax, subtractBg=False):
         ax.set_xlabel(r'E$_{kin}$ (eV)')
         ax.set_ylabel('Intensity (a.u.)')
-        ax.set_xlim(0,self.spec.photonEnergy(self.spec.mdata.data('waveLength')))
+        ax.set_xlim(0,self.spec._hv)
         if subtractBg:
             intensityKey = 'jIntensitySub'
         else:
@@ -175,7 +175,7 @@ class ViewPes(View):
     def plot_ebin(self, ax, show_gauged=False, subtractBg=False):
         ax.set_xlabel(r'E$_{bin}$ (eV)')
         ax.set_ylabel('Intensity (a.u.)')
-        ax.set_xlim(0,self.spec.photonEnergy(self.spec.mdata.data('waveLength')))
+        ax.set_xlim(0,self.spec._hv)
         gauged = False
         if 'ebinGauged' in list(self.spec.xdata.keys()):
             if show_gauged:
@@ -237,16 +237,16 @@ class ViewPt(ViewPes):
                
     def plot_ebin_fit(self, ax, fitPar):
         if fitPar in list(self.spec.mdata.data().keys()):
-            if fitPar in ['fitPar', 'fitPar0']:        
-                ax.plot(self.spec.xdata['ebin'],
-                        self.spec.mGauss(self.spec.xdata['ebin'],
-                                         self.spec.mdata.data('fitPeakPos'),
-                                         self.spec.mdata.data(fitPar)),
-                        color='blue')
-            else:
-                ax.plot(self.spec.xdata['ebin'],
-                        self.spec.jTrans(self.spec._multi_gauss_trans(self.spec.xdata['tof'],
-                                                                      self.spec.mdata.data('fitPeakPosTof'),
+#            if fitPar in ['fitPar', 'fitPar0']:        
+#                ax.plot(self.spec.xdata['ebin'],
+#                        self.spec.mGauss(self.spec.xdata['ebin'],
+#                                         self.spec.mdata.data('fitPeakPos'),
+#                                         self.spec.mdata.data(fitPar)),
+#                        color='blue')
+#            else:
+            ax.plot(self.spec.xdata['ebin'],
+                        self.spec.jtrans(self.spec._multi_gauss_trans(self.spec.xdata['tof'],
+                                                                      self.spec.mdata.data('fitPeakPos'),
                                                                       self.spec.mdata.data(fitPar)),
                                          self.spec.xdata['tof']),
                         color='blue')    
@@ -269,15 +269,17 @@ class ViewPt(ViewPes):
     def plot_tof_fit(self, ax, fitPar, timeUnit):
         if fitPar in list(self.spec.mdata.data().keys()):        
             ax.plot(self.spec.xdata['tof']/timeUnit,
-                    self.spec.mGaussTrans(self.spec.xdata['tof'],self.spec.mdata.data('fitPeakPosTof'),self.spec.mdata.data(fitPar)),
+                    self.spec._multi_gauss_trans(self.spec.xdata['tof'],
+                                                 self.spec.mdata.data('fitPeakPos'),
+                                                 self.spec.mdata.data(fitPar)),
                     color='blue')    
             ax.relim()
             ax.autoscale(axis='y')  
         else:
-            raise ValueError('Spectrum not gauged. Gauge first by running <Spec instance>.gauge(specType, offset=0).')
+            raise ValueError('Spectrum not gauged. Gauge first by running <Spec instance>.gauge().')
     
     
-    def show_tof_fit(self, fitPar='fitParTof', timeUnit=1e-6):
+    def show_tof_fit(self, fitPar='fitPar', timeUnit=1e-6):
         self._single_fig_output()
         self.plot_tof(self.ax, timeUnit=timeUnit)
         self.plot_tof_fit(self.ax, fitPar, timeUnit)       
@@ -340,7 +342,7 @@ class ViewWater(ViewPes):
                             color='DimGray')
         else:
             ax.plot(self.spec.xdata['ebin'],
-                    self.spec.jTrans(self.spec.mGlTrans(self.spec.xdata['tof'],
+                    self.spec.jtrans(self.spec.mGlTrans(self.spec.xdata['tof'],
                                                    self.spec.mdata.data(fitPar)),
                                      self.spec.xdata['tof']),
                     color='blue')
@@ -354,7 +356,7 @@ class ViewWater(ViewPes):
                     A = plist.pop()
                     xmax = plist.pop()
                     ax.plot(self.spec.xdata['ebin'],
-                            self.spec.jTrans(self.spec.mGlTrans(self.spec.xdata['tof'],
+                            self.spec.jtrans(self.spec.mGlTrans(self.spec.xdata['tof'],
                                                                 [xmax,A,sg,sl]),
                                              self.spec.xdata['tof']),
                             color='DimGray')             
