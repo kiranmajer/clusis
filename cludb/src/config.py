@@ -139,8 +139,8 @@ class Cfg():
                                        'fitPar': [np.ndarray, False],
                                        'fitPar0': [np.ndarray, False],
                                        'fitPeakPos': [list, False],
-                                       'fitXdataKey': [['tof', 'tofGauged', 'ebin', 'ebinGauged'], False],
-                                       'fitYdataKey': [['intensity', 'intensitySub', 'jIntensity', 'jIntensitySub'], False]
+                                       'fitXdataKey': [['tof'], False],
+                                       'fitYdataKey': [['intensity', 'intensitySub'], False]
                                        },
                           'specPeWater': {'fitCovar': [np.ndarray, False],
                                           'fitCutoff': [float, False],

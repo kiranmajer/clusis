@@ -21,46 +21,66 @@ class View(object):
             self.ax = self.fig.add_subplot(1,1,1)    
 
 
-    def addtext_file_id(self, ax):
+    def _addtext_file_id(self, ax):
         ax.text(1.0, 1.01, '%s'%(os.path.basename(self.spec.mdata.data('datFile'))),
                 transform = ax.transAxes, fontsize=8, horizontalalignment='right')  
 
         
-    def addtext_gaugemarker(self, ax):
-        ax.text(0, 1.01, 'gauged', transform = self.ax.transAxes, fontsize=8, horizontalalignment='left') 
-        
-        
-    def addtext_cluster_id(self, ax, textPos='left', fontsize=28, ms=False):
-        if textPos == 'left':
-            pos_x, pos_y = 0.05, 0.8
-        elif textPos == 'right':
-            pos_x, pos_y = 0.95, 0.8
-        else:
-            raise ValueError('textPos must be one of: left, right. Got "%s" instead.'%(str(textPos)))  
+    def _addtext_statusmarker(self, ax, xdata_key, ydata_key):
+        stats = []
+        if 'Gauged' in xdata_key:
+            stats.append('gauged')
+        if 'Sub' in ydata_key:
+            stats.append('subtracted')
+        if len(stats) > 0:
+            stat_text = ', '.join(stats)
+            ax.text(0.5, 1.01, stat_text, transform = self.ax.transAxes, fontsize=8, horizontalalignment='center')
+    
+    
+    def _pretty_format_clusterid(self, ms=False):
         formatStart = '$\mathrm{\mathsf{'
         formatEnd = '}}$'
-        partCluster = '{%s'%self.spec.mdata.data('clusterBaseUnit')
+        bu = self.spec.mdata.data('clusterBaseUnit')
+        if sum([c.isupper() for c in bu]) > 1: # base unit is molecule
+            'TODO: Better a general lookup table or a parser.'
+            if bu in ['H2O', 'D2O']:
+                mol_map = {'H2O': '(H_{2}O)',
+                           'D2O': '(D_{2}O)'}
+                partCluster = mol_map[bu]
+            else:
+                print('Warning: No map entry for this molecule.')
+        else:
+            partCluster = bu
         if not ms:
             partClusterNumber = '_{%s}'%(str(self.spec.mdata.data('clusterBaseUnitNumber')))
         partCharge = '}^{%s}'%self.spec.mdata.data('ionType')
         partDopant = '{%s}'%self.spec.mdata.data('clusterDopant')
         partDopantNumber = '_{%s}'%(str(self.spec.mdata.data('clusterDopantNumber')))
         
-        clusterId = formatStart + partCluster
+        cluster_id_str = formatStart + partCluster
         if not ms:
             if self.spec.mdata.data('clusterBaseUnitNumber') > 1:
-                clusterId += partClusterNumber
+                cluster_id_str += partClusterNumber
         if self.spec.mdata.data('clusterDopant'):
-            clusterId += partDopant
+            cluster_id_str += partDopant
             if self.spec.mdata.data('clusterDopantNumber') > 1:
-                clusterId += partDopantNumber
-        clusterId += partCharge
-        clusterId += formatEnd
-               
-        ax.text(pos_x, pos_y, clusterId, transform = ax.transAxes, fontsize=fontsize, horizontalalignment=textPos)
+                cluster_id_str += partDopantNumber
+        cluster_id_str += partCharge
+        cluster_id_str += formatEnd
+        return cluster_id_str
+                
+    
+    def _addtext_cluster_id(self, ax, cluster_id, textPos='left', fontsize=28):
+        if textPos == 'left':
+            pos_x, pos_y = 0.05, 0.8
+        elif textPos == 'right':
+            pos_x, pos_y = 0.95, 0.8
+        else:
+            raise ValueError('textPos must be one of: left, right. Got "%s" instead.'%(str(textPos)))
+        ax.text(pos_x, pos_y, cluster_id, transform = ax.transAxes, fontsize=fontsize, horizontalalignment=textPos)
         
     
-    def set_xlabel_time(self, ax, label, time_unit):
+    def _set_xlabel_time(self, ax, label, time_unit):
         if time_unit not in [1, 1e-3, 1e-6, 1e-9]:
             raise ValueError('time_unit must be one of: 1, 1e-3, 1e-6, 1e-9.')
         prefix_map = ['', 'm', '\mu ', 'n']
@@ -68,67 +88,105 @@ class View(object):
         ax.set_xlabel(r'{0} (${1}s$)'.format(label, prefix))
         
         
-
-    def plot_idx(self, ax, subtractBg=False):
-        if subtractBg:
-            intensityKey = 'intensitySub'
+    def _pref_xdata_key(self, x_repr):
+        pref_map = {'idx': ['idx', 'idx'],
+                    'tof': ['tof', 'tofGauged'],
+                    'ekin': ['ekin', 'ekinGauged'],
+                    'ebin': ['ebin', 'ebinGauged']}
+        if 'gauged' in self.spec.mdata.data('systemTags'):
+            pxk = pref_map[x_repr][1]
         else:
-            intensityKey = 'intensity'
-        ax.plot(self.spec.xdata['idx'], self.spec.ydata[intensityKey], color='black')      
-            
-            
-    def show_idx(self, subtractBg=False):
-        self._single_fig_output()
-        self.plot_idx(self.ax, subtractBg=subtractBg)
-        self.ax.set_xlabel('Index')
-        self.ax.set_ylabel('Intensity (a.u.)')
-        self.ax.set_xlim(0,self.spec.xdata['idx'][-1])
-        self.ax.relim()
-        self.ax.autoscale(axis='y')         
-        self.addtext_file_id(self.ax)
-        self.fig.show()
+            pxk = pref_map[x_repr][0]
+        return pxk
         
         
-    def plot_tof(self, ax, show_gauged=False, subtractBg=False,
-                 time_label='Flight Time', timeUnit=1e-6,
-                 xlim=['auto', 'auto']):
-        print('plot_tof called with xlim =', xlim)
-        # set ydata_key
-        if subtractBg:
-            ydata_key = 'intensitySub'
+    def _pref_ydata_key(self, xdata_key):
+        pref_map = {'idx': ['intensity', 'intensitySub'],
+                    'tof': ['intensity', 'intensitySub'],
+                    'tofGauged': ['intensity', 'intensitySub'],
+                    'ekin': ['jIntensity', 'jIntensitySub'],
+                    'ekinGauged': ['jIntensityGauged', 'jIntensityGaugedSub'],
+                    'ebin': ['jIntensity', 'jIntensitySub'],
+                    'ebinGauged': ['jIntensityGauged', 'jIntensityGaugedSub'],}
+        if 'subtracted' in self.spec.mdata.data('systemTags'):
+            pyk = pref_map[xdata_key][1]
         else:
-            ydata_key = 'intensity'
-        # set xdat_key
-        if show_gauged:
-            xdata_key = 'tofGauged'
-        else:
-            xdata_key = 'tof'
-        ax.plot(self.spec.xdata[xdata_key]/timeUnit, self.spec.ydata[ydata_key], color='black')
+            pyk = pref_map[xdata_key][0]
+        return pyk
+    
+    
+    def _set_xlimit(self, ax, xlim, xlim_auto):
         x_lim = [0,1]
         if xlim[0] == 'auto':
-            x_lim[0] = self.spec.xdata[xdata_key][0]/timeUnit
+            x_lim[0] = xlim_auto[0]
         else:
             x_lim[0] = xlim[0]
         if xlim[1] == 'auto':
-            x_lim[1] = self.spec.xdata[xdata_key][-1]/timeUnit
+            x_lim[1] = xlim_auto[1]
         else:
             x_lim[1] = xlim[1]
         ax.set_xlim(x_lim[0], x_lim[1])
-        ax.relim()
-        ax.autoscale(axis='y')
+        
+        
+    def _set_ylimit(self, ax):
+        ax.relim()  
+        ax.autoscale(axis='y')        
+        
 
+    def plot_idx(self, ax, ydata_key, xlim, xlim_auto, color='black'):
+        # set data keys
+        xdata_key = 'idx'
+        if ydata_key in ['auto']:
+            ydata_key = self._pref_ydata_key(xdata_key)
+        elif ydata_key not in ['instensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']:
+            raise ValueError("ydata_key must be one of: 'intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'")
+        # plot 
+        ax.plot(self.spec.xdata[xdata_key], self.spec.ydata[ydata_key], color=color)
+        # set axes limits
+        self._set_xlimit(ax, xlim, xlim_auto)
+        self._set_ylimit(ax)
 
-    def show_tof(self, show_gauged=False, subtractBg=False, time_label='Time',
-                 timeUnit=1e-6, xlim=['auto', 'auto']):
-        print('show_tof called with xlim =', xlim)
+                
+        
+    def plot_tof(self, ax, xdata_key, ydata_key, time_unit, xlim, xlim_auto, color='black'):
+        print('plot_tof called with xlim =', xlim)
+        # set data keys
+        if xdata_key in ['auto']:
+            xdata_key = self._pref_xdata_key('tof')
+        elif xdata_key not in ['tof', 'tofGauged']:
+            raise ValueError("xdata_key must be one of: 'tof', 'tofGauged'.")
+        if ydata_key in ['auto']:
+            ydata_key = self._pref_ydata_key(xdata_key)
+        elif ydata_key not in ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']:
+            raise ValueError("ydata_key must be one of: 'intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'")  
+        # plot      
+        ax.plot(self.spec.xdata[xdata_key]/time_unit, self.spec.ydata[ydata_key], color=color)
+        #set axes limits
+        self._set_xlimit(ax, xlim, xlim_auto)
+        self._set_ylimit(ax)
+            
+            
+    def show_idx(self, xdata_key='idx', ydata_key='auto', xlim=['auto', 'auto']):
+        xlim_auto = [self.spec.xdata[xdata_key][0], self.spec.xdata[xdata_key][-1]]
         self._single_fig_output()
-        self.plot_tof(self.ax, show_gauged=show_gauged, subtractBg=subtractBg,
-                      time_label=time_label, timeUnit=timeUnit, xlim=xlim)
-        self.set_xlabel_time(self.ax, label=time_label, time_unit=timeUnit)
+        self.plot_idx(self.ax, ydata_key=ydata_key, xlim=xlim, xlim_auto=xlim_auto)
+        self.ax.set_xlabel('Index')
+        self.ax.set_ylabel('Intensity (a.u.)')        
+        self._addtext_file_id(self.ax)
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
+        self.fig.show()
+
+
+    def show_tof(self, xdata_key='auto', ydata_key='auto', time_label='Time',
+                 time_unit=1e-6, xlim=['auto', 'auto']):
+        xlim_auto = [self.spec.xdata[xdata_key][0]/time_unit, self.spec.xdata[xdata_key][-1]/time_unit]      
+        self._single_fig_output()
+        self.plot_tof(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
+                      time_unit=time_unit, xlim=xlim, xlim_auto=xlim_auto)
+        self._set_xlabel_time(self.ax, label=time_label, time_unit=time_unit)
         self.ax.set_ylabel('Intensity (a.u.)')
-        self.addtext_file_id(self.ax)
-        if show_gauged:
-            self.addtext_gaugemarker(self.ax)
+        self._addtext_file_id(self.ax)
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
         self.fig.show()
         
         
@@ -138,74 +196,79 @@ class ViewPes(View):
         View.__init__(self, spec)
         
 
-    def show_idx(self, subtractBg=False):
-        View.show_idx(self, subtractBg=subtractBg)
-        self.addtext_cluster_id(self.ax)        
+    def plot_ekin(self, ax, xdata_key, ydata_key, xlim, xlim_auto, color='black'):
+        # set data keys
+        #ax.set_xlim(0,self.spec._hv)
+        if xdata_key in ['auto']:
+            xdata_key = self._pref_xdata_key('ekin')
+        elif xdata_key not in ['ekin', 'ekinGauged']:
+            raise ValueError("xdata_key must be one of: 'ekin', 'ekinGauged'")
+        if ydata_key in ['auto']:
+            ydata_key = self._pref_ydata_key(xdata_key)
+        elif xdata_key in ['ekin'] and ydata_key not in ['jIntensity', 'jIntensitySub']:
+            raise ValueError("ydata_key must be one of: 'jIntensity', 'jIntensitySub'")
+        elif ydata_key not in ['jIntensityGauged', 'jIntensityGaugedSub']:
+            raise ValueError("ydata_key must be one of: 'jIntensityGauged', 'jIntensityGaugedSub'")
+        # plot 
+        ax.plot(self.spec.xdata[xdata_key], self.spec.ydata[ydata_key], color=color)
+        #set axes limits
+        self._set_xlimit(ax, xlim, xlim_auto)
+        self._set_ylimit(ax)
+
+
+    def plot_ebin(self, ax, xdata_key, ydata_key, xlim, xlim_auto, color='black'):
+        if xdata_key in ['auto']:
+            xdata_key = self._pref_xdata_key('ebin')
+        elif xdata_key not in ['ebin', 'ekinGauged']:
+            raise ValueError("xdata_key must be one of: 'ebin', 'ebinGauged'.")
+        if ydata_key in ['auto']:
+            ydata_key = self._pref_ydata_key(xdata_key)
+        elif xdata_key in ['ebin'] and ydata_key not in ['jIntensity', 'jIntensitySub']:
+            raise ValueError("ydata_key must be one of: 'jIntensity', 'jIntensitySub'")
+        elif ydata_key not in ['jIntensityGauged', 'jIntensityGaugedSub']:
+            raise ValueError("ydata_key must be one of: 'jIntensityGauged', 'jIntensityGaugedSub'")        
+        # plot
+        ax.plot(self.spec.xdata[xdata_key], self.spec.ydata[ydata_key], color=color)
+        #set axes limits
+        self._set_xlimit(ax, xlim, xlim_auto)
+        self._set_ylimit(ax)
+
+
+    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto']):
+        View.show_idx(self, ydata_key=ydata_key, xlim=xlim)
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid())
         self.fig.show()
 
         
-    def show_tof(self, subtractBg=False, time_label='Flight Time', timeUnit=1e-6, xlim=[0, 'auto']):
-        View.show_tof(self, subtractBg=subtractBg, time_label=time_label, 
+    def show_tof(self, xdata_key='auto', ydata_key='auto', time_label='Flight Time',
+                 timeUnit=1e-6, xlim=[0, 'auto']):
+        View.show_tof(self, xdata_key=xdata_key, ydata_key=ydata_key, time_label=time_label, 
                       timeUnit=timeUnit, xlim=xlim)
-        self.addtext_cluster_id(self.ax, textPos='right')        
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), textPos='right')        
         self.fig.show()
         
 
-    def plot_ekin(self, ax, subtractBg=False):
-        ax.set_xlabel(r'E$_{kin}$ (eV)')
-        ax.set_ylabel('Intensity (a.u.)')
-        ax.set_xlim(0,self.spec._hv)
-        if subtractBg:
-            intensityKey = 'jIntensitySub'
-        else:
-            intensityKey = 'jIntensity'          
-        ax.plot(self.spec.xdata['ekin'], self.spec.ydata[intensityKey], color='black')
-        ax.relim()
-        ax.autoscale(axis='y')
-
-
-    def show_ekin(self, subtractBg=False):  
+    def show_ekin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto']):  
+        xlim_auto = [0, self.spec._hv]
         self._single_fig_output()
-        self.plot_ekin(self.ax, subtractBg=subtractBg)        
-        self.addtext_file_id(self.ax)
-        self.addtext_cluster_id(self.ax, textPos='right')        
+        self.plot_ekin(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim, xlim_auto=xlim_auto)
+        self.ax.set_xlabel(r'E$_{kin}$ (eV)')
+        self.ax.set_ylabel('Intensity (a.u.)')     
+        self._addtext_file_id(self.ax)
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), textPos='right')
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)        
         self.fig.show()
 
 
-    def plot_ebin(self, ax, show_gauged=False, subtractBg=False):
-        ax.set_xlabel(r'E$_{bin}$ (eV)')
-        ax.set_ylabel('Intensity (a.u.)')
-        ax.set_xlim(0,self.spec._hv)
-        gauged = False
-        if 'ebinGauged' in list(self.spec.xdata.keys()):
-            if show_gauged:
-                ebinKey = 'ebinGauged'
-                gauged = True
-            else:
-                ebinKey = 'ebin'
-        elif show_gauged and self.spec.mdata.data('clusterBaseUnit') not in ['Pt']:
-            print('Spec is not gauged! Plotting normal spectrum instead.')
-            ebinKey = 'ebin'
-        else:
-            ebinKey = 'ebin'
-        if subtractBg:
-            intensityKey = 'jIntensitySub'
-        else:
-            intensityKey = 'jIntensity'
-        ax.plot(self.spec.xdata[ebinKey], self.spec.ydata[intensityKey], color='black')
-        ax.relim()
-        ax.autoscale(axis='y')
-        
-        return gauged
-
-
-    def show_ebin(self, show_gauged=True, subtractBg=False):
+    def show_ebin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto']):
+        xlim_auto = [0, self.spec._hv]
         self._single_fig_output()
-        gauged = self.plot_ebin(self.ax, show_gauged=show_gauged, subtractBg=subtractBg)
-        if gauged:
-            self.addtext_gaugemarker(self.ax)        
-        self.addtext_file_id(self.ax)
-        self.addtext_cluster_id(self.ax)             
+        self.plot_ebin(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim, xlim_auto=xlim_auto)
+        self.ax.set_xlabel(r'E$_{bin}$ (eV)')
+        self.ax.set_ylabel('Intensity (a.u.)')      
+        self._addtext_file_id(self.ax)
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid())
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)             
         self.fig.show()
         
         
@@ -260,8 +323,8 @@ class ViewPt(ViewPes):
         self._single_fig_output()
         self.plot_ebin(self.ax)
         self.plot_ebin_fit(self.ax, fitPar)       
-        self.addtext_file_id(self.ax)
-        self.addtext_cluster_id(self.ax)
+        self._addtext_file_id(self.ax)
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid())
         self.addtext_gauge_par(self.ax, fitPar=fitPar)             
         self.fig.show()
         
@@ -283,8 +346,8 @@ class ViewPt(ViewPes):
         self._single_fig_output()
         self.plot_tof(self.ax, timeUnit=timeUnit)
         self.plot_tof_fit(self.ax, fitPar, timeUnit)       
-        self.addtext_file_id(self.ax)
-        self.addtext_cluster_id(self.ax, textPos='right')
+        self._addtext_file_id(self.ax)
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), textPos='right')
         self.addtext_gauge_par(self.ax, textPos='right', fitPar=fitPar)             
         self.fig.show()        
 
@@ -373,11 +436,11 @@ class ViewWater(ViewPes):
                 gauged = self.plot_ebin(self.ax, show_gauged=self.spec.mdata.data('fitGaugedTof'),
                                        subtractBg=self.spec.mdata.data('fitSubtractBgTof'))
             self.plot_ebin_fit(self.ax, fitPar)
-            self.addtext_file_id(self.ax)
-            self.addtext_cluster_id(self.ax)
+            self._addtext_file_id(self.ax)
+            self._addtext_cluster_id(self.ax, self._pretty_format_clusterid())
             self.addtext_fitvalues(self.ax, fitParKey=fitPar, specType='ebin')
             if gauged:        
-                self.addtext_gaugemarker(self.ax)
+                self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
             self.fig.show()
         else:
             raise ValueError('Spectrum not yet fitted. Fit first.')            
@@ -410,11 +473,11 @@ class ViewWater(ViewPes):
                                    subtractBg=self.spec.mdata.data('fitSubtractBgTof'),
                                    timeUnit=timeUnit)
             self.plot_tof_fit(self.ax, fitPar, timeUnit=timeUnit)
-            self.addtext_file_id(self.ax)
-            self.addtext_cluster_id(self.ax, textPos='right')
+            self._addtext_file_id(self.ax)
+            self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), textPos='right')
             self.addtext_fitvalues(self.ax, fitParKey=fitPar, specType='tof', timeUnit=timeUnit, textPos='right')
             if gauged:        
-                self.addtext_gaugemarker(self.ax)
+                self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
             self.fig.show()      
         else:
             raise ValueError('Spectrum not yet fitted. Fit first.')
@@ -440,8 +503,8 @@ class ViewMs(View):
     def show_ms(self, massKey='ms'):
         self._single_fig_output()
         self.plot_ms(ax=self.ax, massKey=massKey)
-        self.addtext_file_id(self.ax)
-        self.addtext_cluster_id(self.ax, ms=True)
+        self._addtext_file_id(self.ax)
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(ms=True))
         self.fig.show()
         
         
