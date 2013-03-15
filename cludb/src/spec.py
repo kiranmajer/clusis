@@ -389,7 +389,7 @@ class SpecPePt(SpecPe):
         fitValues = self.__fit_multi_gauss_trans(xdata_key, ydata_key, peakParRef, Eoff, toff, lscale, rel_y_min, cutoff,
                                                   constrain_par, constrain)
         self.mdata.update(fitValues)
-        self.mdata.add_tag('gauged', tagkey='systemTags')
+        self.mdata.add_tag('fitted', tagkey='systemTags')
 
 
 
