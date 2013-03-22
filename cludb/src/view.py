@@ -205,7 +205,7 @@ class View(object):
         # set data keys
         key_deps = {'idx': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']}
         xdata_key, ydata_key = self._auto_key_selection(xdata_key='idx', ydata_key=ydata_key, key_deps=key_deps)        
-        self.plot_idx(self.ax, ydata_key=ydata_key, xlim=xlim)
+        self.plot_idx(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim)
         self.ax.set_xlabel('Index')
         self.ax.set_ylabel('Intensity (a.u.)')        
         self._addtext_file_id(self.ax)
@@ -519,7 +519,7 @@ class ViewWater(ViewPes):
         xdata_key = self.spec.mdata.data('fitXdataKey')
         ydata_key = self.spec.mdata.data('fitYdataKey')
         # plot
-        self.plot_tof(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, time_unit=time_unit, xlim, color='black')
+        self.plot_tof(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, time_unit=time_unit, xlim=xlim, color='black')
         self.plot_tof_fit(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fit_par=fit_par, time_unit=time_unit)
         # setup axes
         self._set_xlabel_time(self.ax, label=time_label, time_unit=time_unit)

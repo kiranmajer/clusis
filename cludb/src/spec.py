@@ -286,7 +286,9 @@ class SpecPePt(SpecPe):
         #gaussTrans = lambda t,m,A,s,toff,Eoff: A*np.exp(-(self._hv - self._pFactor*(1/(t + toff)**2 + 1/Eoff**2) - m)**2/(2*s**2))*2*self._pFactor/(t + toff)**3
         #gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*np.exp(-(-self._pFactor*(1/(t)**2 + 1/Eoff**2 - 1/(l*m + toff)**2))**2/(2*s**2))*2*self._pFactor/(t)**3
         #gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor*(1/(1/np.sqrt(1/t**2-Eoff/self._pFactor)-toff)**2/lscale**2 - 1/m**2))**2/(2*sigma**2))
-        gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor*(1/(1/(lscale*np.sqrt(1/t**2 - Eoff/self._pFactor)) - toff)**2 - 1/m**2))**2/(2*sigma**2))
+        # orig working version
+        #gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor*(1/(1/(lscale*np.sqrt(1/t**2 - Eoff/self._pFactor)) - toff)**2 - 1/m**2))**2/(2*sigma**2))
+        gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor*(1/(1/(np.sqrt(1/(lscale**2*(t+toff)**2) + Eoff/self._pFactor)))**2 - 1/m**2))**2/(2*sigma**2))
         lscale =plist.pop()
         toff = plist.pop()
         Eoff = plist.pop()
