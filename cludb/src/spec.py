@@ -138,15 +138,17 @@ class SpecPe(Spec):
     
     # basic methods    
     def _idx2time(self, idx, time_per_point, trigger_offset, lscale, Eoff, toff):
-        return 1/(lscale*np.sqrt(1/(idx*time_per_point - trigger_offset)**2 - Eoff/self._pFactor)) - toff
-        #return np.sqrt(self._pFactor/self.ekin(t, gauge_scale, gauge_offset))
+        return 1/np.sqrt(lscale*(1/(idx*time_per_point - trigger_offset)**2 - Eoff/self._pFactor)) - toff
+        #return 1/np.sqrt(1/(lscale*(idx*time_per_point - trigger_offset + toff)**2) - Eoff/self._pFactor)
     
-    def ekin(self, t, lscale, Eoff, toff):
-        return self._pFactor/(lscale**2*(t + toff)**2) - Eoff
+    def ekin(self, t):  #, lscale, Eoff, toff):
+        return self._pFactor/t**2
+        #return self._pFactor/(lscale**2*(t + toff)**2) - Eoff
         #return self._hv - self.ebin(t, gauge_scale, gauge_offset)
         
-    def ebin(self, t, lscale, Eoff, toff):
-        return self._hv - (self._pFactor/(lscale**2*(t + toff)**2) - Eoff)
+    def ebin(self, t):  #, lscale, Eoff, toff):
+        return self._hv - self.ekin(t)
+        #return self._hv - (self._pFactor/(lscale**2*(t + toff)**2) - Eoff)
         #return (self._hv-self._pFactor/t**2 - gauge_offset)/gauge_scale
         
     def jtrans(self, intensity, t):
@@ -164,12 +166,12 @@ class SpecPe(Spec):
                                                   Eoff=Eoff,
                                                   toff=toff)           
     
-    def _calc_ekin(self, new_key, timedata_key, lscale, Eoff, toff):
-        self.xdata[new_key] = self.ekin(self.xdata[timedata_key], lscale, Eoff, toff) 
+    def _calc_ekin(self, new_key, timedata_key):  #, lscale, Eoff, toff):
+        self.xdata[new_key] = self.ekin(self.xdata[timedata_key])  #, lscale, Eoff, toff) 
         #self.xdata['ekin'] = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength')/self.xdata['tof'])**2
     
-    def _calc_ebin(self, new_key, timedata_key, lscale, Eoff, toff):
-        self.xdata[new_key] = self.ebin(self.xdata[timedata_key], lscale, Eoff, toff)
+    def _calc_ebin(self, new_key, timedata_key):  #, lscale, Eoff, toff):
+        self.xdata[new_key] = self.ebin(self.xdata[timedata_key])  #, lscale, Eoff, toff)
         #self.xdata['ebin'] = self._photon_energy(self.mdata.data('waveLength')) - self.xdata['ekin']
         
     def _calc_jacoby_intensity(self, new_key='jIntensity', intensity_key='intensity', timedata_key='tof'):
@@ -185,8 +187,8 @@ class SpecPe(Spec):
         Eoff = self.mdata.data(Eoff_key)
         toff = self.mdata.data(toff_key)
         self._calc_time_data(timedata_key='tof', lscale=lscale, Eoff=Eoff, toff=toff)
-        self._calc_ekin(new_key='ekin', timedata_key='tof', lscale=lscale, Eoff=Eoff, toff=toff)
-        self._calc_ebin(new_key='ebin', timedata_key='tof', lscale=lscale, Eoff=Eoff, toff=toff)
+        self._calc_ekin(new_key='ekin', timedata_key='tof')  #, lscale=lscale, Eoff=Eoff, toff=toff)
+        self._calc_ebin(new_key='ebin', timedata_key='tof')  #, lscale=lscale, Eoff=Eoff, toff=toff)
         self._calc_fixed_intensities()
         self._calc_jacoby_intensity()
         
@@ -205,8 +207,8 @@ class SpecPe(Spec):
         self.mdata.add_tag('gauged', 'systemTags')
         # calc xdata gauged
         self._calc_time_data(timedata_key='tofGauged', lscale=lscale, Eoff=Eoff, toff=toff)
-        self._calc_ekin(new_key='ekinGauged', timedata_key='tofGauged', lscale=lscale, Eoff=Eoff, toff=toff)
-        self._calc_ebin(new_key='ebinGauged', timedata_key='tofGauged', lscale=lscale, Eoff=Eoff, toff=toff)
+        self._calc_ekin(new_key='ekinGauged', timedata_key='tofGauged')  #, lscale=lscale, Eoff=Eoff, toff=toff)
+        self._calc_ebin(new_key='ebinGauged', timedata_key='tofGauged')  #, lscale=lscale, Eoff=Eoff, toff=toff)
         # calc ydata gauged
         self._calc_jacoby_intensity(new_key='jIntensityGauged',
                                     intensity_key='intensity', timedata_key='tofGauged')
@@ -287,8 +289,9 @@ class SpecPePt(SpecPe):
         #gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*np.exp(-(-self._pFactor*(1/(t)**2 + 1/Eoff**2 - 1/(l*m + toff)**2))**2/(2*s**2))*2*self._pFactor/(t)**3
         #gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor*(1/(1/np.sqrt(1/t**2-Eoff/self._pFactor)-toff)**2/lscale**2 - 1/m**2))**2/(2*sigma**2))
         # orig working version
-        #gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor*(1/(1/(lscale*np.sqrt(1/t**2 - Eoff/self._pFactor)) - toff)**2 - 1/m**2))**2/(2*sigma**2))
-        gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor*(1/(1/(np.sqrt(1/(lscale**2*(t+toff)**2) + Eoff/self._pFactor)))**2 - 1/m**2))**2/(2*sigma**2))
+        gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor*(1/(1/np.sqrt(lscale*(1/t**2 - Eoff/self._pFactor)) - toff)**2 - 1/m**2))**2/(2*sigma**2))
+        #gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor/t**2-self._pFactor/(lscale*(m+toff)**2) - Eoff)**2/(2*sigma**2))
+        #gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor*(1/(1/(np.sqrt(1/(lscale**2*(t+toff)**2) + Eoff/self._pFactor)))**2 - 1/m**2))**2/(2*sigma**2))
         lscale =plist.pop()
         toff = plist.pop()
         Eoff = plist.pop()
