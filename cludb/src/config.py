@@ -190,7 +190,7 @@ class Cfg():
                                           'flightLengthScale': 1.0,
                                           'flightLengthScaleImport': 1.0,
                                           'mdataVersion': self.mdata_version,
-                                          'timeOffset': 63e-9,
+                                          'timeOffset': 0, # make sure we gauge against neutral parameters
                                           'timeOffsetImport': 63e-9, # previously used for all pes (better derived by gauging)
                                           'timePerPoint': 2e-9,
                                           'triggerOffset': 0,

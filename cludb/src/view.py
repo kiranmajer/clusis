@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import os.path
-from numpy import log10
+from numpy import log10,sqrt
 
 import load
 
@@ -342,6 +342,9 @@ class ViewPt(ViewPes):
         ax.text(pos_x, pos_y-0.05, 't$_{offset}$: %.3f ns'%(self.spec.mdata.data(fit_par)[-2]*1e9),
                 transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=text_pos)
         ax.text(pos_x, pos_y-0.1, 'l$_{scale}$: %.3f'%(self.spec.mdata.data(fit_par)[-1]),
+                transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=text_pos)
+        ax.text(pos_x, pos_y-0.15, '$\Delta$l: %.1f mm'%(self.spec.mdata.data('flightLength')*1000*
+                                                      (1/sqrt(self.spec.mdata.data(fit_par)[-1]) -1)),
                 transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=text_pos)
                
     
