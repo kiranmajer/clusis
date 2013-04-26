@@ -56,6 +56,34 @@ class Spec(object):
         self._commit_pickle()
         self._commit_db(update=update)
         
+    def _auto_key_selection(self, xdata_key, ydata_key, key_deps):
+        def auto_xkey(key_deps):
+            k_gauged = [i for i in key_deps.keys() if 'Gauged' in i]
+            if 'gauged' in self.mdata.data('systemTags') and len(k_gauged) > 0:
+                auto_x = k_gauged[0]
+            else:
+                auto_x = [i for i in key_deps.keys() if 'Gauged' not in i][0]
+            return auto_x
+        
+        def auto_ykey(key_deps, xdata_key):
+            k_sub = [i for i in key_deps[xdata_key] if 'Sub' in i]
+            if 'subtracted' in self.mdata.data('systemTags') and len(k_sub) > 0:
+                auto_y = k_sub[0]
+            else:
+                auto_y =  [i for i in key_deps[xdata_key] if 'Sub' not in i][0]
+            return auto_y
+        
+        if xdata_key in ['auto']:
+            xdata_key = auto_xkey(key_deps)
+        elif xdata_key not in key_deps.keys():
+            raise ValueError("xdata_key must be one of: {}.".format(str(key_deps.keys())[11:-2]))
+        if ydata_key in ['auto']:
+            ydata_key = auto_ykey(key_deps, xdata_key)
+        elif ydata_key not in key_deps[xdata_key]:
+            raise ValueError("""ydata_key must be one of: {}.""".format(str(key_deps[xdata_key])[1:-1]))
+        return xdata_key, ydata_key        
+
+        
     def _idx2time(self, idx, time_per_point, trigger_offset, time_offset=0):
         #self.xdata['tof'] = self.xdata['idx']*self.mdata.data('timePerPoint')-self.mdata.data('triggerOffset')-time_offset
         return idx*time_per_point - trigger_offset - time_offset
@@ -376,6 +404,7 @@ class SpecPePt(SpecPe):
 
     def gauge(self, xdata_key=None, ydata_key=None, rel_y_min=0, lscale=1, Eoff=0, toff=42e-9,
               constrain_par='toff', constrain=[37e-9, 47e-9], cutoff=None):
+        'TODO: data_key parameters usage is not foolproof'
         '''
         Fits a multiple gauss to the pes in time domain.
         data_key: which xy-data to use for the fit
@@ -454,87 +483,126 @@ class SpecPeWater(SpecPe):
         return self.multi_gl_trans(x, par)-y    
     
     
-    def __fit_gl(self, fitPar0, cutoff, subtract_bg, gauged):
-        if gauged:
-            ebin_key = 'ebinGauged'
-        else:
-            ebin_key = 'ebin'
-            
-        if subtract_bg:
-            int_key = 'jIntensitySub'
-        else:
-            int_key = 'jIntensity'
+    def __fit_gl(self, xdata_key, ydata_key, fitPar0, cutoff):
+#        if gauged:
+#            ebin_key = 'ebinGauged'
+#        else:
+#            ebin_key = 'ebin'
+#            
+#        if subtract_bg:
+#            int_key = 'jIntensitySub'
+#        else:
+#            int_key = 'jIntensity'
             
         if type(cutoff) in [int,float]:
-            xdata = self.xdata[ebin_key][self.xdata[ebin_key]<cutoff]
-            ydata = self.ydata[int_key][:len(xdata)]
+            xdata = self.xdata[xdata_key][self.xdata[xdata_key]<cutoff]
+            ydata = self.ydata[ydata_key][:len(xdata)]
         elif cutoff == None:
-            xdata = self.xdata[ebin_key]
-            ydata = np.copy(self.ydata[int_key])
+            xdata = self.xdata[xdata_key]
+            ydata = np.copy(self.ydata[ydata_key])
         else:
             raise ValueError('Cutoff must be int or float')
         
-        fitValues = {'fitPar0': fitPar0, 'fitCutoff': cutoff, 'fitGauged': gauged, 'fitsubtract_bg': subtract_bg}
-        p, covar, info, mess, ierr = leastsq(self.__err_multi_gl, fitPar0, args=(xdata,ydata), full_output=True)
-        fitValues.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
-        
-        return fitValues
- 
- 
-    def __fit_gl_trans(self, fitPar0, cutoff, subtract_bg, gauged):
-        if gauged:
-            tof_key = 'tofGauged'
-        else:
-            tof_key = 'tof'
-            
-        if subtract_bg:
-            int_key = 'intensitySub'
-        else:
-            int_key = 'intensity'
-            
-        if type(cutoff) in [int,float]:
-            xdata = self.xdata[tof_key][self.xdata[tof_key]<cutoff]
-            ydata = self.ydata[int_key][:len(xdata)]
-        elif cutoff == None:
-            xdata = self.xdata[tof_key]
-            ydata = np.copy(self.ydata[int_key])
-        else:
-            raise ValueError('Cutoff must be int or float')
-        
-        fitValues = {'fitPar0Tof': fitPar0, 'fitCutoffTof': cutoff, 'fitGaugedTof': gauged, 'fitsubtract_bgTof': subtract_bg}
-        p, covar, info, mess, ierr = leastsq(self.__err_multi_gl_trans, fitPar0, args=(xdata,ydata), full_output=True)
-        fitValues.update({'fitParTof': p, 'fitCovarTof': covar, 'fitInfoTof': [info, mess, ierr]})
-        
-        return fitValues 
-    
-    
-    def fit(self, specType, fitPar0, cutoff=None, subtract_bg=None, gauged=None):
-        fitPar0 = np.array(fitPar0)
-        '''If subtract_bg and/or gauged are None, try to find useful defaults.'''
-        if subtract_bg == None:
-            if 'subtract_bgBgFile' in list(self.mdata.data().keys()):
-                subtract_bg = True
-            else:
-                subtract_bg = False
-        if gauged == None:
-            if 'gaugeRef' in list(self.mdata.data().keys()):
-                gauged = True
-            else:
-                gauged =False
-        
+        fit_values = {'fitPar0': fitPar0, 'fitCutoff': cutoff, 'fitXdataKey': xdata_key, 'fitYdataKey': ydata_key}
         try:
-            if specType == 'ebin':
-                fitValues = self.__fit_gl(fitPar0, cutoff, subtract_bg, gauged)
-            elif specType == 'tof':
-                fitValues = self.__fit_gl_trans(fitPar0, cutoff, subtract_bg, gauged)
-            else:
-                raise ValueError('specType must be one of: "tof" or "ebin".')
+            p, covar, info, mess, ierr = leastsq(self.__err_multi_gl, fit_values['fitPar0'],
+                                                 args=(xdata,ydata), full_output=True)
         except:
-            #self.mdata.update(fitValues)
+            return fit_values
             raise
         else:
-            print('Fit completed, Updating mdata...')
-            self.mdata.update(fitValues)
+            fit_values.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
+            return fit_values
+ 
+ 
+    def __fit_gl_trans(self, xdata_key, ydata_key, fitPar0, cutoff):
+        'TODO: merge with __fit_gl.'
+#        if gauged:
+#            tof_key = 'tofGauged'
+#        else:
+#            tof_key = 'tof'
+#            
+#        if subtract_bg:
+#            int_key = 'intensitySub'
+#        else:
+#            int_key = 'intensity'
+          
+        if type(cutoff) in [int,float]:
+            xdata = self.xdata[xdata_key][self.xdata[xdata_key]<cutoff]
+            ydata = self.ydata[ydata_key][:len(xdata)]
+        elif cutoff == None:
+            xdata = self.xdata[xdata_key]
+            ydata = np.copy(self.ydata[ydata_key])
+        else:
+            raise ValueError('Cutoff must be int or float')
+        
+        fit_values = {'fitPar0': fitPar0, 'fitCutoff': cutoff, 'fitXdataKey': xdata_key, 'fitYdataKey': ydata_key}
+        try:
+            p, covar, info, mess, ierr = leastsq(self.__err_multi_gl_trans, fit_values['fitPar0'],
+                                                 args=(xdata,ydata), full_output=True)
+        except:
+            return fit_values
+            raise
+        else:
+            fit_values.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
+            return fit_values 
+    
+    
+    def fit(self, fitPar0, fit_type='time', xdata_key='auto', ydata_key='auto', cutoff=None):
+        fitPar0 = np.array(fitPar0)
+        # choose data_keys if not given
+        if fit_type in ['time']:
+            key_deps = {'tof': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'],
+                        'tofGauged': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']}
+            xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key, key_deps=key_deps)
+            fit_values = self.__fit_gl_trans(xdata_key, ydata_key, fitPar0, cutoff)
+        elif fit_type in ['energy']:
+            key_deps = {'ebin': ['jIntensity', 'jIntensitySub'],
+                        'ebinGauged': ['jIntensityGauged', 'jIntensityGaugedSub']}
+            xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key, key_deps=key_deps)
+            fit_values = self.__fit_gl(xdata_key, ydata_key, fitPar0, cutoff)
+        else:
+            raise ValueError("fit_type must be one of 'time' or 'energy'.")
+        
+        print('Fit completed, Updating mdata...')
+        self.mdata.update(fit_values)
+        self.mdata.add_tag('fitted', tagkey='systemTags')
+        
+
+
+
+
+           
+#        if xdata_key is None:
+#            xdata_key = 'tof'
+#        if ydata_key is None and 'subtracted' in self.mdata.data('systemTags'):
+#            ydata_key = 'intensitySub'
+#        elif ydata_key is None:
+#            ydata_key = 'intensity'
+#        '''If subtract_bg and/or gauged are None, try to find useful defaults.'''
+#        if subtract_bg == None:
+#            if 'subtract_bgBgFile' in list(self.mdata.data().keys()):
+#                subtract_bg = True
+#            else:
+#                subtract_bg = False
+#        if gauged == None:
+#            if 'gaugeRef' in list(self.mdata.data().keys()):
+#                gauged = True
+#            else:
+#                gauged =False        
+#        try:
+#            if specType == 'ebin':
+#                fitValues = self.__fit_gl(fitPar0, cutoff, subtract_bg, gauged)
+#            elif specType == 'tof':
+#                fitValues = self.__fit_gl_trans(fitPar0, cutoff, subtract_bg, gauged)
+#            else:
+#                raise ValueError('specType must be one of: "tof" or "ebin".')
+#        except:
+#            #self.mdata.update(fitValues)
+#            raise
+#        else:
+#            print('Fit completed, Updating mdata...')
+#            self.mdata.update(fitValues)
 
 
 #    def fitTof(self, fitPar0, cutoff=None, subtract_bg=None, gauged=None):

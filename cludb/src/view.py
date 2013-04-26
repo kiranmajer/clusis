@@ -116,6 +116,7 @@ class View(object):
 
 
     def _auto_key_selection(self, xdata_key, ydata_key, key_deps):
+        'TODO: Use self.spec._auto_key_selection instead.'
         def auto_xkey(key_deps):
             k_gauged = [i for i in key_deps.keys() if 'Gauged' in i]
             if 'gauged' in self.spec.mdata.data('systemTags') and len(k_gauged) > 0:
