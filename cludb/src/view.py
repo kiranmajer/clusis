@@ -420,7 +420,7 @@ class ViewWater(ViewPes):
         ViewPes.__init__(self, spec)
         
 
-    def _addtext_fitvalues(self, ax, peakpos_unit, time_unit=1, text_pos='left'):
+    def _addtext_fitvalues(self, ax, plot_type, time_unit=1, text_pos='left'):
         def time_prefix(time_unit):
             if time_unit not in [1, 1e-3, 1e-6, 1e-9]:
                 raise ValueError('time_unit must be one of: 1, 1e-3, 1e-6, 1e-9.')
@@ -428,13 +428,17 @@ class ViewWater(ViewPes):
             prefix = prefix_map[int(abs(log10(time_unit)/3))]
             return prefix
         
-        if 'eV' == peakpos_unit and 'tof' in self.spec.mdata.data('fitXdataKey'):
+        if plot_type == 'ebin' and 'tof' in self.spec.mdata.data('fitXdataKey'):
             peak_values = list(self.spec.ebin(self.spec.mdata.data('fitPar')[:-2:2]))
-        elif 's' == peakpos_unit and 'tof' in self.spec.mdata.data('fitXdataKey'):
+            peakPos_unit = 'eV'
+        elif plot_type == 'ekin' and 'tof' in self.spec.mdata.data('fitXdataKey'):
+            peak_values = list(self.spec.ekin(self.spec.mdata.data('fitPar')[:-2:2]))
+            peakPos_unit = 'eV'
+        elif plot_type == 'tof' and 'tof' in self.spec.mdata.data('fitXdataKey'):
             peak_values = list(self.spec.mdata.data('fitPar')[:-2:2])
             peakPos_unit = '{}s'.format(time_prefix(time_unit))
         else:
-            peak_values = list(self.spec.mdata.data('fitPar')[:-2:2])
+            raise ValueError("Can't add values for this plot combination.")
             
         if text_pos == 'left':
             pos_x, pos_y = 0.05, 0.6
@@ -444,7 +448,7 @@ class ViewWater(ViewPes):
             raise ValueError('text_pos must be one of: left, right. Got "%s" instead.'%(str(text_pos)))
         peak_number = 1
         for peak in peak_values:
-            ax.text(pos_x, pos_y, '%i. Peak: %.3f %s'%(peak_number, round(peak/time_unit, 3), peakPos_unit),
+            ax.text(pos_x, pos_y, '%i. Peak: %.2f %s'%(peak_number, round(peak/time_unit, 3), peakPos_unit),
                     transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=text_pos)
             peak_number+=1
             pos_y-=0.05
@@ -459,7 +463,7 @@ class ViewWater(ViewPes):
         xdata = self.spec.xdata[xdata_key]/time_unit
         ax.plot(xdata,
                 self.spec.multi_gl_trans(self.spec.xdata[xdata_key], self.spec.mdata.data(fit_par)),
-                color='blue')
+                color=color)
         ax.relim()
         # plot single peaks, if there are more than one
         if len(self.spec.mdata.data(fit_par)) > 4:        
@@ -470,49 +474,70 @@ class ViewWater(ViewPes):
                 A = plist.pop()
                 xmax = plist.pop()
                 ax.plot(xdata,
-                        self.spec.mGlTrans(self.spec.xdata[xdata_key], [xmax,A,sg,sl]),
-                        color='DimGray')     
+                        self.spec.multi_gl_trans(self.spec.xdata[xdata_key], [xmax,A,sg,sl]),
+                        color=color_peaks)     
     
     
-    'TODO: implement gauging!'
-    def plot_ebin_fit(self, ax, xdata_key, ydata_key, fitPar, color='blue', color_peaks='DimGray'):
-        if fitPar in ['fitPar', 'fitPar0']:
-            ax.plot(self.spec.xdata['ebin'],
-                    self.spec.mGl(self.spec.xdata['ebin'], self.spec.mdata.data(fitPar)),
-                    color=color)
-            ax.relim()
-            # plot single peaks, if there are more than one
-            if len(self.spec.mdata.data(fitPar)) > 4:
-                plist = list(self.spec.mdata.data(fitPar))
-                sl = plist.pop()
-                sg = plist.pop()
-                while len(plist) >= 2:
-                    A = plist.pop()
-                    xmax = plist.pop()
-                    ax.plot(self.spec.xdata['ebin'],
-                            self.spec.mGl(self.spec.xdata['ebin'], [xmax,A,sg,sl]),
-                            color=color_peaks)
-        else:
-            ax.plot(self.spec.xdata['ebin'],
-                    self.spec.jtrans(self.spec.mGlTrans(self.spec.xdata['tof'],
-                                                        self.spec.mdata.data(fitPar)),
-                                     self.spec.xdata['tof']),
-                    color='blue')
-            ax.relim()
-            # plot single peaks, if there are more than one
-            if len(self.spec.mdata.data(fitPar)) > 4:
-                plist = list(self.spec.mdata.data(fitPar))
-                sl = plist.pop()
-                sg = plist.pop()
-                while len(plist) >= 2:
-                    A = plist.pop()
-                    xmax = plist.pop()
-                    ax.plot(self.spec.xdata['ebin'],
-                            self.spec.jtrans(self.spec.mGlTrans(self.spec.xdata['tof'],
-                                                                [xmax,A,sg,sl]),
-                                             self.spec.xdata['tof']),
-                            color='DimGray')             
-
+    def plot_energy_fit(self, ax, fit_par, xdata_key, fit_xdata_key, color='blue', color_peaks='DimGray'):
+        ax.plot(self.spec.xdata[xdata_key],
+                self.spec.jtrans(self.spec.multi_gl_trans(self.spec.xdata[fit_xdata_key],
+                                                              self.spec.mdata.data(fit_par)),
+                                 self.spec.xdata[fit_xdata_key]),
+                color=color)
+        ax.relim()
+        # plot single peaks, if there are more than one
+        if len(self.spec.mdata.data(fit_par)) > 4:
+            plist = list(self.spec.mdata.data(fit_par))
+            sl = plist.pop()
+            sg = plist.pop()
+            while len(plist) >= 2:
+                A = plist.pop()
+                xmax = plist.pop()
+                ax.plot(self.spec.xdata[xdata_key],
+                        self.spec.jtrans(self.spec.multi_gl_trans(self.spec.xdata[fit_xdata_key],
+                                                            [xmax,A,sg,sl]),
+                                         self.spec.xdata[fit_xdata_key]),
+                        color=color_peaks)    
+    
+    
+#    'TODO: implement gauging!'
+#    def plot_ebin_fit(self, ax, xdata_key, ydata_key, fitPar, color='blue', color_peaks='DimGray'):
+#        if fitPar in ['fitPar', 'fitPar0']:
+#            ax.plot(self.spec.xdata['ebin'],
+#                    self.spec.mGl(self.spec.xdata['ebin'], self.spec.mdata.data(fitPar)),
+#                    color=color)
+#            ax.relim()
+#            # plot single peaks, if there are more than one
+#            if len(self.spec.mdata.data(fitPar)) > 4:
+#                plist = list(self.spec.mdata.data(fitPar))
+#                sl = plist.pop()
+#                sg = plist.pop()
+#                while len(plist) >= 2:
+#                    A = plist.pop()
+#                    xmax = plist.pop()
+#                    ax.plot(self.spec.xdata['ebin'],
+#                            self.spec.mGl(self.spec.xdata['ebin'], [xmax,A,sg,sl]),
+#                            color=color_peaks)
+#        else:
+#            ax.plot(self.spec.xdata['ebin'],
+#                    self.spec.jtrans(self.spec.mGlTrans(self.spec.xdata['tof'],
+#                                                        self.spec.mdata.data(fitPar)),
+#                                     self.spec.xdata['tof']),
+#                    color='blue')
+#            ax.relim()
+#            # plot single peaks, if there are more than one
+#            if len(self.spec.mdata.data(fitPar)) > 4:
+#                plist = list(self.spec.mdata.data(fitPar))
+#                sl = plist.pop()
+#                sg = plist.pop()
+#                while len(plist) >= 2:
+#                    A = plist.pop()
+#                    xmax = plist.pop()
+#                    ax.plot(self.spec.xdata['ebin'],
+#                            self.spec.jtrans(self.spec.mGlTrans(self.spec.xdata['tof'],
+#                                                                [xmax,A,sg,sl]),
+#                                             self.spec.xdata['tof']),
+#                            color='DimGray')             
 
 
     def show_tof_fit(self, fit_par='fitPar', time_unit=1e-6, time_label='Flight Time', xlim=[0, 'auto']):
@@ -531,33 +556,68 @@ class ViewWater(ViewPes):
         self._addtext_file_id(self.ax)
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right')
-        self._addtext_fitvalues(self.ax, peakpos_unit='s', time_unit=time_unit, text_pos='right')
+        self._addtext_fitvalues(self.ax, plot_type='tof', time_unit=time_unit, text_pos='right')
         self.fig.show()      
 
 
+    def _show_energy_fit(self, plot_type, fit_par, xlim):
+        plot_key_map = {'ekin': {'tof_intensity': [self.plot_ekin, 'ekin', 'jIntensity'],
+                                 'tof_intensitySub': [self.plot_ekin, 'ekin', 'jIntensitySub'],
+                                 'tofGauged_intensity': [self.plot_ekin, 'ekinGauged', 'jIntensityGauged'],
+                                 'tofGauged_intensitySub': [self.plot_ekin, 'ekinGauged', 'jIntensityGaugedSub'],
+                                 },
+                        'ebin': {'tof_intensity': [self.plot_ebin, 'ebin', 'jIntensity'],
+                                 'tof_intensitySub': [self.plot_ebin, 'ebin', 'jIntensitySub'],
+                                 'tofGauged_intensity': [self.plot_ebin, 'ebinGauged', 'jIntensityGauged'],
+                                 'tofGauged_intensitySub': [self.plot_ebin, 'ebinGauged', 'jIntensityGaugedSub'],
+                                 }
+                        }
+        plot_method, xdata_key, ydata_key = plot_key_map[plot_type]['{}_{}'.format(self.spec.mdata.data('fitXdataKey'),
+                                                                                   self.spec.mdata.data('fitYdataKey'))]
+        self._single_fig_output()
+        plot_method(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim)
+        self.plot_energy_fit(self.ax, fit_par=fit_par, xdata_key=xdata_key,
+                             fit_xdata_key=self.spec.mdata.data('fitXdataKey'))
+        self.ax.set_ylabel('Intensity (a.u.)')        
+        self._addtext_file_id(self.ax)
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
 
 
+    def show_ekin_fit(self, fit_par='fitPar', xlim=[0, 'auto']):
+        self._show_energy_fit(plot_type='ekin', fit_par=fit_par, xlim=xlim)
+        self.ax.set_xlabel(r'E$_{kin}$ (eV)')
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right') 
+        self._addtext_fitvalues(self.ax, plot_type='ekin', text_pos='right')            
+        self.fig.show()  
+
+
+    def show_ebin_fit(self, fit_par='fitPar', xlim=[0, 'auto']):
+        self._show_energy_fit(plot_type='ebin', fit_par=fit_par, xlim=xlim)
+        self.ax.set_xlabel(r'E$_{bin}$ (eV)')
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid()) 
+        self._addtext_fitvalues(self.ax, plot_type='ebin')            
+        self.fig.show()  
 
             
     
-    def show_ebin_fit(self, fitPar='fitPar'):
-        if 'fitted' not in self.spec.mdata.data('systemTags'):
-            raise ValueError('Spectrum not yet fitted. Fit first.') 
-        self._single_fig_output()
-        
-        if fitPar in ['fitPar', 'fitPar0']:
-            gauged = self.plot_ebin(self.ax, show_gauged=self.spec.mdata.data('fitGauged'),
-                                   subtractBg=self.spec.mdata.data('fitSubtractBg'))
-        else:
-            gauged = self.plot_ebin(self.ax, show_gauged=self.spec.mdata.data('fitGaugedTof'),
-                                   subtractBg=self.spec.mdata.data('fitSubtractBgTof'))
-        self.plot_ebin_fit(self.ax, fitPar)
-        self._addtext_file_id(self.ax)
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid())
-        self._addtext_fitvalues(self.ax, peakpos_unit='eV')
-        if gauged:        
-            self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
-        self.fig.show()
+#    def show_ebin_fit(self, fitPar='fitPar', xlim=[0, 'auto']):
+#        if 'fitted' not in self.spec.mdata.data('systemTags'):
+#            raise ValueError('Spectrum not yet fitted. Fit first.') 
+#        self._single_fig_output()
+#        
+#        if fitPar in ['fitPar', 'fitPar0']:
+#            gauged = self.plot_ebin(self.ax, show_gauged=self.spec.mdata.data('fitGauged'),
+#                                   subtractBg=self.spec.mdata.data('fitSubtractBg'))
+#        else:
+#            gauged = self.plot_ebin(self.ax, show_gauged=self.spec.mdata.data('fitGaugedTof'),
+#                                   subtractBg=self.spec.mdata.data('fitSubtractBgTof'))
+#        self.plot_ebin_fit(self.ax, fitPar)
+#        self._addtext_file_id(self.ax)
+#        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid())
+#        self._addtext_fitvalues(self.ax, peakpos_unit='eV')
+#        if gauged:        
+#            self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
+#        self.fig.show()
            
 
 

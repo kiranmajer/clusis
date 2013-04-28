@@ -565,8 +565,28 @@ class SpecPeWater(SpecPe):
             raise ValueError("fit_type must be one of 'time' or 'energy'.")
         
         print('Fit completed, Updating mdata...')
+        print('Fit values are:', fit_values)
         self.mdata.update(fit_values)
         self.mdata.add_tag('fitted', tagkey='systemTags')
+        
+        
+        
+    def gauge(self, gaugeRef):
+        SpecPe.gauge(self, gaugeRef)
+        if 'fitted' in self.mdata.data('systemTags'):
+            print("Warning: Gauging will most likely make previous fits useless.")
+            refit=''
+            while refit not in ['y', 'n']:
+                q = 'Fit again using previous fit parameters as start parameter [y|n]?: '
+                refit = input(q)
+                if refit == 'y':
+                    if 'tof' in self.mdata.data('fitXdataKey'):
+                        fit_type = 'time'
+                    else:
+                        fit_type = 'energy'
+                    self.fit(fitPar0=self.mdata.data('fitPar'),
+                             fit_type=fit_type,
+                             cutoff=self.mdata.data('fitCutoff'))
         
 
 
