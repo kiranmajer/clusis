@@ -20,8 +20,9 @@ class Mdata(object):
         '''
         Returns a valid value or raises an error.
         '''
-        print('Checking: ', key, value)
-        print('type: ', type(value))
+#         print('Starting new validation run.')
+#         print('Checking: ', key, value)
+#         print('type: ', type(value))
         ref = self.__reference
         if ref[key][0] is np.ndarray and type(value) is np.ndarray:
             return value

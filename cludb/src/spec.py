@@ -20,19 +20,18 @@ import load
 
 class Spec(object):
     def __init__(self, mdata, xdata, ydata, cfg):
-        self.mdata_ref = cfg.mdata_ref['spec']
+        self.mdata_ref = cfg.mdata_ref['spec'].copy()
         self.mdata = Mdata(mdata, self.mdata_ref)
         self.xdata = xdata
         self.ydata = ydata
         self.cfg = cfg
-        self.view = view.View(self)        
+        self.view = view.View(self)
         
     
-    def _update_mdata_reference(self, specTypeClass, cfg):
+    def _update_mdata_reference(self, specTypeClass):
         'Adapts mdata reference to the spec type class'
-        print('Updating ref with {}'.format(specTypeClass))
-        self.mdata_ref.update(cfg.mdata_ref[specTypeClass])
-    
+        self.mdata_ref.update(self.cfg.mdata_ref[specTypeClass])
+        
     
     def _commit_db(self, update=True):
         with Db(self.mdata.data('machine'), self.cfg) as db:
@@ -156,7 +155,7 @@ class SpecPe(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
         print('__init__: Init SpecPe')
         Spec.__init__(self, mdata, xdata, ydata, cfg)
-        self._update_mdata_reference('specPe', cfg)
+        self._update_mdata_reference('specPe')
         self._pFactor = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength'))**2
         self._hv = self._photon_energy(self.mdata.data('waveLength'))
         if len(self.xdata) == 1:
@@ -225,6 +224,8 @@ class SpecPe(Spec):
         gaugeSpec = load.load_pickle(self.cfg, gaugeRef)
         if gaugeSpec.mdata.data('specTypeClass') not in ['specPePt']:
             raise ValueError('Gauge reference is not a Pt-spectrum.')
+        if not gaugeSpec.mdata.data('waveLength') == self.mdata.data('waveLength'):
+            raise ValueError('Gauge reference has different laser wavelength.')
         lscale = gaugeSpec.mdata.data('fitPar')[-1]
         toff = gaugeSpec.mdata.data('fitPar')[-2]
         Eoff = gaugeSpec.mdata.data('fitPar')[-3]
@@ -259,7 +260,7 @@ class SpecPe(Spec):
 class SpecPePt(SpecPe):
     def __init__(self, mdata, xdata, ydata, cfg):
         SpecPe.__init__(self, mdata, xdata, ydata, cfg)
-        self._update_mdata_reference('specPePt', cfg)
+        self._update_mdata_reference('specPePt')
         self.view = view.ViewPt(self)
              
         
@@ -430,7 +431,7 @@ class SpecPePt(SpecPe):
 class SpecPeWater(SpecPe):
     def __init__(self, mdata, xdata, ydata, cfg):
         SpecPe.__init__(self, mdata, xdata, ydata, cfg)
-        self._update_mdata_reference(mdata['specTypeClass'], cfg)
+        self._update_mdata_reference('specPeWater')
         self.view = view.ViewWater(self)
 
 
@@ -565,16 +566,13 @@ class SpecPeWater(SpecPe):
             raise ValueError("fit_type must be one of 'time' or 'energy'.")
         
         print('Fit completed, Updating mdata...')
-        print('Fit values are:', fit_values)
         self.mdata.update(fit_values)
         self.mdata.add_tag('fitted', tagkey='systemTags')
         
         
-        
-    def gauge(self, gaugeRef):
-        SpecPe.gauge(self, gaugeRef)
+    def _ask_for_refit(self, reason):
         if 'fitted' in self.mdata.data('systemTags'):
-            print("Warning: Gauging will most likely make previous fits useless.")
+            print("Warning: {} will most likely make previous fit useless.".format(reason))
             refit=''
             while refit not in ['y', 'n']:
                 q = 'Fit again using previous fit parameters as start parameter [y|n]?: '
@@ -587,6 +585,18 @@ class SpecPeWater(SpecPe):
                     self.fit(fitPar0=self.mdata.data('fitPar'),
                              fit_type=fit_type,
                              cutoff=self.mdata.data('fitCutoff'))
+        
+        
+        
+    def gauge(self, gaugeRef):
+        SpecPe.gauge(self, gaugeRef)
+        self._ask_for_refit('gauging')
+
+                    
+                    
+    def subtract_bg(self, bgFile, isUpDown=True):
+        SpecPe.subtract_bg(self, bgFile, isUpDown=isUpDown)
+        self._ask_for_refit('subtracting background')
         
 
 
@@ -653,7 +663,7 @@ class SpecMs(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
         print('__init__: Init SpecMs')
         Spec.__init__(self, mdata, xdata, ydata, cfg)
-        self._update_mdata_reference(mdata['specTypeClass'], cfg)
+        self._update_mdata_reference('specMs')
         if len(self.xdata) == 1:
             self.calc_spec_data() 
         self.view = view.ViewMs(self)
