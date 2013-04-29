@@ -331,7 +331,7 @@ class ViewPt(ViewPes):
         ViewPes.__init__(self, spec)
         
     
-    def _addtext_gauge_par(self, ax, text_pos='left', fit_par='fitParTof'):
+    def _addtext_gauge_par(self, ax, text_pos='left', fit_par='fitPar'):
         if text_pos == 'left':
             pos_x, pos_y = 0.05, 0.6
         elif text_pos == 'right':
