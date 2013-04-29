@@ -219,6 +219,7 @@ class SpecPe(Spec):
         
     
     def calc_spec_data(self, lscale_key='flightLengthScale', Eoff_key='energyOffset', toff_key='timeOffset'):
+        'TODO: decide which data will be generated (e.g. now one generate the same data in tof and tofGauged)! '
         lscale = self.mdata.data(lscale_key)
         Eoff = self.mdata.data(Eoff_key)
         toff = self.mdata.data(toff_key)
