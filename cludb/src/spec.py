@@ -158,7 +158,7 @@ class Spec(object):
 
 class SpecPe(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
-        print('__init__: Init SpecPe')
+        #print('__init__: Init SpecPe')
         Spec.__init__(self, mdata, xdata, ydata, cfg)
         self._update_mdata_reference('specPe')
         self._pFactor = constants.m_e/(2*constants.e)*(self.mdata.data('flightLength'))**2
