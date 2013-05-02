@@ -2,6 +2,11 @@ from load import load_pickle
 from dbshell import Db
 import time
 import os
+# for comparison methods
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import host_subplot
+import mpl_toolkits.axisartist as AA
 
 
 class Batch(object):
@@ -155,10 +160,106 @@ class Batch(object):
             
 
 
+    def compare_water_fits(self):
+        # methods to sort peak position to isomers
+        def border_iso(size):
+            linear_par = {'iso2': [[abs((2.525-2.075)/0.1), -2.525], [abs((2.525-2.075)/0.1), -2.525]],
+                          'iso1a': [[abs((3-2.5)/0.1), 3], [abs((4.275-3.3)/0.1), -4.275]],
+                          'iso1b': [[abs((3.3-2.9)/0.1), -3.3], [abs((4.5-3.6)/0.1), -4.5]]
+                          }
+            def b_part1(iso, size):
+                return linear_par[iso][0][0]*size**(-1/3) + linear_par[iso][0][1]
+            def b_part2(iso, size):
+                return linear_par[iso][1][0]*size**(-1/3) + linear_par[iso][1][1]
+            iso2 = b_part1('iso2', size) if size < 50 else b_part2('iso2', size)
+            iso1a = b_part1('iso1a', size) if size < 50 else b_part2('iso1a', size)
+            iso1b = b_part1('iso1b', size) if size < 50 else b_part2('iso1b', size)
+            print('Border parameter for size {} are:'.format(str(size)), iso2, iso1a, iso1b)
+            return iso2, iso1a, iso1b
+        
+        def sort_peaks(size, peak_list, p_2, p_1a, p_1b, p_vib):
+            iso2, iso1a, iso1b = border_iso(size)
+            for p in peak_list:
+                if -1*p < iso2:
+                    p_2.append([size, p])
+                    print('p_2:', p_2)
+                elif iso2 <= -1*p < iso1a:
+                    p_1a.append([size, p])
+                    print('p_1a:', p_1a)
+                elif iso1a <= -1*p < iso1b:
+                    p_1b.append([size, p])
+                    print('p_1b:', p_1b)
+                else:
+                    p_vib.append([size, p])
+                    print('p_vib:', p_vib)
+                    
+        def plot_comp(plot_data, fit_par):
+            fig = plt.figure()
+            # setup lower axis
+            ax = host_subplot(111, axes_class=AA.Axes)
+            ax.set_xlabel('n$^{-1/3}$')
+            ax.set_xlim(0,0.4)
+            ax.set_ylabel('-VDE (eV)')
+            ax.set_ylim(-4,0)
+            # setup upper axis
+            ax2 = ax.twin()
+            ax2.set_xticks(np.array([10, 20,40,80,150,350,1000, 5000])**(-1/3))
+            ax2.set_xticklabels(["10","20","40","80","150","350","1000","5000"])
+            ax2.set_xlabel('number of water molecules')
+            ax2.axis["right"].major_ticklabels.set_visible(False)
+            ax2.grid(b=True)
+            # plot data
+            for peak_set in plot_data:
+                ax.plot(peak_set[2], peak_set[1], 's')
+            # plot fits
+            xdata_fit = np.arange(0, 1, 0.1)
+            for par_set in fit_par:
+                lin_fit = np.poly1d(par_set)
+                ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')
+            fig.show()
+                
+                
+                
+        # main method
+        p_2 = []
+        p_1a = []
+        p_1b = []
+        p_vib = []
+        for s in self.dbanswer:
+            cs = load_pickle(self.cfg,s[str('pickleFile')])
+            if cs.mdata.data('specTypeClass') == 'specPeWater' and \
+            'background' not in cs.mdata.data('systemTags') and \
+            'fitted' in cs.mdata.data('systemTags'):
+                peak_list = [cs.ebin(p) for p in cs.mdata.data('fitPar')[:-2:2]]
+                sort_peaks(cs.mdata.data('clusterBaseUnitNumber'), peak_list, p_2, p_1a, p_1b, p_vib)
+            else:
+                print('{} not a fitted Water-Spec, skipping'.format(cs.mdata.data('datFile')))
+            del cs
+        
+        print('p_* are:', p_2, p_1a, p_1b, p_vib)
+        plot_data = [ps for ps in [p_2, p_1a, p_1b, p_vib] if len(ps) > 0]
+        plot_data = [np.array(ps).transpose() for ps in plot_data]
+        plot_data = [np.vstack((ps, ps[0]**(-1/3))) for ps in plot_data]
+        for ps in plot_data:
+            ps[1] = ps[1]*-1
+        print('plot_data:', plot_data)
+        fit_data = [ps for ps in plot_data if len(ps) > 1]
+        print('fit_data:', fit_data)
+        
+        # linear fit
+        fit_par = []
+        for peak_set in fit_data:
+            fitpar = np.polyfit(peak_set[2], peak_set[1], 1)
+            fit_par.append(fitpar)
+            
+        plot_comp(plot_data, fit_par)
+        
+        
 
 
-
-
+    
+    
+    
             
             
     def regauge_pt(self):
