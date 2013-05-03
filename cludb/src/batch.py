@@ -180,13 +180,13 @@ class Batch(object):
         def sort_peaks(size, peak_list, p_2, p_1a, p_1b, p_vib):
             iso2, iso1a, iso1b = border_iso(size)
             for p in peak_list:
-                if -1*p < iso2:
+                if -1*p > iso2:
                     p_2.append([size, p])
                     print('p_2:', p_2)
-                elif iso2 <= -1*p < iso1a:
+                elif iso2 >= -1*p > iso1a:
                     p_1a.append([size, p])
                     print('p_1a:', p_1a)
-                elif iso1a <= -1*p < iso1b:
+                elif iso1a >= -1*p > iso1b:
                     p_1b.append([size, p])
                     print('p_1b:', p_1b)
                 else:
@@ -243,7 +243,7 @@ class Batch(object):
         for ps in plot_data:
             ps[1] = ps[1]*-1
         print('plot_data:', plot_data)
-        fit_data = [ps for ps in plot_data if len(ps) > 1]
+        fit_data = [ps for ps in plot_data if len(ps[0]) > 1]
         print('fit_data:', fit_data)
         
         # linear fit
