@@ -43,8 +43,12 @@ class OverView(object):
                                                  fit_xdata_key=spec.mdata.data('fitXdataKey'))
                 spec.view._addtext_fitvalues(ax, plot_type='ebin', fontsize=9)
     
-        def plot_pt_ebin_fit():
-            pass
+        def plot_pt_ebin_fit(spec, ax, fit_par):
+            spec.view.plot_ebin(ax, xdata_key=xdata_key,
+                                       ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
+            spec.view.plot_energy_fit(ax, fit_par=fit_par, xdata_key=xdata_key)
+            spec.view._addtext_gauge_par(ax, fit_par=fit_par, fontsize=9)            
+            
              
              
              
@@ -64,7 +68,7 @@ class OverView(object):
             ax.grid(linewidth=.1, linestyle=':', color='grey')
 
 
-        
+        # main method
         if pdf:
             fname = os.path.join(os.path.expanduser('~'), 'export.pdf')
             pdf_file = Pdf.PdfPages(fname)
@@ -88,7 +92,12 @@ class OverView(object):
                 pf = row['pickleFile']
                 currentspec = load.load_pickle(self.cfg, pf)
                 currentax = fig.add_subplot(size[0],size[1],idx_list[plotidx])
-                plot_water_ebin_fit(currentspec, currentax, fit_par)
+                if currentspec.mdata.data('specTypeClass') == 'specPeWater':
+                    plot_water_ebin_fit(currentspec, currentax, fit_par)
+                elif currentspec.mdata.data('specTypeClass') == 'specPePt':
+                    plot_pt_ebin_fit(currentspec, currentax, fit_par)
+                else:
+                    raise ValueError('Unsupported spec type: {}'.format(currentspec.mdata.data('datFile')))
                 currentspec.view._addtext_file_id(currentax)
                 currentspec.view._addtext_cluster_id(currentax, 
                                                      currentspec.view._pretty_format_clusterid(),

@@ -364,7 +364,7 @@ class ViewPt(ViewPes):
         ViewPes.__init__(self, spec)
         
     
-    def _addtext_gauge_par(self, ax, text_pos='left', fit_par='fitPar'):
+    def _addtext_gauge_par(self, ax, text_pos='left', fit_par='fitPar', fontsize=12):
         if text_pos == 'left':
             pos_x, pos_y = 0.05, 0.6
         elif text_pos == 'right':
@@ -372,14 +372,14 @@ class ViewPt(ViewPes):
         else:
             raise ValueError('text_pos must be one of: left, right. Got "%s" instead.'%(str(text_pos)))        
         ax.text(pos_x, pos_y, 'E$_{offset}$: %.2f meV'%(self.spec.mdata.data(fit_par)[-3]*1e3),
-                transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=text_pos)
+                transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
         ax.text(pos_x, pos_y-0.05, 't$_{offset}$: %.3f ns'%(self.spec.mdata.data(fit_par)[-2]*1e9),
-                transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=text_pos)
+                transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
         ax.text(pos_x, pos_y-0.1, 'l$_{scale}$: %.3f'%(self.spec.mdata.data(fit_par)[-1]),
-                transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=text_pos)
+                transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
         ax.text(pos_x, pos_y-0.15, '$\Delta$l: %.1f mm'%(self.spec.mdata.data('flightLength')*1000*
                                                       (1/sqrt(self.spec.mdata.data(fit_par)[-1]) -1)),
-                transform = self.spec.view.ax.transAxes, fontsize=12, horizontalalignment=text_pos)
+                transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
                
     
     def plot_tof_fit(self, ax, fit_par, time_unit, color='blue'):        
