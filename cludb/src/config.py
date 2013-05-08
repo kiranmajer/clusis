@@ -8,7 +8,7 @@ class Cfg():
             raise ValueError('Please enter absolute path.')
         # cfg and base dir absolute
         cfg_dir = os.path.join(os.path.expanduser('~'), '.cludb')
-        base_Dir = os.path.join(user_storage_dir, 'cludb3refac')
+        base_Dir = os.path.join(user_storage_dir, 'cludb')
         # we keep the internal dir structure relative
         data_storage_dir = 'data'
         archive_storage_dir = 'archive'
@@ -75,7 +75,7 @@ class Cfg():
         Mdata reference: 'key': [type|value list, obligatory]
         Only keys listed are allowed in mdata. Should prevent mdata from being tainted with typos.
         '''
-        self.wavelengths = [157e-9, 193e-9, 248e-9, 308e-9, 800e-9] # 157.63e-9, 193.35e-9, 248.4e-9
+        self.wavelengths = [157.63e-9, 193.35e-9, 248.4e-9, 308e-9, 590e-9, 800e-9] # 157.63e-9, 193.35e-9, 248.4e-9
         'When modified -> increase mdata_version!'
         self.mdata_version = 0.1
         self.mdata_ref = {'spec': {'datFile': [str, True],
@@ -212,16 +212,16 @@ class Cfg():
                                     (3.384, 0.27, 0.01), 
                                     (3.801, 1.14, 0.001)
                                     ],
-                           248e-9: [(2.128, 1.00, 0.01),
-                                    (2.224, 0.91, 0.01),
-                                    (2.889, 0.06, 0.01),
-                                    (2.942, 0.25, 0.01),
-                                    (3.384, 0.22, 0.01),
-                                    (3.801, 1.05, 0.001),
-                                    (4.050, 0.57, 0.001),
-                                    (4.430, 0.57, 0.001),
-                                    (4.852, 2.20, 0.001)
-                                    ]
+                           248.4e-9: [(2.128, 1.00, 0.01),
+                                      (2.224, 0.91, 0.01),
+                                      (2.889, 0.06, 0.01),
+                                      (2.942, 0.25, 0.01),
+                                      (3.384, 0.22, 0.01),
+                                      (3.801, 1.05, 0.001),
+                                      (4.050, 0.57, 0.001),
+                                      (4.430, 0.57, 0.001),
+                                      (4.852, 2.20, 0.001)
+                                      ]
                            }
         
         

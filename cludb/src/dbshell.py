@@ -254,7 +254,7 @@ class Db(object):
         # build order part
         orderResults = {'pes': ' ORDER BY clusterBaseUnit, clusterBaseUnitNumber, recTime, datFile',
                         'ms': ' ORDER BY clusterBaseUnit, recTime, datFile',
-                        'generic': 'ORDER BY recTime, datFile'}
+                        'generic': ' ORDER BY recTime, datFile'}
         sql += orderResults[specType]
         
 
@@ -285,7 +285,7 @@ class Db(object):
                 print(('%s  '%idx).rjust(6),
                       row['clusterBaseUnit'].ljust(7+3),
                       str(row['clusterBaseUnitNumber']).ljust(4+3),
-                      str(row['waveLength']*1e9).ljust(10+3),
+                      str(round(row['waveLength']*1e9, 1)).ljust(10+3),
                       format_RecTime(row['recTime']).ljust(12),
                       format_DatFile(row['datFile']).ljust(16),
                       end=" "

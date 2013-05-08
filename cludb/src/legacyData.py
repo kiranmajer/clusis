@@ -30,7 +30,10 @@ class LegacyData(object):
         print('Parsing dat file ...')
         self.parse_file(fileToImport)
         print('Evaluating header ...')
-        self.eval_header()
+        if self.spectype == 'generic':
+            self.eval_header(min_line_count=90)
+        else:
+            self.eval_header()
         print('Setting up meta data ...')
         self.get_sha1()
         self.get_recTime(self.spectype)

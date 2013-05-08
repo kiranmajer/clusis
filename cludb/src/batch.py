@@ -47,9 +47,9 @@ class Batch(object):
             try:
                 cs.mdata.update(mdataDict)
                 if hasattr(cs, '_hv'):
-                    cs._hv = cs.photonEnergy(cs.mdata.data('waveLength'))
+                    cs._hv = cs._photon_energy(cs.mdata.data('waveLength'))
                     'TODO: this can seriously mix up data!'
-                    cs.calcSpec()
+                    cs.calc_spec_data()
             except:
                 raise
             else:
@@ -99,15 +99,18 @@ class Batch(object):
         print('recTime'.ljust(10+3), end=' ')
         print('datFile'.ljust(13+3), end=' ')
         print('l_scale'.ljust(7+3), end=' ')
+        print('delta_l [mm]'.ljust(12+3), end=' ')
         print('t_off [ns]'.ljust(10+3), end=' ')
         print('E_off [meV]'.ljust(6))
         lastDate = ''
         for row in mdataList:
             if not format_recTime(row[0]) == lastDate:
-                print('-'*70)
+                print('-'*85)
             print(format_recTime(row[0]).ljust(10+3), end=' ')
             print(format_datFile(row[1]).ljust(13+3), end=' ')
             print(str(round(row[2][-1],3)).ljust(7+3), end=' ')
+            'TODO: adapt for mdata flightLength.'
+            print(str(round(1600*(1/np.sqrt(row[2][-1])-1),3)).ljust(12+3), end=' ')
             print(str(round(row[2][-2]*1e9,2)).ljust(10+3), end=' ')
             print(str(round(row[2][-3]*1e3,2)).ljust(6))
             lastDate = format_recTime(row[0])
@@ -153,7 +156,7 @@ class Batch(object):
             if not row[0] == last_size:
                 print('-'*70)
             print(str(row[0]).ljust(4+3), end=' ')
-            print(str(row[1]*1e9).ljust(6+3), end=' ')
+            print(str(round(row[1]*1e9)).ljust(6+3), end=' ')
             print(format_recTime(row[2]).ljust(10+3), end=' ')
             print(format_fitpeaks(row[3]))
             last_size = row[0]

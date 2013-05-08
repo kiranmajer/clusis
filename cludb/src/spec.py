@@ -298,8 +298,10 @@ class SpecPePt(SpecPe):
     
     
     def __get_y_scale(self, xdata, ydata, xcenter, xinterval):
+        #print('xcenter:', xcenter)
         xlb = np.abs(xdata-(xcenter-xinterval/2)).argmin()
         xub = np.abs(xdata-(xcenter+xinterval/2)).argmin()
+        #print('Calculated y_scale:', ydata[xlb:xub].max())
         return ydata[xlb:xub].max()
     
     
@@ -395,7 +397,7 @@ class SpecPePt(SpecPe):
                      'fitConstrains': {constrain_par: constrain},
                      'fitCutoff': cutoff}
         xcenter = peakParRef[0][0]
-        yscale = self.__get_y_scale(self.xdata['ebin'], self.ydata['jIntensity'], xcenter, 0.4) # better use actual intensity values
+        yscale = self.__get_y_scale(self.xdata['ebin'], self.ydata['jIntensity'], xcenter, 1) # better use actual intensity values
         fitValues['fitPar0'] = self.__fit_par0_trans(peakPar, yscale, Eoff, toff, lscale)
         try:
             p, covar, info, mess, ierr = leastsq(self.__err_multi_gauss_trans, fitValues['fitPar0'], 
@@ -526,7 +528,9 @@ class SpecPeWater(SpecPe):
             return fit_values
             raise
         else:
-            fit_values.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
+            # calculate chi squared
+            chisq = sum(info['fvec']*info['fvec'])
+            fit_values.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [chisq, info, mess, ierr]})
             return fit_values
  
  
@@ -559,7 +563,9 @@ class SpecPeWater(SpecPe):
             return fit_values
             raise
         else:
-            fit_values.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
+            # calculate chi squared
+            chisq = sum(info['fvec']*info['fvec'])
+            fit_values.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [chisq, info, mess, ierr]})
             return fit_values 
     
     
@@ -579,7 +585,10 @@ class SpecPeWater(SpecPe):
         else:
             raise ValueError("fit_type must be one of 'time' or 'energy'.")
         
-        print('Fit completed, Updating mdata...')
+        print('Fit converged with:')
+        print('   chi squared:', fit_values['fitInfo'][0])
+        print('   reduced chi squared:', fit_values['fitInfo'][0]/(len(self.xdata[xdata_key]) - len(fit_values['fitPar'])))
+        print('Updating mdata...')
         self.mdata.update(fit_values)
         self.mdata.add_tag('fitted', tagkey='systemTags')
         

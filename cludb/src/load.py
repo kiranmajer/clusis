@@ -43,8 +43,11 @@ def archive(cfg, mdata):
     if not os.path.exists(os.path.dirname(new_file)):
         os.makedirs(os.path.dirname(new_file))
     '''TODO: catch io exceptions'''
-    os.rename(old_file, new_file)
-    movedFiles = [[new_file, old_file]]
+    if not os.path.exists(new_file):
+        os.rename(old_file, new_file)
+        movedFiles = [[new_file, old_file]]
+    else:
+        raise ValueError('Archive contains already a file with this file name.')
         
     
     if 'cfgFileOrig' in mdata and mdata['specTypeClass'] not in ['spec']:

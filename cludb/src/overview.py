@@ -41,13 +41,17 @@ class OverView(object):
                                            ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
                 spec.view.plot_energy_fit(ax, fit_par=fit_par, xdata_key=xdata_key,
                                                  fit_xdata_key=spec.mdata.data('fitXdataKey'))
-                spec.view._addtext_fitvalues(ax, plot_type='ebin', fontsize=9)
+                spec.view._addtext_fitvalues(ax, plot_type='ebin', fit_par=fit_par, fontsize=9)
     
         def plot_pt_ebin_fit(spec, ax, fit_par):
-            spec.view.plot_ebin(ax, xdata_key=xdata_key,
-                                       ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
-            spec.view.plot_energy_fit(ax, fit_par=fit_par, xdata_key=xdata_key)
-            spec.view._addtext_gauge_par(ax, fit_par=fit_par, fontsize=9)            
+            if fit_par is None:
+                spec.view.plot_ebin(ax, xdata_key=xdata_key,
+                                    ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
+            else:
+                spec.view.plot_ebin(ax, xdata_key=xdata_key,
+                                    ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
+                spec.view.plot_energy_fit(ax, fit_par=fit_par, xdata_key=xdata_key)
+                spec.view._addtext_gauge_par(ax, fit_par=fit_par, fontsize=9)            
             
              
              

@@ -453,7 +453,7 @@ class ViewWater(ViewPes):
         ViewPes.__init__(self, spec)
         
 
-    def _addtext_fitvalues(self, ax, plot_type, time_unit=1, text_pos='left', fontsize=12):
+    def _addtext_fitvalues(self, ax, plot_type, fit_par, time_unit=1, text_pos='left', fontsize=12):
         def time_prefix(time_unit):
             if time_unit not in [1, 1e-3, 1e-6, 1e-9]:
                 raise ValueError('time_unit must be one of: 1, 1e-3, 1e-6, 1e-9.')
@@ -462,13 +462,13 @@ class ViewWater(ViewPes):
             return prefix
         
         if plot_type == 'ebin' and 'tof' in self.spec.mdata.data('fitXdataKey'):
-            peak_values = list(self.spec.ebin(self.spec.mdata.data('fitPar')[:-2:2]))
+            peak_values = list(self.spec.ebin(self.spec.mdata.data(fit_par)[:-2:2]))
             peakPos_unit = 'eV'
         elif plot_type == 'ekin' and 'tof' in self.spec.mdata.data('fitXdataKey'):
-            peak_values = list(self.spec.ekin(self.spec.mdata.data('fitPar')[:-2:2]))
+            peak_values = list(self.spec.ekin(self.spec.mdata.data(fit_par)[:-2:2]))
             peakPos_unit = 'eV'
         elif plot_type == 'tof' and 'tof' in self.spec.mdata.data('fitXdataKey'):
-            peak_values = list(self.spec.mdata.data('fitPar')[:-2:2])
+            peak_values = list(self.spec.mdata.data(fit_par)[:-2:2])
             peakPos_unit = '{}s'.format(time_prefix(time_unit))
         else:
             raise ValueError("Can't add values for this plot combination.")
@@ -592,7 +592,7 @@ class ViewWater(ViewPes):
         self._addtext_file_id(self.ax)
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right')
-        self._addtext_fitvalues(self.ax, plot_type='tof', time_unit=time_unit, text_pos='right')
+        self._addtext_fitvalues(self.ax, plot_type='tof', fit_par=fit_par, time_unit=time_unit, text_pos='right')
         self.fig.show()      
 
 
@@ -623,7 +623,7 @@ class ViewWater(ViewPes):
         self._show_energy_fit(plot_type='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
         self.ax.set_xlabel(r'E$_{kin}$ (eV)')
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right') 
-        self._addtext_fitvalues(self.ax, plot_type='ekin', text_pos='right')            
+        self._addtext_fitvalues(self.ax, plot_type='ekin', fit_par=fit_par, text_pos='right')            
         self.fig.show()  
 
 
@@ -631,7 +631,7 @@ class ViewWater(ViewPes):
         self._show_energy_fit(plot_type='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
         self.ax.set_xlabel(r'E$_{bin}$ (eV)')
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid()) 
-        self._addtext_fitvalues(self.ax, plot_type='ebin')            
+        self._addtext_fitvalues(self.ax, plot_type='ebin', fit_par=fit_par)            
         self.fig.show()  
 
             
