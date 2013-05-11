@@ -116,6 +116,28 @@ class Batch(object):
             lastDate = format_recTime(row[0])
             
             
+    def compare_pt_fits(self):
+
+        fig = plt.figure()
+        #print 'Figure created.'
+        ax = fig.add_subplot(1,1,1)
+        fx=np.arange(0, 10e-6, 1e-7)
+        def g_time(xdata, lscale, Eoff, toff, pFactor):
+            return 1/np.sqrt(lscale*(1/(xdata)**2 - Eoff/pFactor)) - toff        
+        
+        for s in self.dbanswer:
+            cs = load_pickle(self.cfg,s[str('pickleFile')])
+            if cs.mdata.data('specTypeClass') == 'specPePt' and \
+            'background' not in cs.mdata.data('systemTags') and \
+            'fitted' in cs.mdata.data('systemTags'):
+                lscale = cs.mdata.data('fitPar')[-1]
+                toff = cs.mdata.data('fitPar')[-2]
+                Eoff = cs.mdata.data('fitPar')[-3]
+                ax.plot(fx*1e6,g_time(fx, lscale, Eoff, toff, cs._pFactor)*1e6)
+                
+        fig.show()
+    
+            
     def list_mdata_waterfit(self):
         def format_recTime(unixtime):
             return time.strftime('%d.%m.%Y', time.localtime(unixtime))
@@ -163,21 +185,21 @@ class Batch(object):
             
 
 
-    def compare_water_fits(self):
+    def compare_water_fits(self, plot_iso_borders=False):
         # methods to sort peak position to isomers
+        linear_par = {'iso2': [[abs((2-1.62)/0.1), -2.2]], #, [abs((2-1.62)/0.1), -2.25]],
+                      'iso1a': [[abs((3.26-2.69)/0.1), -3.26]], #, [abs((3.3-2.71)/0.1), 3.3]],  #[abs((4.275-3.3)/0.1), -4.275]],
+                      'iso1b': [[abs((3.8-3.2)/0.1), -3.77]] #, [abs((3.93-2.82)/0.1), -3.93]]   #[abs((4.5-3.6)/0.1), -4.5]]
+                      }
         def border_iso(size):
-            linear_par = {'iso2': [[abs((2.525-2.075)/0.1), -2.525], [abs((2.525-2.075)/0.1), -2.525]],
-                          'iso1a': [[abs((3-2.5)/0.1), 3], [abs((4.275-3.3)/0.1), -4.275]],
-                          'iso1b': [[abs((3.3-2.9)/0.1), -3.3], [abs((4.5-3.6)/0.1), -4.5]]
-                          }
             def b_part1(iso, size):
                 return linear_par[iso][0][0]*size**(-1/3) + linear_par[iso][0][1]
             def b_part2(iso, size):
                 return linear_par[iso][1][0]*size**(-1/3) + linear_par[iso][1][1]
-            iso2 = b_part1('iso2', size) if size < 50 else b_part2('iso2', size)
-            iso1a = b_part1('iso1a', size) if size < 50 else b_part2('iso1a', size)
-            iso1b = b_part1('iso1b', size) if size < 50 else b_part2('iso1b', size)
-            print('Border parameter for size {} are:'.format(str(size)), iso2, iso1a, iso1b)
+            iso2 = b_part1('iso2', size) #if size < 50 else b_part2('iso2', size)
+            iso1a = b_part1('iso1a', size) #if size < 50 else b_part2('iso1a', size)
+            iso1b = b_part1('iso1b', size) #if size < 50 else b_part2('iso1b', size)
+            #print('Border parameter for size {} are:'.format(str(size)), iso2, iso1a, iso1b)
             return iso2, iso1a, iso1b
         
         def sort_peaks(size, peak_list, p_2, p_1a, p_1b, p_vib):
@@ -185,16 +207,16 @@ class Batch(object):
             for p in peak_list:
                 if -1*p > iso2:
                     p_2.append([size, p])
-                    print('p_2:', p_2)
+                    #print('p_2:', p_2)
                 elif iso2 >= -1*p > iso1a:
                     p_1a.append([size, p])
-                    print('p_1a:', p_1a)
+                    #print('p_1a:', p_1a)
                 elif iso1a >= -1*p > iso1b:
                     p_1b.append([size, p])
-                    print('p_1b:', p_1b)
+                    #print('p_1b:', p_1b)
                 else:
                     p_vib.append([size, p])
-                    print('p_vib:', p_vib)
+                    #print('p_vib:', p_vib)
                     
         def plot_comp(plot_data, fit_par):
             fig = plt.figure()
@@ -219,6 +241,10 @@ class Batch(object):
             for par_set in fit_par:
                 lin_fit = np.poly1d(par_set)
                 ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')
+            # plot borders for isomer classification
+            if plot_iso_borders:
+                for par in linear_par.values():
+                    ax.plot(xdata_fit, par[0][0]*xdata_fit + par[0][1], '-', color='grey')
             fig.show()
                 
                 
@@ -245,9 +271,9 @@ class Batch(object):
         plot_data = [np.vstack((ps, ps[0]**(-1/3))) for ps in plot_data]
         for ps in plot_data:
             ps[1] = ps[1]*-1
-        print('plot_data:', plot_data)
+        #print('plot_data:', plot_data)
         fit_data = [ps for ps in plot_data if len(ps[0]) > 1]
-        print('fit_data:', fit_data)
+        #print('fit_data:', fit_data)
         
         # linear fit
         fit_par = []

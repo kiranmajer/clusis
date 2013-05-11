@@ -145,10 +145,17 @@ class Db(object):
                 times.extend(recTime)
             else:
                 times.append(recTime)
+            n_times = len(times)
+            processed_times = 0
             for t in times:
                 dayStart = time.mktime(time.strptime(t, '%d.%m.%Y'))
                 dayEnd = dayStart + 86400
-                timesQuery+='recTime BETWEEN %s AND %s AND '%(dayStart, dayEnd)
+                timesQuery+='recTime BETWEEN %s AND %s '%(dayStart, dayEnd)
+                processed_times += 1
+                if processed_times < n_times:
+                    timesQuery += 'OR '
+                
+            timesQuery += 'AND '
             
             return timesQuery
         
@@ -200,7 +207,7 @@ class Db(object):
             waves = []
             wavesQuery = ''
             'TODO: adapt for variable machine type.'
-            refWaves = self.__cfg.waveLengths
+            refWaves = self.__cfg.wavelengths
             print(refWaves)
             if type(waveLength) is list:
                 waves.extend(waveLength)
