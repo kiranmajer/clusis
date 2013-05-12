@@ -182,7 +182,7 @@ class Db(object):
         def sqlformat_NotInTags(notInTags):
             tags = []
             tagsQuery = ''
-            if type(inTags) is list:
+            if type(notInTags) is list:
                 tags.extend(notInTags)
             else:
                 tags.append(notInTags)
