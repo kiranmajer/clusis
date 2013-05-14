@@ -64,6 +64,9 @@ class Db(object):
         for spec in specList:
             specType = spec.mdata.data('specType')
             keys = [item[0] for item in self.__dbProps['layout'][specType]]
+            for key in keys:
+                if key not in spec.mdata.data().keys():
+                    spec.mdata.add({key: None})
             values = [spec.mdata.data(key) for key in keys]
             if specType in list(valueList.keys()):
                 valueList[specType].append(tuple(values))
@@ -108,37 +111,34 @@ class Db(object):
         
 
     def query(self, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None, clusterBaseUnitNumberRange=None,
-              recTime=None, recTimeRange=None, inTags=None, notInTags=None, datFileName=None, waveLength=None):
+              recTime=None, recTimeRange=None, inTags=None, notInTags=None, datFileName=None, waveLength=None,
+              trapTemp=None, trapTempRange=None):
 
         
-        def sqlformat_ClusterBaseUnit(clusterBaseUnit):
+        def sqlformat_ClusterBaseUnit(clusterBaseUnit, key):
             if type(clusterBaseUnit) is str:
                 return 'clusterBaseUnit IS "%s" AND '%clusterBaseUnit
             else:
                 raise ValueError('clusterBaseUnit must be a string. Got "%s" instead'%clusterBaseUnit)
             
-        def sqlformat_ClusterBaseUnitNumber(clusterBaseUnitNumber):
-            numbers = []
+        def sqlformat_number(numbers, key):
+            number_list = []
             numbersQuery = ''
-            if type(clusterBaseUnitNumber) is list:
-                numbers.extend(clusterBaseUnitNumber)
+            if type(numbers) is list:
+                number_list.extend(numbers)
             else:
-                numbers.append(clusterBaseUnitNumber)
-            for i in numbers:
-                if type(i) is int and i > 0:
-                    numbersQuery+='clusterBaseUnitNumber IS "%s" AND '%i
-                else:
-                    raise ValueError('clusterBaseUnitNumber must be an int > 0. Got "%s" instead'%i)
+                number_list.append(numbers)
+            for i in number_list:
+                numbersQuery+='{} IS {} AND '.format(key, i)
             return numbersQuery
         
-        def sqlformat_ClusterBaseUnitNumberRange(clusterBaseUnitNumberRange):
-            if type(clusterBaseUnitNumberRange) is list and len(clusterBaseUnitNumberRange) == 2 \
-            and clusterBaseUnitNumberRange[0] is int and clusterBaseUnitNumberRange[1] is int:
-                return 'clusterBaseUnitNumber BETWEEN %S AND %s AND '%tuple(clusterBaseUnitNumberRange)
+        def sqlformat_number_range(number_range, key):
+            if type(number_range) is list and len(number_range) == 2 and number_range[0] <= number_range[1]:
+                return '{} BETWEEN {} AND {} AND '.format(key, number_range[0], number_range[1])
             else:
                 raise ValueError('Not a valid range.')
             
-        def sqlformat_RecTime(recTime):
+        def sqlformat_RecTime(recTime, key):
             times = []
             timesQuery = ''
             if type(recTime) is list:
@@ -159,7 +159,7 @@ class Db(object):
             
             return timesQuery
         
-        def sqlformat_RecTimeRange(recTimeRange):
+        def sqlformat_RecTimeRange(recTimeRange, key):
             '''TODO: check if t0<t1'''
             if type(recTimeRange) is list and len(recTimeRange) == 2:
                 startTime = time.mktime(time.strptime(recTimeRange[0], '%d.%m.%Y'))
@@ -168,7 +168,7 @@ class Db(object):
             else:
                 raise ValueError('Not a valid time range.')
             
-        def sqlformat_InTags(inTags):
+        def sqlformat_InTags(inTags, key):
             tags = []
             tagsQuery = ''
             if type(inTags) is list:
@@ -179,7 +179,7 @@ class Db(object):
                 tagsQuery+='tags GLOB "*%s*" AND '%(t,)
             return tagsQuery
                 
-        def sqlformat_NotInTags(notInTags):
+        def sqlformat_NotInTags(notInTags, key):
             tags = []
             tagsQuery = ''
             if type(notInTags) is list:
@@ -190,7 +190,7 @@ class Db(object):
                 tagsQuery+='tags NOT GLOB "*%s*" AND '%(t,)
             return tagsQuery
             
-        def sqlformat_DatFileName(datFileName):
+        def sqlformat_DatFileName(datFileName, key):
             dats = []
             datsQuery = ''
             if type(datFileName) is list:
@@ -203,7 +203,7 @@ class Db(object):
                 datsQuery+='datFile GLOB "*%s*" AND '%f
             return datsQuery
         
-        def sqlformat_WaveLength(waveLength):
+        def sqlformat_WaveLength(waveLength, key):
             waves = []
             wavesQuery = ''
             'TODO: adapt for variable machine type.'
@@ -223,14 +223,16 @@ class Db(object):
         
                 
         q = {'clusterBaseUnit': [sqlformat_ClusterBaseUnit, clusterBaseUnit, 'clusterBaseUnit'],
-             'clusterBaseUnitNumber': [sqlformat_ClusterBaseUnitNumber, clusterBaseUnitNumber, 'clusterBaseUnitNumber'],
-             'clusterBaseUnitNumberRange': [sqlformat_ClusterBaseUnitNumberRange, clusterBaseUnitNumberRange, 'clusterBaseUnitNumber'],
+             'clusterBaseUnitNumber': [sqlformat_number, clusterBaseUnitNumber, 'clusterBaseUnitNumber'],
+             'clusterBaseUnitNumberRange': [sqlformat_number_range, clusterBaseUnitNumberRange, 'clusterBaseUnitNumber'],
              'recTime': [sqlformat_RecTime, recTime, 'recTime'],
              'recTimeRange': [sqlformat_RecTimeRange, recTimeRange, 'recTime'],
              'inTags': [sqlformat_InTags, inTags, 'tags'],
              'notInTags': [sqlformat_NotInTags, notInTags, 'tags'],
              'datFileName': [sqlformat_DatFileName, datFileName, 'datFile'],
-             'waveLength': [sqlformat_WaveLength, waveLength, 'waveLength']
+             'waveLength': [sqlformat_WaveLength, waveLength, 'waveLength'],
+             'trapTemp': [sqlformat_number, trapTemp, 'trapTemp'],
+             'trapTempRange': [sqlformat_number_range, trapTempRange, 'trapTemp']
              }
         #print 'we start with: ', q
             
@@ -251,7 +253,7 @@ class Db(object):
         for v in q.values():
             #print 'processing: ', k, v
             if v[1] is not None:
-                whereItems.append(v[0](v[1]))
+                whereItems.append(v[0](v[1], v[2]))
         if len(whereItems) > 0:
             sql += 'WHERE '
             for i in whereItems:
@@ -284,6 +286,7 @@ class Db(object):
                       'element'.ljust(7+3),
                       'size'.ljust(4+3),
                       'waveLength'.ljust(10+3),
+                      'temp'.ljust(4+3),
                       'recTime'.ljust(12),
                       'datFile'.ljust(16),
                       'tags')
@@ -293,6 +296,7 @@ class Db(object):
                       row['clusterBaseUnit'].ljust(7+3),
                       str(row['clusterBaseUnitNumber']).ljust(4+3),
                       str(round(row['waveLength']*1e9, 1)).ljust(10+3),
+                      str(row['trapTemp']).ljust(4+3),
                       format_RecTime(row['recTime']).ljust(12),
                       format_DatFile(row['datFile']).ljust(16),
                       end=" "

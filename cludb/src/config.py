@@ -3,12 +3,12 @@ import numpy as np
 
 
 class Cfg():
-    def __init__(self,user_storage_dir):
+    def __init__(self,user_storage_dir, base_dir_name):
         if not os.path.isabs(user_storage_dir):
             raise ValueError('Please enter absolute path.')
         # cfg and base dir absolute
         cfg_dir = os.path.join(os.path.expanduser('~'), '.cludb')
-        base_Dir = os.path.join(user_storage_dir, 'cludb')
+        base_Dir = os.path.join(user_storage_dir, base_dir_name)
         # we keep the internal dir structure relative
         data_storage_dir = 'data'
         archive_storage_dir = 'archive'
@@ -31,7 +31,8 @@ class Cfg():
                                                ['tags', 'LIST'],
                                                ['waveLength', 'REAL'],
                                                ['recTime', 'REAL'],
-                                               ['machine', 'TEXT']
+                                               ['machine', 'TEXT'],
+                                               ['trapTemp', 'REAL']
                                                ),
                                        'ms': (['sha1', 'TEXT PRIMARY KEY'],
                                               ['clusterBaseUnit', 'TEXT'],
@@ -43,7 +44,8 @@ class Cfg():
                                               ['datFile', 'TEXT'],
                                               ['tags', 'LIST'],
                                               ['recTime', 'REAL'],
-                                               ['machine', 'TEXT']
+                                              ['machine', 'TEXT'],
+                                              ['trapTemp', 'REAL']
                                               ),
                                        'pfs': (['sha1', 'TEXT PRIMARY KEY'],
                                                ['clusterBaseUnit', 'TEXT'],
@@ -55,7 +57,8 @@ class Cfg():
                                                ['tags', 'LIST'],
                                                ['waveLength', 'REAL'],
                                                ['recTime', 'REAL'],
-                                               ['machine', 'TEXT']
+                                               ['machine', 'TEXT'],
+                                               ['trapTemp', 'REAL']
                                                ),
                                        'generic': (['sha1', 'TEXT PRIMARY KEY'],
                                                    ['pickleFile', 'TEXT UNIQUE'],

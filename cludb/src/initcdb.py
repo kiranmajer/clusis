@@ -39,9 +39,9 @@ def init_db(cfg):
     
         
         
-def init_cludb(user_storage_dir):
+def init_cludb(user_storage_dir, base_dir_name):
     'TODO: provide global cfg object.'
-    cfg = config.Cfg(user_storage_dir)
+    cfg = config.Cfg(user_storage_dir, base_dir_name)
 #    cfg = ConfigParser.SafeConfigParser()
 #    "set base path where all cludb files live"
 #    if mainStorageDir == config.mainStorageDir:

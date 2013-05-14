@@ -12,26 +12,30 @@ import mpl_toolkits.axisartist as AA
 class Batch(object):
     def __init__(self, cfg, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None,
                  clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
-                 inTags=None, notInTags=None, datFileName=None, waveLength=None):
+                 inTags=None, notInTags=None, datFileName=None, waveLength=None, trapTemp=None,
+                 trapTempRange=None):
         self.cfg = cfg
         self.query(specType, clusterBaseUnit=clusterBaseUnit,
                    clusterBaseUnitNumber=clusterBaseUnitNumber,
                    clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
                    recTime=recTime, recTimeRange=recTimeRange,
                    inTags=inTags, notInTags=notInTags,
-                   datFileName=datFileName, waveLength=waveLength)
+                   datFileName=datFileName, waveLength=waveLength,
+                   trapTemp=trapTemp, trapTempRange=trapTempRange)
 
         
     def query(self, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None,
               clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
-              inTags=None, notInTags=None, datFileName=None, waveLength=None):
+              inTags=None, notInTags=None, datFileName=None, waveLength=None,
+              trapTemp=None, trapTempRange=None):
         with Db('casi', self.cfg) as db:
             self.dbanswer = db.query(specType, clusterBaseUnit=clusterBaseUnit,
                                      clusterBaseUnitNumber=clusterBaseUnitNumber,
                                      clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
                                      recTime=recTime, recTimeRange=recTimeRange,
                                      inTags=inTags, notInTags=notInTags,
-                                     datFileName=datFileName, waveLength=waveLength)
+                                     datFileName=datFileName, waveLength=waveLength,
+                                     trapTemp=trapTemp, trapTempRange=trapTempRange)
             
             
     def get_spec(self, number):
@@ -69,6 +73,38 @@ class Batch(object):
                 cs.commit(update=True)
                 
             del cs
+            
+            
+    def list_temp(self):
+        def format_recTime(unixtime):
+            return time.strftime('%d.%m.%Y', time.localtime(unixtime))
+        
+        def format_datFile(datfile):
+            return os.path.basename(datfile)
+        
+        items = ['clusterBaseUnitNumber', 'waveLength', 'recTime', 'datFile', 'trapTemp']
+        mdataList = []
+        rowCount = 0
+        for s in self.dbanswer:
+            cs = load_pickle(self.cfg,s[str('pickleFile')])        
+            mdataList.append([])
+            for key in items:
+                if key in cs.mdata.data().keys():
+                    mdataList[rowCount].append(cs.mdata.data(key))
+                else:
+                    mdataList[rowCount].append(0)
+            rowCount += 1             
+        print('size'.ljust(4+3), end=' ')
+        print('lambda'.ljust(5+3), end=' ')
+        print('recTime'.ljust(10+3), end=' ')
+        print('datFile'.ljust(13+3), end=' ')
+        print('trapTemp'.ljust(8))
+        for row in mdataList:
+            print(str(row[0]).ljust(4+3), end=' ')
+            print(str(round(row[1]*1e9,1)).ljust(5+3), end=' ')
+            print(format_recTime(row[2]).ljust(10+3), end=' ')
+            print(format_datFile(row[3]).ljust(13+3), end=' ')
+            print(str(round(row[4],1)).ljust(8))  
   
     
     
@@ -187,8 +223,16 @@ class Batch(object):
             last_size = row[0]
             
 
+    def load_comp_data(self, dat_file_list):
+        comp_data = []
+        for dat_file in dat_file_list:
+            with open(dat_file, 'rb') as f:
+                x,y = np.loadtxt(f, unpack=True)
+            comp_data.append([x, y])
+        return comp_data
 
-    def compare_water_fits(self, plot_iso_borders=False):
+
+    def compare_water_fits(self, plot_iso_borders=False, comp_data=None):
         # methods to sort peak position to isomers
         linear_par = {'iso2': [[abs((2-1.62)/0.1), -2.2]], #, [abs((2-1.62)/0.1), -2.25]],
                       'iso1a': [[abs((3.26-2.69)/0.1), -3.26]], #, [abs((3.3-2.71)/0.1), 3.3]],  #[abs((4.275-3.3)/0.1), -4.275]],
@@ -221,7 +265,7 @@ class Batch(object):
                     p_vib.append([size, p])
                     #print('p_vib:', p_vib)
                     
-        def plot_comp(plot_data, fit_par):
+        def plot_comp(plot_data, fit_par, comp_data=None):
             fig = plt.figure()
             # setup lower axis
             ax = host_subplot(111, axes_class=AA.Axes)
@@ -239,6 +283,11 @@ class Batch(object):
             # plot data
             for peak_set in plot_data:
                 ax.plot(peak_set[2], peak_set[1], 's')
+            # plot comparison data
+            if comp_data is not None:
+                print('Got comparison data. Plotting...')
+                for peak_set in comp_data:
+                    ax.plot(peak_set[0], -1*peak_set[1], 'o')
             # plot fits
             xdata_fit = np.arange(0, 1, 0.1)
             for par_set in fit_par:
@@ -268,7 +317,7 @@ class Batch(object):
                 print('{} not a fitted Water-Spec, skipping'.format(cs.mdata.data('datFile')))
             del cs
         
-        print('p_* are:', p_2, p_1a, p_1b, p_vib)
+        #print('p_* are:', p_2, p_1a, p_1b, p_vib)
         plot_data = [ps for ps in [p_2, p_1a, p_1b, p_vib] if len(ps) > 0]
         plot_data = [np.array(ps).transpose() for ps in plot_data]
         plot_data = [np.vstack((ps, ps[0]**(-1/3))) for ps in plot_data]
@@ -284,7 +333,7 @@ class Batch(object):
             fitpar = np.polyfit(peak_set[2], peak_set[1], 1)
             fit_par.append(fitpar)
             
-        plot_comp(plot_data, fit_par)
+        plot_comp(plot_data, fit_par, comp_data=comp_data)
         
         
 

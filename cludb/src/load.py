@@ -1,5 +1,6 @@
 from spec import *
 from legacyData import LegacyData
+from shutil import copy2
 #import config
 #import mdata
 #import pickle
@@ -198,34 +199,38 @@ def load_pickle(cfg, pickleFile):
 
 
 
-
+def import_cludb_dir(cfg, import_dir):
+    '''Imports data from cludb dir structure: Import spectra from their pickle files
+    into database; copy archive data (*.dat, *.cfg) to current archive dir.
+    '''
+    if not os.path.isabs(import_dir):
+        import_dir = os.path.abspath(import_dir)
+    # simple check for correct dir structure
+    import_archive = os.path.join(import_dir, 'archive')
+    import_data = os.path.join(import_dir, 'data')
+    #import_db = os.path.join(import_dir,)
+    if not os.path.isdir(import_archive) or not os.path.isdir(import_data):
+        raise ValueError('"{}" does not seem to be avalid cludb dir.'.format(import_dir)) 
+    # get pickle files for import
+    pickle_list =  ls_recursive(import_data, suffix='.pickle')
+    # process spectra
+    for pfile in pickle_list:
+        cs = load_pickle(cfg, pfile)
+        cs.commit()
+        for key in ['datFile', 'cfgFile']:
+            if key in cs.mdata.data().keys():
+                old_file = os.path.join(import_dir, cs.mdata.data(key))
+                new_file = os.path.join(cfg.path['base'], cs.mdata.data(key))
+                if not os.path.exists(os.path.dirname(new_file)):
+                    os.makedirs(os.path.dirname(new_file))
+                print('Copying {} to {} ...'.format(old_file, new_file))
+                copy2(old_file, new_file)
+                
+    
 
     
     
-#def load(loads):
-#    '''Make a list, so we can work only with lists'''
-#    loadList = []
-#    if type(loads) is list:
-#        loadList.extend(loads)
-#    else:
-#        loadList.append(loads)
-#        
-#    pickleSpecs = []
-#    legacyDataSpecs = []
-#    for item in loadList:
-#        if type(item) is str: # should be path to pickle file
-#            spec = load_pickle(item)
-#            pickleSpecs.append(spec)
-#        else:
-#            spec = loadLegacyData(item)
-#            legacyDataSpecs.append(spec)
-#    
-#    if len(legacyDataSpecs) > 0:
-#        Db.add(legacyDataSpecs)
-#        
-#    return pickleSpecs.extend(legacyDataSpecs)
-#
-#    
+
     
     
     
