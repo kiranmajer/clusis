@@ -188,7 +188,7 @@ class Batch(object):
             return ', '.join(str(e) for e in peaklist)
         
         
-        items = ['clusterBaseUnitNumber', 'waveLength', 'recTime', 'fitPar']
+        items = ['clusterBaseUnitNumber', 'waveLength', 'recTime', 'fitCutoff', 'fitInfo', 'fitPar']
         mdataList = []
         rowCount = 0
         for s in self.dbanswer:
@@ -200,6 +200,8 @@ class Batch(object):
                 for key in items:
                     if key == 'fitPar':
                         mdataList[rowCount].append([round(float(cs.ebin(p)),2) for p in cs.mdata.data(key)[:-2:2]])
+                    elif key == 'fitInfo':
+                        mdataList[rowCount].append(cs.mdata.data(key)[0])
                     else:
                         mdataList[rowCount].append(cs.mdata.data(key))
                 rowCount += 1
@@ -208,18 +210,25 @@ class Batch(object):
             #print cs.mdata.data('datFile'), cs.mdata.data('recTime'), cs.mdata.data('fitParTof')[-1]
             del cs
         
-        print('size'.ljust(4+3), end=' ')
-        print('lambda'.ljust(6+3), end=' ')
-        print('recTime'.ljust(10+3), end=' ')
-        print('Ebin of peaks [eV]')
+        print('size'.ljust(4+3),
+              'lambda'.ljust(6+3),
+              'recTime'.ljust(10+3),
+              'cutoff'.ljust(6+3),
+              'chi2*3'.ljust(5+3),
+              'Ebin of peaks [eV]')
         last_size = 0
         for row in mdataList:
             if not row[0] == last_size:
-                print('-'*70)
-            print(str(row[0]).ljust(4+3), end=' ')
-            print(str(round(row[1]*1e9)).ljust(6+3), end=' ')
-            print(format_recTime(row[2]).ljust(10+3), end=' ')
-            print(format_fitpeaks(row[3]))
+                print('-'*85)
+            print(str(row[0]).ljust(4+3), 
+                  str(round(row[1]*1e9)).ljust(6+3),
+                  format_recTime(row[2]).ljust(10+3), end=' ')
+            if row[3] is None:
+                print('None'.ljust(6+3), end=' ')
+            else:                                       
+                print(str(round(row[3]*1e6, 2)).ljust(6+3), end=' ')
+            print(str(round(row[4]*1e3, 3)).ljust(5+3),
+                  format_fitpeaks(row[5]))
             last_size = row[0]
             
 
