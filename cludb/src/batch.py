@@ -172,8 +172,10 @@ class Batch(object):
                 lscale = cs.mdata.data('fitPar')[-1]
                 toff = cs.mdata.data('fitPar')[-2]
                 Eoff = cs.mdata.data('fitPar')[-3]
-                ax.plot(fx*1e6,g_time(fx, lscale, Eoff, toff, cs._pFactor)*1e6)
+                dat_filename = os.path.basename(cs.mdata.data('datFile'))
+                ax.plot(fx*1e6,g_time(fx, lscale, Eoff, toff, cs._pFactor)*1e6, label=dat_filename)
                 
+        ax.legend(loc=2)
         fig.show()
     
             
@@ -233,11 +235,12 @@ class Batch(object):
             
 
     def load_comp_data(self, dat_file_list):
-        comp_data = []
+        comp_data = {}
         for dat_file in dat_file_list:
             with open(dat_file, 'rb') as f:
                 x,y = np.loadtxt(f, unpack=True)
-            comp_data.append([x, y])
+            legend = os.path.splitext(os.path.basename(dat_file))[0]
+            comp_data[legend] = [x, y]
         return comp_data
 
 
@@ -295,8 +298,9 @@ class Batch(object):
             # plot comparison data
             if comp_data is not None:
                 print('Got comparison data. Plotting...')
-                for peak_set in comp_data:
-                    ax.plot(peak_set[0], -1*peak_set[1], 'o')
+                for key, peak_set in comp_data.items():
+                    ax.plot(peak_set[0], -1*peak_set[1], 'o', label=key)
+                ax.legend(loc=2)
             # plot fits
             xdata_fit = np.arange(0, 1, 0.1)
             for par_set in fit_par:
