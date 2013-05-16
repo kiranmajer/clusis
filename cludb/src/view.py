@@ -21,9 +21,9 @@ class View(object):
             self.ax = self.fig.add_subplot(1,1,1)    
 
 
-    def _addtext_file_id(self, ax):
+    def _addtext_file_id(self, ax, fontsize=6):
         ax.text(1.0, 1.01, '%s'%(os.path.basename(self.spec.mdata.data('datFile'))),
-                transform = ax.transAxes, fontsize=8, horizontalalignment='right')  
+                transform = ax.transAxes, fontsize=fontsize, horizontalalignment='right')  
 
         
     def _addtext_statusmarker(self, ax, xdata_key, ydata_key, text_pos='center'):
@@ -366,20 +366,27 @@ class ViewPt(ViewPes):
     
     def _addtext_gauge_par(self, ax, text_pos='left', fit_par='fitPar', fontsize=12):
         if text_pos == 'left':
-            pos_x, pos_y = 0.05, 0.6
+            pos_x, pos_y = 0.05, 0.4
         elif text_pos == 'right':
-            pos_x, pos_y = 0.95, 0.6
+            pos_x, pos_y = 0.95, 0.4
         else:
             raise ValueError('text_pos must be one of: left, right. Got "%s" instead.'%(str(text_pos)))        
-        ax.text(pos_x, pos_y, 'E$_{offset}$: %.2f meV'%(self.spec.mdata.data(fit_par)[-3]*1e3),
+        ax.text(pos_x, pos_y,
+                'E$_{offset}$: %.2f meV\nt$_{offset}$: %.3f ns\nl$_{scale}$: %.3f\n$\Delta$l: %.1f mm'%(self.spec.mdata.data(fit_par)[-3]*1e3,
+                                        self.spec.mdata.data(fit_par)[-2]*1e9,
+                                        self.spec.mdata.data(fit_par)[-1],
+                                        self.spec.mdata.data('flightLength')*1000*
+                                        (1/sqrt(self.spec.mdata.data(fit_par)[-1]) -1)),
                 transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
-        ax.text(pos_x, pos_y-0.05, 't$_{offset}$: %.3f ns'%(self.spec.mdata.data(fit_par)[-2]*1e9),
-                transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
-        ax.text(pos_x, pos_y-0.1, 'l$_{scale}$: %.3f'%(self.spec.mdata.data(fit_par)[-1]),
-                transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
-        ax.text(pos_x, pos_y-0.15, '$\Delta$l: %.1f mm'%(self.spec.mdata.data('flightLength')*1000*
-                                                      (1/sqrt(self.spec.mdata.data(fit_par)[-1]) -1)),
-                transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
+        
+        
+#        ax.text(pos_x, pos_y-0.05, 't$_{offset}$: %.3f ns'%(self.spec.mdata.data(fit_par)[-2]*1e9),
+#                transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
+#        ax.text(pos_x, pos_y-0.1, 'l$_{scale}$: %.3f'%(self.spec.mdata.data(fit_par)[-1]),
+#                transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
+#        ax.text(pos_x, pos_y-0.15, '$\Delta$l: %.1f mm'%(self.spec.mdata.data('flightLength')*1000*
+#                                                      (1/sqrt(self.spec.mdata.data(fit_par)[-1]) -1)),
+#                transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
                
     
     def plot_tof_fit(self, ax, fit_par, time_unit, color='blue'):        

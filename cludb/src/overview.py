@@ -51,7 +51,7 @@ class OverView(object):
                 spec.view.plot_ebin(ax, xdata_key=xdata_key,
                                     ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
                 spec.view.plot_energy_fit(ax, fit_par=fit_par, xdata_key=xdata_key)
-                spec.view._addtext_gauge_par(ax, fit_par=fit_par, fontsize=9)            
+                spec.view._addtext_gauge_par(ax, fit_par=fit_par, fontsize=7)            
             
              
              
@@ -68,8 +68,8 @@ class OverView(object):
                 label.set_fontsize(7)
             ax.yaxis.set_major_locator(mpl.ticker.NullLocator())
             ax.legend_=None
-            ax.lines[0].set_linewidth(.5)
-            ax.grid(linewidth=.1, linestyle=':', color='grey')
+            ax.lines[0].set_linewidth(.3)
+            ax.grid(linewidth=.1, linestyle=':', color='black')
 
 
         # main method
@@ -86,8 +86,8 @@ class OverView(object):
             # create page
             print('Creating page', figidx)
             fig = plt.figure(figidx, figsize=(0.21/constants.inch, 0.297/constants.inch))
-            plt.subplots_adjust(left  = 0.05, right = 0.95, bottom = 0.05, top = 0.95,
-                                wspace = 0.15, hspace = 0.2)
+            plt.subplots_adjust(left  = 0.03, right = 0.97, bottom = 0.03, top = 0.97,
+                                wspace = 0.1, hspace = 0.14)
             plotidx = 0
             while plotidx < size[0]*size[1] and len(plot_list) > 0:
                 #print 'Creating plot', plotidx
