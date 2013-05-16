@@ -11,14 +11,79 @@ import numpy as np
 
 class ViewList(object):
     def __init__(self, speclist):
-        self.specList = speclist
+        self.speclist = speclist
 
+    # auxiliary methods
+    def _build_idx_list(self, layout):
+        'Returns a list of subplot indices for a given layout [rows, columns].'
+        rows = layout[0]
+        col = layout[1]
+        return np.arange(1,rows*col+1).reshape(rows,col).transpose().reshape(rows*col)
+    
+    def _format_overview_plot(self, ax):
+          
+        for tick in ax.xaxis.get_major_ticks():
+            tick.tick2On=True
+            tick.gridOn=True
+            tick.label1On=True
+            tick.label2On=False
+            tick.tick1On=True
+        for label in ax.xaxis.get_ticklabels():
+            label.set_fontsize(7)
+        ax.yaxis.set_major_locator(mpl.ticker.NullLocator())
+        ax.legend_=None
+        ax.lines[0].set_linewidth(.3)
+        ax.grid(linewidth=.1, linestyle=':', color='black')
+        
+    def _show(self, show_fct, layout=[5,4], **keywords):
+        print('keywords:', keywords)
+        subplt_idx = self._build_idx_list(layout)
+        total_plots = len(self.speclist.pfile_list)
+        plotcount = 0
+        figidx = 1
+        while plotcount < total_plots:
+            # create page
+            print('Plotting page', figidx)
+            fig = plt.figure(figidx, figsize=(0.21/constants.inch, 0.297/constants.inch))
+            plt.subplots_adjust(left  = 0.03, right = 0.97, bottom = 0.03, top = 0.97,
+                                wspace = 0.1, hspace = 0.14)
+            plotidx = 0
+            while plotidx < layout[0]*layout[1] and plotcount < total_plots:
+                #print('Creating plot', plotidx)
+                cs = self.speclist.get_spec(plotcount)
+                ax = fig.add_subplot(layout[0], layout[1], subplt_idx[plotidx])
+                show_fct(cs, ax, **keywords)
+                self._format_overview_plot(ax)
+                del cs
+                plotidx += 1
+                plotcount += 1
+            figidx += 1        
+   
+    def _show_idx(self, spec, axes, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None):
+        print('Calling _show_idx with:', ydata_key, xlim)
+        key_deps = {'idx': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']}
+        x_key, y_key = spec._auto_key_selection(xdata_key='idx', ydata_key=ydata_key, key_deps=key_deps) 
+        spec.view.plot_idx(axes, x_key, y_key, xlim, xlim_scale=None, color='black')
+        spec.view._addtext_file_id(axes) 
+        
+    def _show_tof(self, spec, axes, xdata_key='auto', ydata_key='auto', time_unit=1e-6,
+                  xlim=['auto', 'auto'], xlim_scale=None):
+        key_deps = {'tof': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'],
+                    'tofGauged': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']} 
+        xdata_key, ydata_key = spec._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key, key_deps=key_deps)      
+        spec.view.plot_tof(axes, xdata_key=xdata_key, ydata_key=ydata_key,
+                      time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale)
+        spec.view._addtext_file_id(axes)
+        spec.view._addtext_statusmarker(axes, xdata_key=xdata_key, ydata_key=ydata_key)          
+    
+    
+    def show_idx(self, layout=[5,4], ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None):
+        self._show(self._show_idx, layout=layout, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
 
-
-
-
-
-
+    def show_tof(self, layout=[5,4], xdata_key='auto', ydata_key='auto', time_unit=1e-6,
+                 xlim=['auto', 'auto'], xlim_scale=None):
+        self._show(self._show_tof, layout=layout, xdata_key=xdata_key, ydata_key=ydata_key,
+                   time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale)
 
 
 

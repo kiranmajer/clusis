@@ -2,6 +2,7 @@ from load import load_pickle
 from dbshell import Db
 import time
 import os
+import viewlist
 # for comparison methods
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,14 +15,18 @@ class SpecList(object):
     def __init__(self, cfg, specType, recTime=None, recTimeRange=None,
                  inTags=None, notInTags=None, datFileName=None):
         self.cfg = cfg
-        self.query(specType, recTime=recTime, recTimeRange=recTimeRange,
+        self.spec_type = specType
+        print('Calling query with:', specType, recTime, recTimeRange)
+        self.query( recTime=recTime, recTimeRange=recTimeRange,
                    inTags=inTags, notInTags=notInTags, datFileName=datFileName)
+        self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
+        self.view = viewlist.ViewList(self)
         
 
-    def query(self, specType, recTime=None, recTimeRange=None,
+    def query(self, recTime=None, recTimeRange=None,
               inTags=None, notInTags=None, datFileName=None):
         with Db('casi', self.cfg) as db:
-            self.dbanswer = db.query(specType, recTime=recTime, recTimeRange=recTimeRange,
+            self.dbanswer = db.query(self.spec_type, recTime=recTime, recTimeRange=recTimeRange,
                                      inTags=inTags, notInTags=notInTags, datFileName=datFileName)
 
     def get_spec(self, number):

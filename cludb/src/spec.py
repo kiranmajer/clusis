@@ -61,6 +61,7 @@ class Spec(object):
         self._commit_db(update=update)
         
     def _auto_key_selection(self, xdata_key, ydata_key, key_deps):
+        #print('Searching for valid keys ...')
         def auto_xkey(key_deps):
             k_gauged = [i for i in key_deps.keys() if 'Gauged' in i]
             if 'gauged' in self.mdata.data('systemTags') and len(k_gauged) > 0:
@@ -74,7 +75,11 @@ class Spec(object):
             if 'subtracted' in self.mdata.data('systemTags') and len(k_sub) > 0:
                 auto_y = k_sub[0]
             else:
-                auto_y =  [i for i in key_deps[xdata_key] if 'Sub' not in i][0]
+                ydata_key_list = [i for i in key_deps[xdata_key] if 'Sub' not in i]
+                ydata_key_list.reverse()
+                auto_y =  ydata_key_list.pop()
+                while auto_y not in self.ydata.keys():
+                    auto_y =  ydata_key_list.pop()
             return auto_y
         
         if xdata_key in ['auto']:
