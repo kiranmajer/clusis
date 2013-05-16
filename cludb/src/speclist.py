@@ -9,6 +9,62 @@ from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 
 
+
+class SpecList(object):
+    def __init__(self, cfg, specType, recTime=None, recTimeRange=None,
+                 inTags=None, notInTags=None, datFileName=None):
+        self.cfg = cfg
+        self.query(specType, recTime=recTime, recTimeRange=recTimeRange,
+                   inTags=inTags, notInTags=notInTags, datFileName=datFileName)
+        
+
+    def query(self, specType, recTime=None, recTimeRange=None,
+              inTags=None, notInTags=None, datFileName=None):
+        with Db('casi', self.cfg) as db:
+            self.dbanswer = db.query(specType, recTime=recTime, recTimeRange=recTimeRange,
+                                     inTags=inTags, notInTags=notInTags, datFileName=datFileName)
+
+    def get_spec(self, number):
+        spec = load_pickle(self.cfg, self.dbanswer[number]['pickleFile'])
+        return spec
+
+    def update_mdata(self, mdataDict):
+        'TODO: open db only once'
+        for entry in self.dbanswer:
+            print(entry['pickleFile'])
+            cs = load_pickle(self.cfg, entry['pickleFile'])
+            try:
+                cs.mdata.update(mdataDict)
+                if hasattr(cs, '_hv'):
+                    cs._hv = cs._photon_energy(cs.mdata.data('waveLength'))
+                    'TODO: this can seriously mix up data!'
+                    cs.calc_spec_data()
+            except:
+                raise
+            else:
+                cs.commit(update=True)
+                
+            del cs
+        
+    def remove_tag(self, tag):
+        for entry in self.dbanswer:
+            cs = load_pickle(self.cfg, entry['pickleFile'])
+            try:
+                cs.mdata.remove_tag(tag)
+            except ValueError:
+                print('Key not applicable, skipping.')
+            else:
+                cs.commit(update=True)
+                
+            del cs
+
+
+
+
+
+
+
+
 class Batch(object):
     def __init__(self, cfg, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None,
                  clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
@@ -38,41 +94,7 @@ class Batch(object):
                                      trapTemp=trapTemp, trapTempRange=trapTempRange)
             
             
-    def get_spec(self, number):
-        spec = load_pickle(self.cfg, self.dbanswer[number]['pickleFile'])
-        return spec
 
-
-    def update_mdata(self, mdataDict):
-        'TODO: open db only once'
-        for entry in self.dbanswer:
-            print(entry['pickleFile'])
-            cs = load_pickle(self.cfg, entry['pickleFile'])
-            try:
-                cs.mdata.update(mdataDict)
-                if hasattr(cs, '_hv'):
-                    cs._hv = cs._photon_energy(cs.mdata.data('waveLength'))
-                    'TODO: this can seriously mix up data!'
-                    cs.calc_spec_data()
-            except:
-                raise
-            else:
-                cs.commit(update=True)
-                
-            del cs
-        
-    
-    def remove_tag(self, tag):
-        for entry in self.dbanswer:
-            cs = load_pickle(self.cfg, entry['pickleFile'])
-            try:
-                cs.mdata.remove_tag(tag)
-            except ValueError:
-                print('Key not applicable, skipping.')
-            else:
-                cs.commit(update=True)
-                
-            del cs
             
             
     def list_temp(self):

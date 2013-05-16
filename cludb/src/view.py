@@ -5,7 +5,7 @@ from numpy import log10,sqrt, abs, argmin
 import load
 
 class View(object):
-    def __init__(self,spec):
+    def __init__(self, spec):
         #print '__init__: Initializing View object.'
         'TODO: allow multiple specs'
         self.spec = spec

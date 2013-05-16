@@ -9,6 +9,27 @@ import numpy as np
 
 
 
+class ViewList(object):
+    def __init__(self, speclist):
+        self.specList = speclist
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class OverView(object):
     def __init__(self,specList, cfg):
         self.cfg = cfg
