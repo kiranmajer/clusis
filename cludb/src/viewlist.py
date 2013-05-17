@@ -35,7 +35,10 @@ class ViewList(object):
         ax.lines[0].set_linewidth(.3)
         ax.grid(linewidth=.1, linestyle=':', color='black')
         
-    def _show(self, show_fct, layout=[5,4], **keywords):
+    def _show(self, show_fct, layout=[5,4], pdf=False, **keywords):
+        if pdf:
+            fname = os.path.join(os.path.expanduser('~'), 'export.pdf')
+            pdf_file = Pdf.PdfPages(fname)        
         print('keywords:', keywords)
         subplt_idx = self._build_idx_list(layout)
         total_plots = len(self.speclist.pfile_list)
@@ -57,8 +60,13 @@ class ViewList(object):
                 del cs
                 plotidx += 1
                 plotcount += 1
-            figidx += 1        
-   
+            if pdf:
+                fig.savefig(pdf_file, dpi=None, facecolor='w', edgecolor='w',
+                            orientation='portrait', papertype='a4', format='pdf')
+            figidx += 1
+        if pdf:    
+            pdf_file.close()
+               
     def _show_idx(self, spec, axes, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None):
         key_deps = {'idx': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']}
         x_key, y_key = spec._auto_key_selection(xdata_key='idx', ydata_key=ydata_key, key_deps=key_deps) 
@@ -76,12 +84,12 @@ class ViewList(object):
         spec.view._addtext_statusmarker(axes, xdata_key=xdata_key, ydata_key=ydata_key, text_pos='left')          
     
     
-    def show_idx(self, layout=[5,4], ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None):
-        self._show(self._show_idx, layout=layout, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
+    def show_idx(self, layout=[5,4], ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, pdf=False):
+        self._show(self._show_idx, layout=layout, pdf=pdf, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
 
     def show_tof(self, layout=[5,4], xdata_key='auto', ydata_key='auto', time_unit=1e-6,
-                 xlim=['auto', 'auto'], xlim_scale=None):
-        self._show(self._show_tof, layout=layout, xdata_key=xdata_key, ydata_key=ydata_key,
+                 xlim=['auto', 'auto'], xlim_scale=None, pdf=False):
+        self._show(self._show_tof, layout=layout, pdf=pdf, xdata_key=xdata_key, ydata_key=ydata_key,
                    time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale)
 
 
@@ -124,13 +132,13 @@ class ViewPesList(ViewList):
               
         
     def show_ekin(self, layout=[5,4], xdata_key='auto', ydata_key='auto',
-                  xlim=['auto', 'auto'], xlim_scale=None):
-        self._show(self._show_ekin, layout=layout, xdata_key=xdata_key,
+                  xlim=['auto', 'auto'], xlim_scale=None, pdf=False):
+        self._show(self._show_ekin, layout=layout, pdf=pdf, xdata_key=xdata_key,
                    ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
         
     def show_ebin(self, layout=[5,4], xdata_key='auto', ydata_key='auto',
-                  xlim=['auto', 'auto'], xlim_scale=None):
-        self._show(self._show_ebin, layout=layout, xdata_key=xdata_key,
+                  xlim=['auto', 'auto'], xlim_scale=None, pdf=False):
+        self._show(self._show_ebin, layout=layout, pdf=pdf, xdata_key=xdata_key,
                    ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)        
         
         
@@ -175,15 +183,17 @@ class ViewPtFitList(ViewPesList):
                 
         
     def show_tof_fit(self, layout=[5,4], fit_par='fitPar', time_unit=1e-6,
-                     xlim=['auto', 'auto'], xlim_scale=None):
+                     xlim=[0, 'auto'], xlim_scale=None, pdf=False):
         self._show(self._show_tof_fit, layout=layout, fit_par=fit_par, time_unit=time_unit,
                    xlim=xlim, xlim_scale=xlim_scale)
             
-    def show_ekin_fit(self, layout=[5,4], fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None):
-        self._show(self._show_ekin_fit, layout=layout, fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
+    def show_ekin_fit(self, layout=[5,4], fit_par='fitPar', xlim=['auto', 'auto'],
+                      xlim_scale=None, pdf=False):
+        self._show(self._show_ekin_fit, layout=layout, pdf=pdf, fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
         
-    def show_ebin_fit(self, layout=[5,4], fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None):
-        self._show(self._show_ebin_fit, layout=layout, fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)    
+    def show_ebin_fit(self, layout=[5,4], fit_par='fitPar', xlim=['auto', 'auto'],
+                      xlim_scale=None, pdf=False):
+        self._show(self._show_ebin_fit, layout=layout, pdf=pdf, fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)    
 
 
 
@@ -202,8 +212,8 @@ class ViewWaterFitList(ViewPesList):
                           time_unit=time_unit)
         spec.view._addtext_file_id(ax)
         spec.view._addtext_statusmarker(ax, xdata_key=xdata_key, ydata_key=ydata_key, text_pos='left')
-        spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), text_pos='right')
-        spec.view._addtext_fitvalues(ax, plot_type='tof', fit_par=fit_par, time_unit=time_unit, text_pos='right')
+        spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), text_pos='right', fontsize=10)
+        spec.view._addtext_fitvalues(ax, plot_type='tof', fit_par=fit_par, time_unit=time_unit, text_pos='right', fontsize=6)
 
     def _show_energy_fit(self, spec, ax, plot_type, fit_par, xlim, xlim_scale):
         'TODO: use method from View instead (after minimal modification).'
@@ -240,15 +250,15 @@ class ViewWaterFitList(ViewPesList):
 
 
     def show_tof_fit(self, layout=[5,4], fit_par='fitPar', time_unit=1e-6,
-                     xlim=['auto', 'auto'], xlim_scale=None):
-        self._show(self._show_tof_fit, layout=layout, fit_par=fit_par, time_unit=time_unit,
+                     xlim=[0, 'auto'], xlim_scale=None, pdf=False):
+        self._show(self._show_tof_fit, layout=layout, pdf=pdf, fit_par=fit_par, time_unit=time_unit,
                    xlim=xlim, xlim_scale=xlim_scale)
 
-    def show_ekin_fit(self, layout=[5,4], fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None):
-        self._show(self._show_ekin_fit, layout=layout, fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
+    def show_ekin_fit(self, layout=[5,4], fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, pdf=False):
+        self._show(self._show_ekin_fit, layout=layout, pdf=pdf, fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
         
-    def show_ebin_fit(self, layout=[5,4], fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None):
-        self._show(self._show_ebin_fit, layout=layout, fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale) 
+    def show_ebin_fit(self, layout=[5,4], fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, pdf=False):
+        self._show(self._show_ebin_fit, layout=layout, pdf=pdf, fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale) 
 
 
 
