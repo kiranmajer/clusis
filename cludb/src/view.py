@@ -26,7 +26,7 @@ class View(object):
                 transform = ax.transAxes, fontsize=fontsize, horizontalalignment='right')  
 
         
-    def _addtext_statusmarker(self, ax, xdata_key, ydata_key, text_pos='center'):
+    def _addtext_statusmarker(self, ax, xdata_key, ydata_key, text_pos='center', fontsize=6):
         xpos = {'left': 0.0,
                 'center': 0.5,
                 'right': 1.0}
@@ -38,7 +38,7 @@ class View(object):
         if len(stats) > 0:
             stat_text = ', '.join(stats)
             ax.text(xpos[text_pos], 1.01, stat_text, transform = ax.transAxes,
-                    fontsize=8, horizontalalignment=text_pos)
+                    fontsize=fontsize, horizontalalignment=text_pos)
     
     
     def _pretty_format_clusterid(self, ms=False):

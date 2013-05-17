@@ -12,22 +12,23 @@ import mpl_toolkits.axisartist as AA
 
 
 class SpecList(object):
-    def __init__(self, cfg, specType, recTime=None, recTimeRange=None,
+    def __init__(self, cfg, recTime=None, recTimeRange=None,
                  inTags=None, notInTags=None, datFileName=None):
         self.cfg = cfg
-        self.spec_type = specType
-        print('Calling query with:', specType, recTime, recTimeRange)
-        self.query( recTime=recTime, recTimeRange=recTimeRange,
-                   inTags=inTags, notInTags=notInTags, datFileName=datFileName)
+        self.spec_type = 'generic'
+        with Db('casi', self.cfg) as db:
+            self.dbanswer = db.query(self.spec_type, recTime=recTime,
+                                     recTimeRange=recTimeRange, inTags=inTags,
+                                     notInTags=notInTags, datFileName=datFileName)
         self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
         self.view = viewlist.ViewList(self)
         
 
-    def query(self, recTime=None, recTimeRange=None,
-              inTags=None, notInTags=None, datFileName=None):
-        with Db('casi', self.cfg) as db:
-            self.dbanswer = db.query(self.spec_type, recTime=recTime, recTimeRange=recTimeRange,
-                                     inTags=inTags, notInTags=notInTags, datFileName=datFileName)
+#    def query(self, recTime=None, recTimeRange=None,
+#              inTags=None, notInTags=None, datFileName=None):
+#        with Db('casi', self.cfg) as db:
+#            self.dbanswer = db.query(self.spec_type, recTime=recTime, recTimeRange=recTimeRange,
+#                                     inTags=inTags, notInTags=notInTags, datFileName=datFileName)
 
     def get_spec(self, number):
         spec = load_pickle(self.cfg, self.dbanswer[number]['pickleFile'])
@@ -68,74 +69,64 @@ class SpecList(object):
 
 
 
-
-
-class Batch(object):
-    def __init__(self, cfg, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None,
+class SpecPeList(SpecList):
+    def __init__(self, cfg, clusterBaseUnit=None, clusterBaseUnitNumber=None,
                  clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
                  inTags=None, notInTags=None, datFileName=None, waveLength=None, trapTemp=None,
                  trapTempRange=None):
         self.cfg = cfg
-        self.query(specType, clusterBaseUnit=clusterBaseUnit,
-                   clusterBaseUnitNumber=clusterBaseUnitNumber,
-                   clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
-                   recTime=recTime, recTimeRange=recTimeRange,
-                   inTags=inTags, notInTags=notInTags,
-                   datFileName=datFileName, waveLength=waveLength,
-                   trapTemp=trapTemp, trapTempRange=trapTempRange)
-
-        
-    def query(self, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None,
-              clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
-              inTags=None, notInTags=None, datFileName=None, waveLength=None,
-              trapTemp=None, trapTempRange=None):
+        self.spec_type = 'pes'
         with Db('casi', self.cfg) as db:
-            self.dbanswer = db.query(specType, clusterBaseUnit=clusterBaseUnit,
+            self.dbanswer = db.query(self.spec_type, clusterBaseUnit=clusterBaseUnit,
                                      clusterBaseUnitNumber=clusterBaseUnitNumber,
                                      clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
-                                     recTime=recTime, recTimeRange=recTimeRange,
-                                     inTags=inTags, notInTags=notInTags,
-                                     datFileName=datFileName, waveLength=waveLength,
-                                     trapTemp=trapTemp, trapTempRange=trapTempRange)
-            
-            
+                                     recTime=recTime, recTimeRange=recTimeRange, inTags=inTags,
+                                     notInTags=notInTags, datFileName=datFileName,
+                                     waveLength=waveLength, trapTemp=trapTemp,
+                                     trapTempRange=trapTempRange)
+        self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
+        self.view = viewlist.ViewPesList(self)
 
-            
-            
-    def list_temp(self):
-        def format_recTime(unixtime):
-            return time.strftime('%d.%m.%Y', time.localtime(unixtime))
-        
-        def format_datFile(datfile):
-            return os.path.basename(datfile)
-        
-        items = ['clusterBaseUnitNumber', 'waveLength', 'recTime', 'datFile', 'trapTemp']
-        mdataList = []
-        rowCount = 0
-        for s in self.dbanswer:
-            cs = load_pickle(self.cfg,s[str('pickleFile')])        
-            mdataList.append([])
-            for key in items:
-                if key in cs.mdata.data().keys():
-                    mdataList[rowCount].append(cs.mdata.data(key))
-                else:
-                    mdataList[rowCount].append(0)
-            rowCount += 1             
-        print('size'.ljust(4+3), end=' ')
-        print('lambda'.ljust(5+3), end=' ')
-        print('recTime'.ljust(10+3), end=' ')
-        print('datFile'.ljust(13+3), end=' ')
-        print('trapTemp'.ljust(8))
-        for row in mdataList:
-            print(str(row[0]).ljust(4+3), end=' ')
-            print(str(round(row[1]*1e9,1)).ljust(5+3), end=' ')
-            print(format_recTime(row[2]).ljust(10+3), end=' ')
-            print(format_datFile(row[3]).ljust(13+3), end=' ')
-            print(str(round(row[4],1)).ljust(8))  
-  
-    
-    
-    def list_mdata_ptfit(self):
+
+
+class SpecPePtList(SpecPeList):
+    def __init__(self, cfg, clusterBaseUnitNumber=None, recTime=None, recTimeRange=None,
+                 inTags=None, notInTags=None, datFileName=None, waveLength=None):
+        SpecPeList.__init__(self, cfg, clusterBaseUnit='Pt', clusterBaseUnitNumber=clusterBaseUnitNumber,
+                            recTime=recTime, recTimeRange=recTimeRange, inTags=inTags,
+                                     notInTags=notInTags, datFileName=datFileName,
+                                     waveLength=waveLength)
+        self.view = viewlist.ViewPesList(self)
+
+
+
+class SpecPePtFitList(SpecPeList):
+    def __init__(self, cfg, clusterBaseUnitNumber=None, recTime=None, recTimeRange=None,
+                 inTags=None, notInTags=None, datFileName=None, waveLength=None):
+        inTags_list = []
+        if inTags is not None:
+            if type(inTags) is str:
+                inTags_list.append(inTags)
+            else:
+                inTags_list.extend(inTags)
+        if not 'fitted' in inTags_list:
+            inTags_list.append('fitted')       
+        notInTags_list = []
+        if notInTags is not None:
+            if type(notInTags) is str:
+                notInTags_list.append(notInTags)
+            else:
+                notInTags_list.extend(notInTags)
+        if not 'background' in notInTags_list:
+            notInTags_list.append('background')
+        SpecPePtList.__init__(self, cfg, clusterBaseUnitNumber=clusterBaseUnitNumber, 
+                              recTime=recTime, recTimeRange=recTimeRange, inTags=inTags_list,
+                              notInTags=notInTags_list, datFileName=datFileName,
+                              waveLength=waveLength)
+        self.view = viewlist.ViewPtFitList(self)
+
+
+    def list_fit_par(self):
         def format_recTime(unixtime):
             return time.strftime('%d.%m.%Y', time.localtime(unixtime))
         
@@ -179,8 +170,7 @@ class Batch(object):
             lastDate = format_recTime(row[0])
             
             
-    def compare_pt_fits(self):
-
+    def plot_fit_par(self):
         fig = plt.figure()
         #print 'Figure created.'
         ax = fig.add_subplot(1,1,1)
@@ -203,10 +193,54 @@ class Batch(object):
                 ax.plot(fx*1e6,g_time(fx, lscale, Eoff, toff, cs._pFactor)*1e6, label=dat_filename)
                 
         ax.legend(loc=2)
-        fig.show()
-    
-            
-    def list_mdata_waterfit(self):
+        fig.show()            
+
+
+
+class SpecPeWaterList(SpecPeList):
+    def __init__(self, cfg, clusterBaseUnitNumber=None, clusterBaseUnitNumberRange=None,
+                 recTime=None, recTimeRange=None, inTags=None, notInTags=None,
+                 datFileName=None, waveLength=None, trapTemp=None,
+                 trapTempRange=None):
+        SpecPeList.__init__(self, cfg, clusterBaseUnit='H2O', clusterBaseUnitNumber=clusterBaseUnitNumber,
+                            clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
+                            recTime=recTime, recTimeRange=recTimeRange, inTags=inTags,
+                            notInTags=notInTags, datFileName=datFileName,
+                            waveLength=waveLength, trapTemp=trapTemp,
+                            trapTempRange=trapTempRange)
+        self.view = viewlist.ViewPesList(self)
+
+
+class SpecPeWaterFitList(SpecPeList):
+    def __init__(self, cfg, clusterBaseUnitNumber=None, clusterBaseUnitNumberRange=None,
+                 recTime=None, recTimeRange=None, inTags=None, notInTags=None,
+                 datFileName=None, waveLength=None, trapTemp=None,
+                 trapTempRange=None):
+        inTags_list = []
+        if inTags is not None:
+            if type(inTags) is str:
+                inTags_list.append(inTags)
+            else:
+                inTags_list.extend(inTags)
+        if not 'fitted' in inTags_list:
+            inTags_list.append('fitted')       
+        notInTags_list = []
+        if notInTags is not None:
+            if type(notInTags) is str:
+                notInTags_list.append(notInTags)
+            else:
+                notInTags_list.extend(notInTags)
+        if not 'background' in notInTags_list:
+            notInTags_list.append('background')
+        SpecPeWaterList.__init__(self, cfg, clusterBaseUnitNumber=clusterBaseUnitNumber,
+                                 clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
+                                 recTime=recTime, recTimeRange=recTimeRange, inTags=inTags_list,
+                                 notInTags=notInTags_list, datFileName=datFileName,
+                                 waveLength=waveLength, trapTemp=trapTemp,
+                                 trapTempRange=trapTempRange)
+        self.view = viewlist.ViewWaterFitList(self)
+
+    def list_fit_par(self):
         def format_recTime(unixtime):
             return time.strftime('%d.%m.%Y', time.localtime(unixtime))
         
@@ -348,13 +382,8 @@ class Batch(object):
         p_vib = []
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
-            if cs.mdata.data('specTypeClass') == 'specPeWater' and \
-            'background' not in cs.mdata.data('systemTags') and \
-            'fitted' in cs.mdata.data('systemTags'):
-                peak_list = [cs.ebin(p) for p in cs.mdata.data('fitPar')[:-2:2]]
-                sort_peaks(cs.mdata.data('clusterBaseUnitNumber'), peak_list, p_2, p_1a, p_1b, p_vib)
-            else:
-                print('{} not a fitted Water-Spec, skipping'.format(cs.mdata.data('datFile')))
+            peak_list = [cs.ebin(p) for p in cs.mdata.data('fitPar')[:-2:2]]
+            sort_peaks(cs.mdata.data('clusterBaseUnitNumber'), peak_list, p_2, p_1a, p_1b, p_vib)
             del cs
         
         #print('p_* are:', p_2, p_1a, p_1b, p_vib)
@@ -374,6 +403,81 @@ class Batch(object):
             fit_par.append(fitpar)
             
         plot_comp(plot_data, fit_par, comp_data=comp_data)
+
+
+
+
+
+
+class Batch(object):
+    def __init__(self, cfg, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None,
+                 clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
+                 inTags=None, notInTags=None, datFileName=None, waveLength=None, trapTemp=None,
+                 trapTempRange=None):
+        self.cfg = cfg
+        self.query(specType, clusterBaseUnit=clusterBaseUnit,
+                   clusterBaseUnitNumber=clusterBaseUnitNumber,
+                   clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
+                   recTime=recTime, recTimeRange=recTimeRange,
+                   inTags=inTags, notInTags=notInTags,
+                   datFileName=datFileName, waveLength=waveLength,
+                   trapTemp=trapTemp, trapTempRange=trapTempRange)
+
+        
+    def query(self, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None,
+              clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
+              inTags=None, notInTags=None, datFileName=None, waveLength=None,
+              trapTemp=None, trapTempRange=None):
+        with Db('casi', self.cfg) as db:
+            self.dbanswer = db.query(specType, clusterBaseUnit=clusterBaseUnit,
+                                     clusterBaseUnitNumber=clusterBaseUnitNumber,
+                                     clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
+                                     recTime=recTime, recTimeRange=recTimeRange,
+                                     inTags=inTags, notInTags=notInTags,
+                                     datFileName=datFileName, waveLength=waveLength,
+                                     trapTemp=trapTemp, trapTempRange=trapTempRange)
+            
+
+
+            
+            
+    def list_temp(self):
+        def format_recTime(unixtime):
+            return time.strftime('%d.%m.%Y', time.localtime(unixtime))
+        
+        def format_datFile(datfile):
+            return os.path.basename(datfile)
+        
+        items = ['clusterBaseUnitNumber', 'waveLength', 'recTime', 'datFile', 'trapTemp']
+        mdataList = []
+        rowCount = 0
+        for s in self.dbanswer:
+            cs = load_pickle(self.cfg,s[str('pickleFile')])        
+            mdataList.append([])
+            for key in items:
+                if key in cs.mdata.data().keys():
+                    mdataList[rowCount].append(cs.mdata.data(key))
+                else:
+                    mdataList[rowCount].append(0)
+            rowCount += 1             
+        print('size'.ljust(4+3), end=' ')
+        print('lambda'.ljust(5+3), end=' ')
+        print('recTime'.ljust(10+3), end=' ')
+        print('datFile'.ljust(13+3), end=' ')
+        print('trapTemp'.ljust(8))
+        for row in mdataList:
+            print(str(row[0]).ljust(4+3), end=' ')
+            print(str(round(row[1]*1e9,1)).ljust(5+3), end=' ')
+            print(format_recTime(row[2]).ljust(10+3), end=' ')
+            print(format_datFile(row[3]).ljust(13+3), end=' ')
+            print(str(round(row[4],1)).ljust(8))  
+  
+    
+    
+
+    
+            
+
         
         
 
