@@ -606,13 +606,22 @@ class SpecPeWater(SpecPe):
                 q = 'Fit again using previous fit parameters as start parameter [y|n]?: '
                 refit = input(q)
                 if refit == 'y':
-                    if 'tof' in self.mdata.data('fitXdataKey'):
-                        fit_type = 'time'
-                    else:
-                        fit_type = 'energy'
-                    self.fit(fitPar0=self.mdata.data('fitPar'),
-                             fit_type=fit_type,
-                             cutoff=self.mdata.data('fitCutoff'))
+                    self._refit()
+                    
+                    
+    def _refit(self, fit_par=None, cutoff=None):
+        if 'tof' in self.mdata.data('fitXdataKey'):
+            fit_type = 'time'
+        else:
+            fit_type = 'energy'
+        if fit_par is None:
+            fit_par = self.mdata.data('fitPar')
+            fit_par[-2:] = [0.2, 0.2]
+        if cutoff is None:
+            cutoff = self.mdata.data('fitCutoff')
+        self.fit(fitPar0=fit_par,
+                 fit_type=fit_type,
+                 cutoff=cutoff)        
         
         
         

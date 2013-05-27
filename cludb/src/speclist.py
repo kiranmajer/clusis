@@ -263,6 +263,7 @@ class SpecPeWaterFitList(SpecPeList):
                 for key in items:
                     if key == 'fitPar':
                         mdataList[rowCount].append([round(float(cs.ebin(p)),2) for p in cs.mdata.data(key)[:-2:2]])
+                        mdataList[rowCount].append(round(np.sum(cs.mdata.data(key)[-2:]), 3))
                     elif key == 'fitInfo':
                         mdataList[rowCount].append(cs.mdata.data(key)[0])
                     else:
@@ -278,6 +279,7 @@ class SpecPeWaterFitList(SpecPeList):
               'recTime'.ljust(10+3),
               'cutoff'.ljust(6+3),
               'chi2*3'.ljust(5+3),
+              'sg+sl'.ljust(5+3),
               'Ebin of peaks [eV]')
         last_size = 0
         for row in mdataList:
@@ -291,6 +293,7 @@ class SpecPeWaterFitList(SpecPeList):
             else:                                       
                 print(str(round(row[3]*1e6, 2)).ljust(6+3), end=' ')
             print(str(round(row[4]*1e3, 3)).ljust(5+3),
+                  str(row[6]).ljust(5+3),
                   format_fitpeaks(row[5]))
             last_size = row[0]
             
@@ -405,8 +408,51 @@ class SpecPeWaterFitList(SpecPeList):
         plot_comp(plot_data, fit_par, comp_data=comp_data)
 
 
-
-
+    def compare_peak_widths(self):
+        widths = []
+        for s in self.dbanswer:
+            cs = load_pickle(self.cfg,s[str('pickleFile')])
+            size = cs.mdata.data('clusterBaseUnitNumber')
+            width = np.sum(cs.mdata.data('fitPar')[-2:])
+            if 0.1 < width < 1:
+                widths.append([size, width])
+            del cs
+        plot_data = np.transpose(widths)
+        xdata = plot_data[0]**(-1/3)
+        # linear fit
+        fitpar = np.polyfit(xdata, plot_data[1], 1)        
+        # create plot
+        fig = plt.figure()
+        # setup lower axis
+        ax = host_subplot(111, axes_class=AA.Axes)
+        ax.set_xlabel('n$^{-1/3}$')
+        ax.set_xlim(0,0.4)
+        ax.set_ylabel('$\sigma_g + \sigma_l$ (eV)')
+        ax.set_ylim(0,1.3)
+        # setup upper axis
+        ax2 = ax.twin()
+        ax2.set_xticks(np.array([10, 20,40,80,150,350,1000, 5000])**(-1/3))
+        ax2.set_xticklabels(["10","20","40","80","150","350","1000","5000"])
+        ax2.set_xlabel('number of water molecules')
+        ax2.axis["right"].major_ticklabels.set_visible(False)
+        ax2.grid(b=True)
+        # plot data
+        ax.plot(xdata, plot_data[1], 's')
+        # plot fit
+        xdata_fit = np.arange(0, 1, 0.1)
+        lin_fit = np.poly1d(fitpar)
+        ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')
+                                   
+        fig.show()
+        
+        
+    def refit(self, fit_par=None, cutoff=None):
+        for s in self.dbanswer:
+            cs = load_pickle(self.cfg,s[str('pickleFile')])
+            cs._refit(fit_par=fit_par, cutoff=cutoff)
+            cs.commit()
+            del cs
+            
 
 
 class Batch(object):
