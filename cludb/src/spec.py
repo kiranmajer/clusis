@@ -621,7 +621,10 @@ class SpecPeWater(SpecPe):
             cutoff = self.mdata.data('fitCutoff')
         self.fit(fitPar0=fit_par,
                  fit_type=fit_type,
-                 cutoff=cutoff)        
+                 cutoff=cutoff)
+        
+    def _get_peak_width(self):
+        return np.sum(self.mdata.data('fitPar')[-2:])    
         
         
         

@@ -396,7 +396,7 @@ class SpecPeWaterFitList(SpecPeList):
         for ps in plot_data:
             ps[1] = ps[1]*-1
         #print('plot_data:', plot_data)
-        fit_data = [ps for ps in plot_data if len(ps[0]) > 1]
+        fit_data = [ps for ps in plot_data if len(ps[0]) > 1 and np.abs(ps[0][0]-ps[0][-1]) > 20]
         #print('fit_data:', fit_data)
         
         # linear fit
@@ -409,18 +409,21 @@ class SpecPeWaterFitList(SpecPeList):
 
 
     def compare_peak_widths(self):
-        widths = []
+        widths = {1: [], 2: [], 3: [], 4: []}
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
             size = cs.mdata.data('clusterBaseUnitNumber')
             width = np.sum(cs.mdata.data('fitPar')[-2:])
+            peak_n = (len(cs.mdata.data('fitPar')) -2)/2
             if 0.1 < width < 1:
-                widths.append([size, width])
+                widths[peak_n].append([size, width])
             del cs
-        plot_data = np.transpose(widths)
-        xdata = plot_data[0]**(-1/3)
-        # linear fit
-        fitpar = np.polyfit(xdata, plot_data[1], 1)        
+        plot_data = {}
+        for k,v in widths.items():
+            if len(v) > 0:
+                plot_data[k] = np.transpose(v)
+        #xdata = plot_data[0]**(-1/3)
+        
         # create plot
         fig = plt.figure()
         # setup lower axis
@@ -437,12 +440,17 @@ class SpecPeWaterFitList(SpecPeList):
         ax2.axis["right"].major_ticklabels.set_visible(False)
         ax2.grid(b=True)
         # plot data
-        ax.plot(xdata, plot_data[1], 's')
-        # plot fit
-        xdata_fit = np.arange(0, 1, 0.1)
-        lin_fit = np.poly1d(fitpar)
-        ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')
-                                   
+        for k,v in plot_data.items():
+            xdata = v[0]**(-1/3)
+            ax.plot(xdata, v[1], 's', label='number of peaks: {}'.format(k))
+            # linear fit
+            if len(v[0]) > 2 and np.abs(v[0][0] - v[0][-1]) > 20: 
+                fitpar = np.polyfit(xdata, v[1], 1)
+                # plot fit
+                xdata_fit = np.arange(0, 1, 0.1)
+                lin_fit = np.poly1d(fitpar)
+                ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')
+        ax.legend()
         fig.show()
         
         
