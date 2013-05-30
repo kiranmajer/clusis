@@ -459,7 +459,7 @@ class SpecPeWater(SpecPe):
     def __gl(self, x, xmax, A, sg, sl):
         y = np.zeros(x.shape)
         y[x<=xmax] = A*np.exp(-(x[x<=xmax]-xmax)**2/(2*sg**2))
-        y[x>xmax] = A/((x[x>xmax]-xmax)**2/(2*sl**2)+1)
+        y[x>xmax] = A/((x[x>xmax]-xmax)**2/(sl**2)+1)
         return y
     
 
@@ -471,14 +471,14 @@ class SpecPeWater(SpecPe):
         xmax = ebin(tmax)
         A = At*tmax/(2*(hv-xmax))
         y[t<=tmax] = A*np.exp(-(ebin(t[t<=tmax])-xmax)**2/(2*sg**2))*2*q/t[t<=tmax]**3
-        y[t>tmax] = A/((ebin(t[t>tmax])-xmax)**2/(2*sl**2)+1)*2*q/t[t>tmax]**3
+        y[t>tmax] = A/((ebin(t[t>tmax])-xmax)**2/(sl**2)+1)*2*q/t[t>tmax]**3
         return y
     
     
     def multi_gl(self, x, par):
         plist = list(par)
         mgl = 0
-        sl =plist.pop()
+        sl = plist.pop()
         sg = plist.pop()
         while len(plist) > 0:
             A = plist.pop()
@@ -489,7 +489,7 @@ class SpecPeWater(SpecPe):
     def multi_gl_trans(self, x, par):
         plist = list(par)
         mgl = 0
-        sl =plist.pop()
+        sl = plist.pop()
         sg = plist.pop()
         while len(plist) > 0:
             A = plist.pop()
@@ -624,7 +624,11 @@ class SpecPeWater(SpecPe):
                  cutoff=cutoff)
         
     def _get_peak_width(self):
-        return np.sum(self.mdata.data('fitPar')[-2:])    
+        #pw = np.sum(self.mdata.data('fitPar')[-2:])
+        #         ________ 
+        # fwhm = V 2*ln(2)*s_g + s_l 
+        fwhm = np.sqrt(2*np.log(2))*self.mdata.data('fitPar')[-2] + self.mdata.data('fitPar')[-1]
+        return fwhm    
         
         
         

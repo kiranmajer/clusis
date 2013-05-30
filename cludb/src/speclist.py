@@ -63,8 +63,21 @@ class SpecList(object):
                 cs.commit(update=True)
                 
             del cs
-
-
+            
+    def list_mdata(self, mdata_keys):
+        keys = []
+        if type(mdata_keys) is list:
+            keys.extend(mdata_keys)
+        else:
+            keys.append(mdata_keys)
+        print('datFile:', keys)
+        print('-'*85)
+        for s in self.dbanswer:
+            cs = load_pickle(self.cfg, s['pickleFile'])
+            values = [cs.mdata.data(k) for k in keys]
+            print('{}:'.format(os.path.basename(cs.mdata.data('datFile'))), values)
+            del cs
+            
 
 
 
@@ -86,6 +99,13 @@ class SpecPeList(SpecList):
                                      trapTempRange=trapTempRange)
         self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
         self.view = viewlist.ViewPesList(self)
+        
+        
+    def gauge(self, gauge_ref):
+        for s in self.dbanswer:
+            cs = load_pickle(self.cfg, s['pickleFile'])
+            cs.gauge(gauge_ref)
+            del cs
 
 
 
@@ -138,6 +158,7 @@ class SpecPePtFitList(SpecPeList):
         rowCount = 0
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
+            'TODO: cant we remove the if clause?' 
             if cs.mdata.data('specTypeClass') == 'specPePt' and \
             'background' not in cs.mdata.data('systemTags') and \
             'fitted' in cs.mdata.data('systemTags'):
@@ -256,6 +277,7 @@ class SpecPeWaterFitList(SpecPeList):
         rowCount = 0
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
+            'TODO: cant we remove the if clause?'
             if cs.mdata.data('specTypeClass') == 'specPeWater' and \
             'background' not in cs.mdata.data('systemTags') and \
             'fitted' in cs.mdata.data('systemTags'):
@@ -263,7 +285,8 @@ class SpecPeWaterFitList(SpecPeList):
                 for key in items:
                     if key == 'fitPar':
                         mdataList[rowCount].append([round(float(cs.ebin(p)),2) for p in cs.mdata.data(key)[:-2:2]])
-                        mdataList[rowCount].append(round(np.sum(cs.mdata.data(key)[-2:]), 3))
+                        #mdataList[rowCount].append(round(np.sum(cs.mdata.data(key)[-2:]), 3))
+                        mdataList[rowCount].append(round(cs._get_peak_width(), 3))
                     elif key == 'fitInfo':
                         mdataList[rowCount].append(cs.mdata.data(key)[0])
                     else:
@@ -279,7 +302,7 @@ class SpecPeWaterFitList(SpecPeList):
               'recTime'.ljust(10+3),
               'cutoff'.ljust(6+3),
               'chi2*3'.ljust(5+3),
-              'sg+sl'.ljust(5+3),
+              'fwhm'.ljust(5+3),
               'Ebin of peaks [eV]')
         last_size = 0
         for row in mdataList:
@@ -413,9 +436,10 @@ class SpecPeWaterFitList(SpecPeList):
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
             size = cs.mdata.data('clusterBaseUnitNumber')
-            width = np.sum(cs.mdata.data('fitPar')[-2:])
+            #width = np.sum(cs.mdata.data('fitPar')[-2:])
+            width = cs._get_peak_width()
             peak_n = (len(cs.mdata.data('fitPar')) -2)/2
-            if 0.1 < width < 1:
+            if 0.1 < width < 1.5:
                 widths[peak_n].append([size, width])
             del cs
         plot_data = {}
@@ -430,7 +454,7 @@ class SpecPeWaterFitList(SpecPeList):
         ax = host_subplot(111, axes_class=AA.Axes)
         ax.set_xlabel('n$^{-1/3}$')
         ax.set_xlim(0,0.4)
-        ax.set_ylabel('$\sigma_g + \sigma_l$ (eV)')
+        ax.set_ylabel('fwhm (eV)')
         ax.set_ylim(0,1.3)
         # setup upper axis
         ax2 = ax.twin()
@@ -442,7 +466,7 @@ class SpecPeWaterFitList(SpecPeList):
         # plot data
         for k,v in plot_data.items():
             xdata = v[0]**(-1/3)
-            ax.plot(xdata, v[1], 's', label='number of peaks: {}'.format(k))
+            ax.plot(xdata, v[1], 's', label='{}'.format(k))
             # linear fit
             if len(v[0]) > 2 and np.abs(v[0][0] - v[0][-1]) > 20: 
                 fitpar = np.polyfit(xdata, v[1], 1)
@@ -450,7 +474,7 @@ class SpecPeWaterFitList(SpecPeList):
                 xdata_fit = np.arange(0, 1, 0.1)
                 lin_fit = np.poly1d(fitpar)
                 ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')
-        ax.legend()
+        ax.legend(title='Number of fit peaks:')
         fig.show()
         
         
