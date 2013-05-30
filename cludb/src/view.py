@@ -494,7 +494,7 @@ class ViewWater(ViewPes):
                     transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
             peak_number+=1
             pos_y-=0.05
-        ax.text(pos_x, pos_y-0.025, '$\sigma_g + \sigma_l$: %.3f eV'%(peak_width),
+        ax.text(pos_x, pos_y-0.025, 'fwhm: %.3f eV'%(peak_width),
                 transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
         
         #textScale = ax.text(0.05, 0.55, 'Scale: %s'%(round(self.spec.mdata.data('fitPar')[-2], 2)),
