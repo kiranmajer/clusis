@@ -487,115 +487,115 @@ class SpecPeWaterFitList(SpecPeList):
             
 
 
-class Batch(object):
-    def __init__(self, cfg, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None,
-                 clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
-                 inTags=None, notInTags=None, datFileName=None, waveLength=None, trapTemp=None,
-                 trapTempRange=None):
-        self.cfg = cfg
-        self.query(specType, clusterBaseUnit=clusterBaseUnit,
-                   clusterBaseUnitNumber=clusterBaseUnitNumber,
-                   clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
-                   recTime=recTime, recTimeRange=recTimeRange,
-                   inTags=inTags, notInTags=notInTags,
-                   datFileName=datFileName, waveLength=waveLength,
-                   trapTemp=trapTemp, trapTempRange=trapTempRange)
-
-        
-    def query(self, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None,
-              clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
-              inTags=None, notInTags=None, datFileName=None, waveLength=None,
-              trapTemp=None, trapTempRange=None):
-        with Db('casi', self.cfg) as db:
-            self.dbanswer = db.query(specType, clusterBaseUnit=clusterBaseUnit,
-                                     clusterBaseUnitNumber=clusterBaseUnitNumber,
-                                     clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
-                                     recTime=recTime, recTimeRange=recTimeRange,
-                                     inTags=inTags, notInTags=notInTags,
-                                     datFileName=datFileName, waveLength=waveLength,
-                                     trapTemp=trapTemp, trapTempRange=trapTempRange)
-            
-
-
-            
-            
-    def list_temp(self):
-        def format_recTime(unixtime):
-            return time.strftime('%d.%m.%Y', time.localtime(unixtime))
-        
-        def format_datFile(datfile):
-            return os.path.basename(datfile)
-        
-        items = ['clusterBaseUnitNumber', 'waveLength', 'recTime', 'datFile', 'trapTemp']
-        mdataList = []
-        rowCount = 0
-        for s in self.dbanswer:
-            cs = load_pickle(self.cfg,s[str('pickleFile')])        
-            mdataList.append([])
-            for key in items:
-                if key in cs.mdata.data().keys():
-                    mdataList[rowCount].append(cs.mdata.data(key))
-                else:
-                    mdataList[rowCount].append(0)
-            rowCount += 1             
-        print('size'.ljust(4+3), end=' ')
-        print('lambda'.ljust(5+3), end=' ')
-        print('recTime'.ljust(10+3), end=' ')
-        print('datFile'.ljust(13+3), end=' ')
-        print('trapTemp'.ljust(8))
-        for row in mdataList:
-            print(str(row[0]).ljust(4+3), end=' ')
-            print(str(round(row[1]*1e9,1)).ljust(5+3), end=' ')
-            print(format_recTime(row[2]).ljust(10+3), end=' ')
-            print(format_datFile(row[3]).ljust(13+3), end=' ')
-            print(str(round(row[4],1)).ljust(8))  
-  
-    
-    
-
-    
-            
-
-        
-        
-
-
-    
-    
-    
-            
-            
-    def regauge_pt(self):
-        for s in self.dbanswer:
-            cs = load_pickle(self.cfg,s[str('pickleFile')])
-            try:
-                cs.gauge('tof', 
-                         lscale=1.006,  #cs.mdata.data('fitParTof')[-1], 
-                         Eoff=cs.mdata.data('fitParTof')[-3]#, 
-                         #toff=63e-9  #cs.mdata.data('fitParTof')[-2]
-                         )
-            except:
-                print(cs.mdata.data('datFile'), 'Fit failed.')
-            else:
-                cs.commit()
-            del cs
-        self.list_mdata_ptfit()
-        
-        
-    def show_all(self):
-        sl=[]
-        for s in self.dbanswer:
-            cs = load_pickle(self.cfg,s[str('pickleFile')])
-            cs.view.showTofFit('fitParTof')
-            sl.append(cs)
-        return sl
-    
-    def list_of_specs(self, slist):
-        sl=[]
-        for s in slist:
-            cs = load_pickle(self.cfg,s[str('pickleFile')])
-            sl.append(cs)
-        return sl    
-            
+# class Batch(object):
+#     def __init__(self, cfg, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None,
+#                  clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
+#                  inTags=None, notInTags=None, datFileName=None, waveLength=None, trapTemp=None,
+#                  trapTempRange=None):
+#         self.cfg = cfg
+#         self.query(specType, clusterBaseUnit=clusterBaseUnit,
+#                    clusterBaseUnitNumber=clusterBaseUnitNumber,
+#                    clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
+#                    recTime=recTime, recTimeRange=recTimeRange,
+#                    inTags=inTags, notInTags=notInTags,
+#                    datFileName=datFileName, waveLength=waveLength,
+#                    trapTemp=trapTemp, trapTempRange=trapTempRange)
+# 
+#         
+#     def query(self, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None,
+#               clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
+#               inTags=None, notInTags=None, datFileName=None, waveLength=None,
+#               trapTemp=None, trapTempRange=None):
+#         with Db('casi', self.cfg) as db:
+#             self.dbanswer = db.query(specType, clusterBaseUnit=clusterBaseUnit,
+#                                      clusterBaseUnitNumber=clusterBaseUnitNumber,
+#                                      clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
+#                                      recTime=recTime, recTimeRange=recTimeRange,
+#                                      inTags=inTags, notInTags=notInTags,
+#                                      datFileName=datFileName, waveLength=waveLength,
+#                                      trapTemp=trapTemp, trapTempRange=trapTempRange)
+#             
+# 
+# 
+#             
+#             
+#     def list_temp(self):
+#         def format_recTime(unixtime):
+#             return time.strftime('%d.%m.%Y', time.localtime(unixtime))
+#         
+#         def format_datFile(datfile):
+#             return os.path.basename(datfile)
+#         
+#         items = ['clusterBaseUnitNumber', 'waveLength', 'recTime', 'datFile', 'trapTemp']
+#         mdataList = []
+#         rowCount = 0
+#         for s in self.dbanswer:
+#             cs = load_pickle(self.cfg,s[str('pickleFile')])        
+#             mdataList.append([])
+#             for key in items:
+#                 if key in cs.mdata.data().keys():
+#                     mdataList[rowCount].append(cs.mdata.data(key))
+#                 else:
+#                     mdataList[rowCount].append(0)
+#             rowCount += 1             
+#         print('size'.ljust(4+3), end=' ')
+#         print('lambda'.ljust(5+3), end=' ')
+#         print('recTime'.ljust(10+3), end=' ')
+#         print('datFile'.ljust(13+3), end=' ')
+#         print('trapTemp'.ljust(8))
+#         for row in mdataList:
+#             print(str(row[0]).ljust(4+3), end=' ')
+#             print(str(round(row[1]*1e9,1)).ljust(5+3), end=' ')
+#             print(format_recTime(row[2]).ljust(10+3), end=' ')
+#             print(format_datFile(row[3]).ljust(13+3), end=' ')
+#             print(str(round(row[4],1)).ljust(8))  
+#   
+#     
+#     
+# 
+#     
+#             
+# 
+#         
+#         
+# 
+# 
+#     
+#     
+#     
+#             
+#             
+#     def regauge_pt(self):
+#         for s in self.dbanswer:
+#             cs = load_pickle(self.cfg,s[str('pickleFile')])
+#             try:
+#                 cs.gauge('tof', 
+#                          lscale=1.006,  #cs.mdata.data('fitParTof')[-1], 
+#                          Eoff=cs.mdata.data('fitParTof')[-3]#, 
+#                          #toff=63e-9  #cs.mdata.data('fitParTof')[-2]
+#                          )
+#             except:
+#                 print(cs.mdata.data('datFile'), 'Fit failed.')
+#             else:
+#                 cs.commit()
+#             del cs
+#         self.list_mdata_ptfit()
+#         
+#         
+#     def show_all(self):
+#         sl=[]
+#         for s in self.dbanswer:
+#             cs = load_pickle(self.cfg,s[str('pickleFile')])
+#             cs.view.showTofFit('fitParTof')
+#             sl.append(cs)
+#         return sl
+#     
+#     def list_of_specs(self, slist):
+#         sl=[]
+#         for s in slist:
+#             cs = load_pickle(self.cfg,s[str('pickleFile')])
+#             sl.append(cs)
+#         return sl    
+#             
             
             
