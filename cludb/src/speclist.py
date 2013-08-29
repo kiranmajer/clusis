@@ -12,6 +12,9 @@ import mpl_toolkits.axisartist as AA
 
 
 class SpecList(object):
+    '''
+    Applies the methods of single spec-object to a list of spec-objects.
+    '''
     def __init__(self, cfg, recTime=None, recTimeRange=None,
                  inTags=None, notInTags=None, datFileName=None):
         self.cfg = cfg
