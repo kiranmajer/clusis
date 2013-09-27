@@ -47,9 +47,11 @@ class LegacyData(object):
         if self.metadata['specType'] not in ['generic']:
             print('Parsing dir structure ...')
             self.parse_dir_structure()
+            print('... completed.')
             if self.metadata['specType'] in ['ms']:
                 print('Parsing ms datfile name ...')
                 self.parse_datfile_name()
+                print('Fetching clusterBaseUnit mass for {} ...'.format(self.metadata['clusterBaseUnit']))
                 self.metadata['clusterBaseUnitMass'] = Atoms(self.metadata['clusterBaseUnit']).get_masses().sum()
         print('Setting specTypeClass ...')
         self.set_spectype_class()
@@ -110,6 +112,7 @@ class LegacyData(object):
         
         
     def add_default_mdata(self):
+        print('>>> add_default_mdata <<<')
         # add default meta data to metadata 
         for k,v in self.cfg.defaults[self.metadata['machine']][self.metadata['specType']].items():
             if k not in list(self.metadata.keys()):
@@ -299,10 +302,12 @@ class LegacyData(object):
         If the the full filepath contains self.metadata['machine'], try to extract some metadata
         from the dir structure and add it to mdata
         '''
+        print('>>> parse_dir_structure <<<')
         if self.metadata['machine'] in self.metadata['datFileOrig'].split('/'):
             splitted_path = self.metadata['datFileOrig'].split('/')[self.metadata['datFileOrig'].split('/').index(self.metadata['machine']) + 1:]
             if len(splitted_path) == 5 or len(splitted_path) == 6:
-                self.metadata['clusterBaseUnit'] = splitted_path[0].title()
+                'TODO: we need a better conversion to ase understandable Atoms strings!'
+                self.metadata['clusterBaseUnit'] = splitted_path[0].upper()
                 self.metadata['ionType'] = splitted_path[1]
                 if splitted_path[2] == 'pure':
                     self.metadata['clusterDopant'] = None
@@ -320,7 +325,9 @@ class LegacyData(object):
 
                     
     def parse_datfile_name(self):
+        print('>>> parse_datfile_name <<<')
         fname_parts = os.path.splitext(os.path.basename(self.metadata['datFileOrig']))[0].split('_')
+        print(fname_parts)
         if len(fname_parts) == 4:
             self.metadata['clusterBaseUnitNumberStart'] = fname_parts[2].split('-')[0]
             self.metadata['clusterBaseUnitNumberEnd'] = fname_parts[2].split('-')[-1]

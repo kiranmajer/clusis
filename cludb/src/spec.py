@@ -98,10 +98,12 @@ class Spec(object):
         return idx*time_per_point - trigger_offset - time_offset
     
     def _calc_time_data(self, time_data_key='tof', time_offset=0):
+#         print('>>> _calc_time_data <<<')
         self.xdata[time_data_key] = self._idx2time(idx=self.xdata['idx'],
                                                    time_per_point=self.mdata.data('timePerPoint'),
                                                    trigger_offset=self.mdata.data('triggerOffset'),
                                                    time_offset=time_offset)
+#         print(self.xdata[time_data_key])
 
     def _photon_energy(self, waveLength):
         """
@@ -723,7 +725,8 @@ class SpecMs(Spec):
     
     'TODO: use *Import mdata keys or dont?'
     def calc_spec_data(self):
-        self._calc_time_data(self.mdata.data('timeOffset'))
+        self._calc_time_data( time_data_key='tof', time_offset=self.mdata.data('timeOffset'))
+#         print('xdata.keys after _calc_time_data: ', self.xdata.keys())
         self._calc_fixed_intensities()
         self._calc_ms(mass_key='amu', time_key='tof',
                       t_ref=self.mdata.data('referenceTime'),
@@ -740,14 +743,16 @@ class SpecMs(Spec):
         '''
         if unit == 'cluster':
             m_unit = self.mdata.data('clusterBaseUnitMass')
+            mass_key = 'ms'
         elif unit == 'amu':
             m_unit = 1
+            mass_key = 'amu'
         else:
             raise ValueError('unit must be one of [cluster/amu].')
         t_off = lambda n,dn,t1,t2: (np.sqrt(1-float(dn)/n)*t2 - t1)/(np.sqrt(1-float(dn)/n)-1)
         t_ref = lambda m_unit,dn,t1,t2,t_off: np.sqrt(193.96/(m_unit*dn)*((t2-t_off)**2 - (t1-t_off)**2))
-        self._calc_time_data(time_off=0)
-        self.view.showTof()
+        self._calc_time_data(time_offset=0)
+        self.view.show_tof()
         # Ask for t1,t2,dn
         no_valid_input = True
         while no_valid_input:
@@ -762,18 +767,85 @@ class SpecMs(Spec):
             else:
                 print('t1, t2 should be numbers with t1<t2.')
                 
-        start_size = max(dn + 1, self.mdata.data('clusterBaseUnitNumberStart'))
-        X = np.arange(start_size,
-                      self.mdata.data('clusterBaseUnitNumberEnd'))
+        
+        start_size = max(dn + 1, round(self.mdata.data('clusterBaseUnitNumberStart')*self.mdata.data('clusterBaseUnitMass')/m_unit))
+        X = np.arange(32, #start_size,
+                      320000, #round(self.mdata.data('clusterBaseUnitNumberEnd')*self.mdata.data('clusterBaseUnitMass')/m_unit),
+                      1)
+        min_delta_n = 100
+#         is_min = False
+        t1_position = np.abs(self.xdata['tof']-t1).argmin()
+        t2_position = np.abs(self.xdata['tof']-t2).argmin()        
+#         while len(X) > 0:
         Y = t_off(X, dn, t1, t2)
         n = X[np.abs(Y).argmin()]
+#         n = X[0]
+#             print('n is now: ', n)
         to = t_off(n, dn, t1, t2)
         tr = t_ref(m_unit,dn,t1,t2,to)
+        print('n, to, tr: ', n, to, tr)
         self.mdata.update({'timeOffset': to, 'referenceTime': tr})
         self.calc_spec_data()
+#             t1_position = np.abs(self.xdata['tof']-t1).argmin()
+#             t2_position = np.abs(self.xdata['tof']-t2).argmin()
+        m_t1 = self.xdata[mass_key][t1_position]
+        m_t2 = self.xdata[mass_key][t2_position]
+#             print('m_t1, m_t2: ', m_t1, m_t2)
+        dm = m_t2 - m_t1
+        print('Gauging resulted in dm=', dm)
+#             raise
+#         delta_n = np.abs(dn - dm)
+#         if delta_n < min_delta_n:
+# #                 print('Nothing new')
+# #                 last_delta_n = delta_n
+# # #                 t_off_min_pos = np.abs(Y).argmin()
+# # #                 Y = np.delete(Y, t_off_min_pos)
+# # #                 X = np.delete(X, t_off_min_pos)
+# #             else:
+# #                 print('Found new min delta_n.')
+#             min_delta_n = delta_n
+#             min_dm = dm
+#             min_to = to
+#             min_tr = tr
+# #                 t_off_min_pos = np.abs(Y).argmin()
+# #                 Y = np.delete(Y, t_off_min_pos)
+# #                 X = np.delete(X, t_off_min_pos)
+# #                 is_min = True
+# #         return X, Y
+#         X = np.delete(X, 0)
+#         Y = np.delete(Y, 0)
+#         print('min_delta_n found: ', min_delta_n)  
+#         print('min_dm: ', min_dm)  
+#         self.mdata.update({'timeOffset': min_to, 'referenceTime': min_tr})
+#         self.calc_spec_data()        
+
+    def gauge_amu(self, p0=[0]):
+        self._calc_time_data(time_offset=0)
+        self.view.show_tof()
+        # Ask for t1,t2,dn
+        no_valid_input = True
+        while no_valid_input:
+            q = 'Enter t1, t2, and dn separated by comma: '
+            ui = input(q)
+            ui_list = ui.split(',')
+            t1 = float(ui_list[0].strip())
+            t2 = float(ui_list[1].strip())
+            dn = int(ui_list[2].strip())
+            if t1<t2:
+                no_valid_input = False
+            else:
+                print('t1, t2 should be numbers with t1<t2.')
+                
+        def delta_n(to, t1, t2):
+            return ((t2-to)**2 - (t1-to)**2)
         
-        
-        
+        def err_delta_n(par, t1, t2, dn):
+            par_list = list(par)
+            to = par_list[0] #, par_list[1]
+            return delta_n(to, t1, t2) - dn
+            
+        p, covar, info, mess, ierr = leastsq(err_delta_n, np.array(p0), args=(t1,t2,dn), full_output=True)
+        print('parameter tr,to: ', p)
 
 class SpecPf(Spec):
     def calc_spec_data(self):

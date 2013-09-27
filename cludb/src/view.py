@@ -47,9 +47,10 @@ class View(object):
         bu = self.spec.mdata.data('clusterBaseUnit')
         if sum([c.isupper() for c in bu]) > 1: # base unit is molecule
             'TODO: Better a general lookup table or a parser.'
-            if bu in ['H2O', 'D2O']:
+            if bu in ['H2O', 'D2O', 'CH4O']:
                 mol_map = {'H2O': '(H_{2}O)',
-                           'D2O': '(D_{2}O)'}
+                           'D2O': '(D_{2}O)',
+                           'CH4O': '(CH_{4}O)'}
                 partCluster = mol_map[bu]
             else:
                 print('Warning: No map entry for this molecule.')
