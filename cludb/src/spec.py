@@ -714,13 +714,20 @@ class SpecMs(Spec):
             self.calc_spec_data() 
         self.view = view.ViewMs(self)
         
-    def _mass(self, t, t_ref, m_ref, m_baseunit):
-        return ((t/t_ref)**2)*m_ref/m_baseunit
+#     def _mass(self, t, t_ref, m_ref, m_baseunit):
+#         return ((t/t_ref)**2)*m_ref/m_baseunit
+    def _mass(self, t, k, m_baseunit):
+        return k/m_baseunit*t**2
         
-    def _calc_ms(self, mass_key, time_key, t_ref, m_baseunit):
+#     def _calc_ms(self, mass_key, time_key, t_ref, m_baseunit):
+#         self.xdata[mass_key] = self._mass(self.xdata[time_key],
+#                                           t_ref=t_ref,
+#                                           m_ref=self.mdata.data('referenceMass'),
+#                                           m_baseunit=m_baseunit)
+        
+    def _calc_ms(self, mass_key, time_key, k, m_baseunit):
         self.xdata[mass_key] = self._mass(self.xdata[time_key],
-                                          t_ref=t_ref,
-                                          m_ref=self.mdata.data('referenceMass'),
+                                          k=k,
                                           m_baseunit=m_baseunit)
     
     'TODO: use *Import mdata keys or dont?'
@@ -729,10 +736,12 @@ class SpecMs(Spec):
 #         print('xdata.keys after _calc_time_data: ', self.xdata.keys())
         self._calc_fixed_intensities()
         self._calc_ms(mass_key='amu', time_key='tof',
-                      t_ref=self.mdata.data('referenceTime'),
+#                       t_ref=self.mdata.data('referenceTime'),
+                      k=self.mdata.data('referenceTime'),                
                       m_baseunit=1)
         self._calc_ms(mass_key='ms', time_key='tof',
-                      t_ref=self.mdata.data('referenceTime'),
+#                       t_ref=self.mdata.data('referenceTime'),
+                      k=self.mdata.data('referenceTime'),
                       m_baseunit=self.mdata.data('clusterBaseUnitMass'))
         
         
@@ -819,33 +828,69 @@ class SpecMs(Spec):
 #         self.mdata.update({'timeOffset': min_to, 'referenceTime': min_tr})
 #         self.calc_spec_data()        
 
-    def gauge_amu(self, p0=[0]):
+    def gauge_new(self, unit='cluster'):
+        if unit == 'cluster':
+            m_unit = self.mdata.data('clusterBaseUnitMass')
+            #mass_key = 'ms'
+        elif unit == 'amu':
+            m_unit = self.mdata.data('clusterBaseUnitMass')/round(self.mdata.data('clusterBaseUnitMass'))
+            #mass_key = 'amu'
+        else:
+            raise ValueError('unit must be one of [cluster/amu].')        
         self._calc_time_data(time_offset=0)
         self.view.show_tof()
         # Ask for t1,t2,dn
         no_valid_input = True
         while no_valid_input:
-            q = 'Enter t1, t2, and dn separated by comma: '
+            q = 'Enter t1, dn1, t2, dn2, and t3 separated by comma: '
             ui = input(q)
             ui_list = ui.split(',')
             t1 = float(ui_list[0].strip())
-            t2 = float(ui_list[1].strip())
-            dn = int(ui_list[2].strip())
-            if t1<t2:
+            dn1 = int(ui_list[1].strip())
+            t2 = float(ui_list[2].strip())
+            dn2 = int(ui_list[3].strip())
+            t3 = float(ui_list[4].strip())
+            if t1<t2<t3 and dn1>1 and dn2>1:
                 no_valid_input = False
             else:
-                print('t1, t2 should be numbers with t1<t2.')
+                print('t1, t2, t3 must be floats with t1<t2<t3 and dn1, dn2 > 1.')
                 
-        def delta_n(to, t1, t2):
-            return ((t2-to)**2 - (t1-to)**2)
+        def mass(t, k, toff):
+            return k/m_unit*(t - toff)**2
         
-        def err_delta_n(par, t1, t2, dn):
-            par_list = list(par)
-            to = par_list[0] #, par_list[1]
-            return delta_n(to, t1, t2) - dn
-            
-        p, covar, info, mess, ierr = leastsq(err_delta_n, np.array(p0), args=(t1,t2,dn), full_output=True)
-        print('parameter tr,to: ', p)
+        def err_mass(p, t, m):
+            k=p[0]
+            toff=p[1]
+            dn=p[2]
+            return mass(t, k, toff) - m - dn
+        
+        def err2_mass(p, t, m):
+            k=p[0]
+            toff=p[1]
+            return mass(t, k, toff) - m
+        
+        t_array = np.array([t1, t2, t3])
+        m_array = np.array([0, dn1, dn1+dn2]) +1
+        print('Fitting with: ', t_array, m_array)
+        
+        # get offset dn
+        p, covar, info, mess, ierr = leastsq(err_mass, (2.5e8, 1.6e-7, 0), args=(t_array, m_array), full_output=True)
+        offset = int(round(p[2]+1))
+        print('Step 1 fit resulted in mass offset of: ', offset)
+        print('Fit parameter: ', p)
+        
+        m_array = np.array([offset, offset+dn1, offset+dn1+dn2])
+        
+        p, covar, info, mess, ierr = leastsq(err2_mass, (p[0], p[1]), args=(t_array, m_array), full_output=True)
+        print('Step 2 fit resulted in gauge parameter: ', p)
+
+        self.mdata.update({'timeOffset': p[1], 'referenceTime': p[0]})
+        self.calc_spec_data()
+
+
+
+
+
 
 class SpecPf(Spec):
     def calc_spec_data(self):
