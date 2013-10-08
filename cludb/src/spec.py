@@ -735,11 +735,15 @@ class SpecMs(Spec):
         self._calc_time_data( time_data_key='tof', time_offset=self.mdata.data('timeOffset'))
 #         print('xdata.keys after _calc_time_data: ', self.xdata.keys())
         self._calc_fixed_intensities()
-        self._calc_ms(mass_key='amu', time_key='tof',
+        self._calc_ms(mass_key='u', time_key='tof',
 #                       t_ref=self.mdata.data('referenceTime'),
                       k=self.mdata.data('referenceTime'),                
                       m_baseunit=1)
-        self._calc_ms(mass_key='ms', time_key='tof',
+        self._calc_ms(mass_key='s_u', time_key='tof',
+#                       t_ref=self.mdata.data('referenceTime'),
+                      k=self.mdata.data('referenceTime'),                
+                      m_baseunit=self.mdata.data('clusterBaseUnitMass')/round(self.mdata.data('clusterBaseUnitMass')))
+        self._calc_ms(mass_key='cluster', time_key='tof',
 #                       t_ref=self.mdata.data('referenceTime'),
                       k=self.mdata.data('referenceTime'),
                       m_baseunit=self.mdata.data('clusterBaseUnitMass'))
@@ -828,49 +832,88 @@ class SpecMs(Spec):
 #         self.mdata.update({'timeOffset': min_to, 'referenceTime': min_tr})
 #         self.calc_spec_data()        
 
-    def gauge_new(self, unit='cluster'):
-        if unit == 'cluster':
-            m_unit = self.mdata.data('clusterBaseUnitMass')
+    def gauge_new(self, dn_unit='cluster', view_unit='tof'):
+        if dn_unit == 'cluster':
+            dn_unit = self.mdata.data('clusterBaseUnitMass')
             #mass_key = 'ms'
-        elif unit == 'amu':
-            m_unit = self.mdata.data('clusterBaseUnitMass')/round(self.mdata.data('clusterBaseUnitMass'))
+        elif dn_unit == 's_u':
+            dn_unit = self.mdata.data('clusterBaseUnitMass')/round(self.mdata.data('clusterBaseUnitMass'))
             #mass_key = 'amu'
         else:
-            raise ValueError('unit must be one of [cluster/amu].')        
-        self._calc_time_data(time_offset=0)
-        self.view.show_tof()
-        # Ask for t1,t2,dn
-        no_valid_input = True
-        while no_valid_input:
-            q = 'Enter t1, dn1, t2, dn2, and t3 separated by comma: '
-            ui = input(q)
-            ui_list = ui.split(',')
-            t1 = float(ui_list[0].strip())
-            dn1 = int(ui_list[1].strip())
-            t2 = float(ui_list[2].strip())
-            dn2 = int(ui_list[3].strip())
-            t3 = float(ui_list[4].strip())
-            if t1<t2<t3 and dn1>1 and dn2>1:
-                no_valid_input = False
-            else:
-                print('t1, t2, t3 must be floats with t1<t2<t3 and dn1, dn2 > 1.')
+            raise ValueError('dn_unit must be one of [cluster/s_u].')        
+        
+        def get_pos_and_dn():
+            # Ask for positions and dn
+            no_valid_input = True
+            while no_valid_input:
+                q = 'Enter pos1, dn1, pos2, dn2, and pos3 separated by comma: '
+                ui = input(q)
+                ui_list = ui.split(',')
+                p1 = float(ui_list[0].strip())
+                dn1 = int(ui_list[1].strip())
+                p2 = float(ui_list[2].strip())
+                dn2 = int(ui_list[3].strip())
+                p3 = float(ui_list[4].strip())
+                if p1<p2<p3 and dn1>1 and dn2>1:
+                    no_valid_input = False
+                else:
+                    print('p1, p2, p3 must be floats with p1<p2<p3 and dn1, dn2 > 1.')
+            return p1, dn1, p2, dn2, p3
                 
+        def time_from_m(m, k, toff, m_unit):
+            return toff + np.sqrt(m_unit*m/k)
+        
+        
+        # view mode
+        if view_unit == 'tof':
+            self._calc_time_data(time_offset=0)
+            self.view.show_tof()
+            p1, dn1, p2, dn2, p3 = get_pos_and_dn()
+            t1, t2, t3 = p1, p2, p3           
+        elif view_unit in ['s_u', 'cluster']:
+            self.view.show_ms(massKey=view_unit)
+            if view_unit == 'cluster':
+                view_unit = self.mdata.data('clusterBaseUnitMass')
+            else:
+                view_unit = self.mdata.data('clusterBaseUnitMass')/round(self.mdata.data('clusterBaseUnitMass'))
+            p1, dn1, p2, dn2, p3 = get_pos_and_dn()
+            t1 = time_from_m(p1, self.mdata.data('referenceTime'),
+                             self.mdata.data('timeOffset'), view_unit)
+            t2 = time_from_m(p2, self.mdata.data('referenceTime'),
+                             self.mdata.data('timeOffset'), view_unit)
+            t3 = time_from_m(p3, self.mdata.data('referenceTime'),
+                             self.mdata.data('timeOffset'), view_unit)
+        else:
+            raise ValueError('view_unit must be one of [cluster/s_u].')
+        
         def mass(t, k, toff):
+            m_unit = self.mdata.data('clusterBaseUnitMass')/round(self.mdata.data('clusterBaseUnitMass'))
             return k/m_unit*(t - toff)**2
         
+
         def err_mass(p, t, m):
             k=p[0]
             toff=p[1]
             dn=p[2]
-            return mass(t, k, toff) - m - dn
+            # limit |toff| < 1e-6
+            if np.abs(toff) > 1e-6:
+                return 1e6
+            else: 
+                return mass(t, k, toff) - m - dn
         
         def err2_mass(p, t, m):
             k=p[0]
             toff=p[1]
-            return mass(t, k, toff) - m
+            # limit |toff| < 1e-6
+            if np.abs(toff) > 1e-6:
+                return 1e6
+            else: 
+                return mass(t, k, toff) - m
         
+        isu = round(self.mdata.data('clusterBaseUnitMass'))/self.mdata.data('clusterBaseUnitMass')
+        dm1, dm2 = dn1*isu*dn_unit, dn2*isu*dn_unit
         t_array = np.array([t1, t2, t3])
-        m_array = np.array([0, dn1, dn1+dn2]) +1
+        m_array = np.array([0, dm1, dm1+dm2]) +1
         print('Fitting with: ', t_array, m_array)
         
         # get offset dn

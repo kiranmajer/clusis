@@ -681,17 +681,19 @@ class ViewMs(View):
         
         
     def plot_ms(self, ax, massKey):
-        if massKey == 'ms':
+        if massKey == 'cluster':
             ax.set_xlabel('Cluster Size (#%s)'%self.spec.mdata.data('clusterBaseUnit'))
+        elif massKey == 's_u':
+            ax.set_xlabel('Cluster Mass (simplefied u)')
         else:
-            ax.set_xlabel('Cluster Mass (amu)')
+            ax.set_xlabel('Cluster Mass (u)')
         ax.set_ylabel('Intensity (a.u.)')
         ax.plot(self.spec.xdata[massKey], self.spec.ydata['intensity'], color='black')
         ax.relim()
         ax.autoscale()
         
         
-    def show_ms(self, massKey='ms'):
+    def show_ms(self, massKey='cluster'):
         self._single_fig_output()
         self.plot_ms(ax=self.ax, massKey=massKey)
         self._addtext_file_id(self.ax)
