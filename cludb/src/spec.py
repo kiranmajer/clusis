@@ -832,7 +832,7 @@ class SpecMs(Spec):
 #         self.mdata.update({'timeOffset': min_to, 'referenceTime': min_tr})
 #         self.calc_spec_data()        
 
-    def gauge_new(self, dn_unit='cluster', view_unit='tof'):
+    def gauge_new(self, dn_unit='cluster', view_unit='tof', p0=(5e9, 1.6e-7, 0), manual_offset=False):
         if dn_unit == 'cluster':
             dn_unit = self.mdata.data('clusterBaseUnitMass')
             #mass_key = 'ms'
@@ -871,18 +871,18 @@ class SpecMs(Spec):
             p1, dn1, p2, dn2, p3 = get_pos_and_dn()
             t1, t2, t3 = p1, p2, p3           
         elif view_unit in ['s_u', 'cluster']:
-            self.view.show_ms(massKey=view_unit)
+            self._calc_time_data(time_offset=p0[1])
             if view_unit == 'cluster':
-                view_unit = self.mdata.data('clusterBaseUnitMass')
+                m_baseunit = self.mdata.data('clusterBaseUnitMass')
+                self._calc_ms(mass_key=view_unit, time_key='tof', k=p0[0], m_baseunit=m_baseunit)
             else:
-                view_unit = self.mdata.data('clusterBaseUnitMass')/round(self.mdata.data('clusterBaseUnitMass'))
+                m_baseunit = self.mdata.data('clusterBaseUnitMass')/round(self.mdata.data('clusterBaseUnitMass'))
+                self._calc_ms(mass_key=view_unit, time_key='tof', k=p0[0], m_baseunit=m_baseunit)
+            self.view.show_ms(massKey=view_unit)                
             p1, dn1, p2, dn2, p3 = get_pos_and_dn()
-            t1 = time_from_m(p1, self.mdata.data('referenceTime'),
-                             self.mdata.data('timeOffset'), view_unit)
-            t2 = time_from_m(p2, self.mdata.data('referenceTime'),
-                             self.mdata.data('timeOffset'), view_unit)
-            t3 = time_from_m(p3, self.mdata.data('referenceTime'),
-                             self.mdata.data('timeOffset'), view_unit)
+            t1 = time_from_m(p1, p0[0], p0[1], m_baseunit)
+            t2 = time_from_m(p2, p0[0], p0[1], m_baseunit)
+            t3 = time_from_m(p3, p0[0], p0[1], m_baseunit)
         else:
             raise ValueError('view_unit must be one of [cluster/s_u].')
         
@@ -896,19 +896,20 @@ class SpecMs(Spec):
             toff=p[1]
             dn=p[2]
             # limit |toff| < 1e-6
-            if np.abs(toff) > 1e-6:
-                return 1e6
-            else: 
-                return mass(t, k, toff) - m - dn
+#             if np.abs(toff) > 1e-6:
+#                 return np.abs(mass(t, k, toff) - m - dn + 1e6)
+#             else: 
+            return mass(t, k, toff) - m - dn
         
         def err2_mass(p, t, m):
             k=p[0]
             toff=p[1]
             # limit |toff| < 1e-6
-            if np.abs(toff) > 1e-6:
-                return 1e6
-            else: 
-                return mass(t, k, toff) - m
+#             if np.abs(toff) > 1e-6:
+#                 return np.abs(mass(t, k, toff) - m + 1e6)
+#             else: 
+            return mass(t, k, toff) - m
+            
         
         isu = round(self.mdata.data('clusterBaseUnitMass'))/self.mdata.data('clusterBaseUnitMass')
         dm1, dm2 = dn1*isu*dn_unit, dn2*isu*dn_unit
@@ -916,15 +917,30 @@ class SpecMs(Spec):
         m_array = np.array([0, dm1, dm1+dm2]) +1
         print('Fitting with: ', t_array, m_array)
         
-        # get offset dn
-        p, covar, info, mess, ierr = leastsq(err_mass, (2.5e8, 1.6e-7, 0), args=(t_array, m_array), full_output=True)
-        offset = int(round(p[2]+1))
-        print('Step 1 fit resulted in mass offset of: ', offset)
-        print('Fit parameter: ', p)
-        
-        m_array = np.array([offset, offset+dn1, offset+dn1+dn2])
-        
-        p, covar, info, mess, ierr = leastsq(err2_mass, (p[0], p[1]), args=(t_array, m_array), full_output=True)
+        if manual_offset:
+            print('Set offset manually. Skipping step 1 fit.')
+            no_valid_input = True
+            while no_valid_input:
+                q = 'Enter offset: '
+                offset = int(input(q))
+                if offset>0:
+                    no_valid_input = False
+                else:
+                    print('offset must be int > 0.')
+        else:
+            # get offset dn
+            p, covar, info, mess, ierr = leastsq(err_mass, p0, args=(t_array, m_array), full_output=True)
+            offset = int(round(p[2]+1))
+            print('Step 1 fit resulted in mass offset of: ', offset)
+            d_offset = round(np.abs(p[2]+1 - offset), 1)
+            print('offset int quality: ', d_offset)
+            if d_offset > 0.2:
+                print('Warning: offset int quality is bad!')
+            print('Fit parameter: ', p)            
+                           
+        m_array = np.array([offset, offset+dm1, offset+dm1+dm2])
+        print('Fitting with: ', t_array, m_array)
+        p, covar, info, mess, ierr = leastsq(err2_mass, (p0[0], p0[1]), args=(t_array, m_array), full_output=True)
         print('Step 2 fit resulted in gauge parameter: ', p)
 
         self.mdata.update({'timeOffset': p[1], 'referenceTime': p[0]})

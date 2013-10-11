@@ -684,7 +684,7 @@ class ViewMs(View):
         if massKey == 'cluster':
             ax.set_xlabel('Cluster Size (#%s)'%self.spec.mdata.data('clusterBaseUnit'))
         elif massKey == 's_u':
-            ax.set_xlabel('Cluster Mass (simplefied u)')
+            ax.set_xlabel('Cluster Mass (simplified u)')
         else:
             ax.set_xlabel('Cluster Mass (u)')
         ax.set_ylabel('Intensity (a.u.)')
