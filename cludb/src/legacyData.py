@@ -7,6 +7,9 @@ import time
 import hashlib
 from mdata import Mdata
 from ase.atoms import Atoms
+import sys
+sys.path.append('/home/kiran/git/delay/src')
+from filestorage import load_xml, load_pickle
 #import config
 
 
@@ -21,7 +24,7 @@ class LegacyData(object):
                          'systemTags': [],
                          'userTags': [],
                          'machine': machine,
-                         'delayTimings': {},
+                         'delayState': {},
                          'info': ''}
         self.cfg = cfg
         self.header = []
@@ -37,8 +40,12 @@ class LegacyData(object):
         print('Setting up meta data ...')
         self.get_sha1()
         self.get_recTime(self.spectype)
-        print('Evaluating cfg file ...')
-        self.eval_cfgfile()
+        statedict = self.find_statefile()
+        if statedict is None:
+            print('No statefile, evaluating cfg file instead ...')
+            self.eval_cfgfile()
+        else:
+            self.eval_statedict(statedict)
         print('Setting specType ...')
         self.set_spectype(self.spectype)
         print('... {}'.format(self.metadata['specType']))
@@ -161,7 +168,28 @@ class LegacyData(object):
             else:
                 self.metadata['recTime'] = timeStamp
 
-
+    
+    def find_statefile(self):
+        dat_file_name = os.path.splitext(os.path.basename(self.metadata['datFileOrig']))[0]
+        dat_file_dir = os.path.dirname(self.metadata['datFileOrig'])
+        statefile_xml = os.path.join(dat_file_dir, dat_file_name + '.xml')
+        statefile_pickle = os.path.join(dat_file_dir, dat_file_name + '.pickle')
+        if os.path.isfile(statefile_xml):
+            state_dict = load_xml(statefile_xml)
+            self.metadata['cfgFileOrig'] = statefile_xml
+        elif os.path.isfile(statefile_pickle):
+            state_dict = load_pickle(statefile_pickle)
+            self.metadata['cfgFileOrig'] = statefile_pickle
+        else:
+            state_dict = None
+            print('Could not find state file.')
+        
+        return state_dict
+    
+    def eval_statedict(self, statedict):
+        self.metadata['delayState'] = statedict
+            
+    
     def find_cfgfile(self):
         """Gets the date and number out of the pes dat filename and searches
         for the associated cfg file: *ddmmyy_nn.cfg. Or searches for a cfg
@@ -214,7 +242,7 @@ class LegacyData(object):
                 self.metadata['clusterBaseUnitNumber'] = int(cfg_data.pop())
                 ch_idx=1
                 for pair in list(zip(cfg_data[::2],cfg_data[1::2])):
-                    self.metadata['delayTimings']['ch{}'.format(ch_idx)] = [int(pair[0])*20e-9,
+                    self.metadata['delayState']['ch{}'.format(ch_idx)] = [int(pair[0])*20e-9,
                                                                             (int(pair[1])-int(pair[0]))*20e-9]
                     ch_idx+=1
 

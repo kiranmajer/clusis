@@ -80,7 +80,7 @@ class Cfg():
         '''
         self.wavelengths = [157.63e-9, 193.35e-9, 248.4e-9, 308e-9, 590e-9, 800e-9] # 157.63e-9, 193.35e-9, 248.4e-9
         'When modified -> increase mdata_version!'
-        self.mdata_version = 0.1
+        self.mdata_version = 0.2
         self.mdata_ref = {'spec': {'datFile': [str, True],
                                    'info': [str, True],
                                    'machine': [['casi'], True],
@@ -106,7 +106,7 @@ class Cfg():
                                      'clusterDopant': [str, True],
                                      'clusterDopantMass': [float, True],
                                      'clusterDopantNumber': [int, True],
-                                     'delayTimings': [dict, False],
+                                     'delayState': [dict, False],
                                      'ionType': [['+','-'], True],
                                      'referenceMass': [float, True],
                                      'referenceTime': [float, True],
@@ -121,7 +121,7 @@ class Cfg():
                                      'clusterBaseUnitNumber': [int, True],
                                      'clusterDopant': [str, True],
                                      'clusterDopantNumber': [int, True],
-                                     'delayTimings': [dict, False],
+                                     'delayState': [dict, False],
                                      'energyOffset': [float, True],
                                      'energyOffsetImport': [float, True],
                                      'flightLength': [[1.6], True],
@@ -160,7 +160,7 @@ class Cfg():
                                      'clusterDopant': [str, True],
                                      'clusterDopantMass': [float, True],
                                      'clusterDopantNumber': [int, True],
-                                     'delayTimings': [dict, False],
+                                     'delayState': [dict, False],
                                      'ionType': [['+','-'], True],
                                      'subtractBgRef': [str, False],
                                      'timeOffset': [float, True],
@@ -261,4 +261,12 @@ class Cfg():
                               7.67385, 7.75668, 7.85240, 7.88327, 7.88507, 7.90845]
 
 
-
+    def convert_mdata_v0p1_to_v0p2(self, mdata):
+        if mdata['mdataVersion'] is 0.1:
+            mdata['delayState'] = mdata.pop('delayTimings')
+        else:
+            raise ValueError('mdata has wrong version: {}, expected 0.1.'.format(mdata['mdataVersion']))
+        
+        return mdata 
+        
+        
