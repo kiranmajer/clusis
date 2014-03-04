@@ -7,6 +7,7 @@ import time
 import hashlib
 from mdata import Mdata
 from ase.atoms import Atoms
+from ase.data import chemical_symbols
 import sys
 sys.path.append('/home/kiran/git/delay/src')
 from filestorage import load_xml, load_pickle
@@ -46,6 +47,11 @@ class LegacyData(object):
             self.eval_cfgfile()
         else:
             self.eval_statedict(statedict)
+#             if self.spectype not in ['generic']:
+#                 print('Parsing dir structure ...')
+#                 self.parse_dir_structure()
+#                 print('... completed.')
+
         print('Setting specType ...')
         self.set_spectype(self.spectype)
         print('... {}'.format(self.metadata['specType']))
@@ -60,6 +66,10 @@ class LegacyData(object):
                 self.parse_datfile_name()
                 print('Fetching clusterBaseUnit mass for {} ...'.format(self.metadata['clusterBaseUnit']))
                 self.metadata['clusterBaseUnitMass'] = Atoms(self.metadata['clusterBaseUnit']).get_masses().sum()
+        print('Evaluating element name: ', self.metadata['clusterBaseUnit'])
+        cbu = self.eval_element_name(self.metadata['clusterBaseUnit'], chemical_symbols)
+        self.metadata['clusterBaseUnit'] = cbu
+        print('Element name changed to: ', self.metadata['clusterBaseUnit'])
         print('Setting specTypeClass ...')
         self.set_spectype_class()
         print('... {}'.format(self.metadata['specTypeClass']))
@@ -283,6 +293,22 @@ class LegacyData(object):
         if 'cfgFileOrig' in self.metadata.keys():
             self.parse_cfgfile(self.metadata['cfgFileOrig'])
 
+
+    def eval_element_name(self, element, reference):
+        '''Returns a well capitalized string of an element name, if in reference.
+        '''
+        i=0
+        valid_name = None
+        for e in reference:
+            if element.lower() == e.lower():
+                valid_name = reference[i]
+                break
+            i+=1   
+        
+        if valid_name is None:
+            raise ValueError("Couldn't find valid name for ", element)
+        else:
+            return valid_name
     
     
     def set_storage_paths(self):
@@ -335,7 +361,8 @@ class LegacyData(object):
             splitted_path = self.metadata['datFileOrig'].split('/')[self.metadata['datFileOrig'].split('/').index(self.metadata['machine']) + 1:]
             if len(splitted_path) == 5 or len(splitted_path) == 6:
                 'TODO: we need a better conversion to ase understandable Atoms strings!'
-                self.metadata['clusterBaseUnit'] = splitted_path[0].upper()
+                #cbu = 
+                self.metadata['clusterBaseUnit'] = splitted_path[0]
                 self.metadata['ionType'] = splitted_path[1]
                 if splitted_path[2] == 'pure':
                     self.metadata['clusterDopant'] = None

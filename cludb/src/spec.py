@@ -393,8 +393,8 @@ class SpecPePt(SpecPe):
         ydata = self.ydata[ydata_key]
         constrain_par_map = {'lscale': -1, 'toff': -2,'Eoff': -3}
         if cutoff == None:
-            tof_max = xdata.max()
-        elif 0 < cutoff < xdata.max():
+            tof_max = xdata.max() + np.abs(Eoff)
+        elif 0 < cutoff < xdata.max() + np.abs(Eoff):
             tof_max =cutoff
         else:
             raise ValueError('cutoff must be between 0 and %.2f. Got %.1f instead.'%(xdata.max(), cutoff))
@@ -423,7 +423,7 @@ class SpecPePt(SpecPe):
        
 
     def gauge(self, xdata_key=None, ydata_key=None, rel_y_min=0, lscale=1, Eoff=0, toff=42e-9,
-              constrain_par='toff', constrain=[35e-9, 65e-9], cutoff=None):
+              constrain_par='toff', constrain=[35e-9, 65e-9], cutoff=None, peakpar_ref=None):
         'TODO: data_key parameters usage is not foolproof'
         '''
         Fits a multiple gauss to the pes in time domain.
@@ -431,6 +431,8 @@ class SpecPePt(SpecPe):
         constrain_par: which parameter to constrain:  lscale, toff, Eoff
         constrain: [constrain_par_min, constrain_par_min]
         rel_y_min: minimum peak height of reference peaks (cfg.pt_peakpar) to be included in the fit.
+        peakpar_ref: dict with list of tuples with reference peak parameter,
+                     e.g. {wave length: [(E_bin, I_rel, sigma), ...]}
         '''
         # choose data_keys if not given
         if xdata_key is None:
@@ -439,8 +441,9 @@ class SpecPePt(SpecPe):
             ydata_key = 'intensitySub'
         elif ydata_key is None:
             ydata_key = 'intensity'
-        peakParRef = self.cfg.pt_peakpar[self.mdata.data('waveLength')]
-        fitValues = self.__fit_multi_gauss_trans(xdata_key, ydata_key, peakParRef, Eoff, toff, lscale, rel_y_min, cutoff,
+        if peakpar_ref is None:
+            peakpar_ref = self.cfg.pt_peakpar[self.mdata.data('waveLength')]
+        fitValues = self.__fit_multi_gauss_trans(xdata_key, ydata_key, peakpar_ref, Eoff, toff, lscale, rel_y_min, cutoff,
                                                   constrain_par, constrain)
         self.mdata.update(fitValues)
         self.mdata.add_tag('fitted', tagkey='systemTags')

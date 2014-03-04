@@ -159,5 +159,20 @@ class Mdata(object):
         del self.__mdata[key]
         
         
+    def eval_element_name(self, element, reference):
+        '''Returns a well capitalized string of an element name, if in reference.
+        '''
+        i=0
+        valid_name = None
+        for e in reference:
+            if element.lower() == e.lower():
+                valid_name = reference[i]
+                break
+            i+=1   
+        
+        if valid_name is None:
+            raise ValueError("Couldn't find valid name for ", element)
+        else:
+            return valid_name     
         
         

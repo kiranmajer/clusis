@@ -390,12 +390,28 @@ class ViewPt(ViewPes):
 #                transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
                
     
-    def plot_tof_fit(self, ax, fit_par, time_unit, color='blue'):        
+    def plot_tof_fit(self, ax, fit_par, time_unit, color='blue', color_peaks='DimGray', single_peaks=False):        
         ax.plot(self.spec.xdata['tof']/time_unit,
                 self.spec._multi_gauss_trans(self.spec.xdata['tof'],
                                              self.spec.mdata.data('fitPeakPos'),
                                              self.spec.mdata.data(fit_par)),
                 color=color) 
+        # plot single peaks, if there are more than one
+        if single_peaks and len(self.spec.mdata.data(fit_par)) > 4:        
+            plist = list(self.spec.mdata.data(fit_par))
+            xlist = list(self.spec.mdata.data('fitPeakPos'))
+            lscale = plist.pop()
+            toff = plist.pop()
+            Eoff = plist.pop()
+            while len(plist) >= 2:
+                sigma = plist.pop()
+                A = plist.pop()
+                m = xlist.pop()
+                ax.plot(self.spec.xdata['tof']/time_unit,
+                        self.spec._multi_gauss_trans(self.spec.xdata['tof'],
+                                                     [m],
+                                                     [A, sigma, Eoff, toff, lscale]),
+                        color=color_peaks)
     
                
     def plot_energy_fit(self, ax, fit_par, xdata_key, color='blue'):
@@ -407,13 +423,13 @@ class ViewPt(ViewPes):
                 color=color) 
 
     
-    def show_tof_fit(self, fit_par='fitPar', time_unit=1e-6, time_label='Flight Time', xlim=[0, 'auto'], xlim_scale=None):
+    def show_tof_fit(self, fit_par='fitPar', time_unit=1e-6, time_label='Flight Time', xlim=[0, 'auto'], xlim_scale=None, single_peaks=True):
         xdata_key = 'tof'
         ydata_key = self.spec.mdata.data('fitYdataKey')
         self._single_fig_output()
         self.plot_tof(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
                       time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale)
-        self.plot_tof_fit(self.ax, fit_par=fit_par, time_unit=time_unit)   
+        self.plot_tof_fit(self.ax, fit_par=fit_par, time_unit=time_unit, single_peaks=single_peaks)   
         self._set_xlabel_time(self.ax, label=time_label, time_unit=time_unit)
         self.ax.set_ylabel('Intensity (a.u.)')
         self._addtext_file_id(self.ax)

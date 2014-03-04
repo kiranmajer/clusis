@@ -115,7 +115,7 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}):
         except Exception as e:
             print('LegacyData creation failed:', e)
             failedImports.append([datFile, 'LegacyData creation failed: {}'.format(e)])
-            #raise
+            raise
             continue
         if not db.table_has_sha1(mi.mdata.data('specType'), mi.mdata.data('sha1')) and mi.mdata.data('sha1') not in sha1ToImport:
             '''TODO: handle special files with identical sha1 (e.g. "flat line"-spectra).
