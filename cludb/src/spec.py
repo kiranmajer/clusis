@@ -288,6 +288,9 @@ class SpecPePt(SpecPe):
     def __fit_peakpos_trans(self, peakPar):
         return [np.sqrt(self._pFactor/(self._hv-p[0])) for p in peakPar]
     
+#     def __fit_peakpos(self, peakPar):
+#         return [p[0] for p in peakPar]
+    
     
 #    def __fit_par_init(self, peakPar, yscale, scale, offset):
 #        l = [i for p in peakPar if p[0] for i in [p[1]*yscale,p[2]]]
@@ -327,19 +330,21 @@ class SpecPePt(SpecPe):
 #        return mgauss
     
     
+#    def _gauss_trans(self, t,m,A,sigma,toff,Eoff,lscale):
+        
+    
+    
     def _multi_gauss_trans(self, t, peak_pos, parList):
         '''
         Multiple Gauss at peak_pos with parameter from parList transformed into time domain
         '''
         plist = list(parList)
         xlist = list(peak_pos)
-        #gaussTrans = lambda t,m,A,s,toff,Eoff: A*np.exp(-(self._hv - self._pFactor*(1/(t + toff)**2 + 1/Eoff**2) - m)**2/(2*s**2))*2*self._pFactor/(t + toff)**3
-        #gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*np.exp(-(-self._pFactor*(1/(t)**2 + 1/Eoff**2 - 1/(l*m + toff)**2))**2/(2*s**2))*2*self._pFactor/(t)**3
-        #gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor*(1/(1/np.sqrt(1/t**2-Eoff/self._pFactor)-toff)**2/lscale**2 - 1/m**2))**2/(2*sigma**2))
         # orig working version
         gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor*(1/(1/np.sqrt(lscale*(1/t**2 - Eoff/self._pFactor)) - toff)**2 - 1/m**2))**2/(2*sigma**2))
-        #gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor/t**2-self._pFactor/(lscale*(m+toff)**2) - Eoff)**2/(2*sigma**2))
-        #gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor*(1/(1/(np.sqrt(1/(lscale**2*(t+toff)**2) + Eoff/self._pFactor)))**2 - 1/m**2))**2/(2*sigma**2))
+        # replace q/m**2 by hv-m 
+        #gaussTrans = lambda t,m,A,sigma,toff,Eoff,lscale: A*2*self._pFactor/(t)**3*np.exp(-(self._pFactor*(1/(1/np.sqrt(lscale*(1/t**2 - Eoff/self._pFactor)) - toff)**2 - (self._hv - m)))**2/(2*sigma**2))
+        
         lscale =plist.pop()
         toff = plist.pop()
         Eoff = plist.pop()
@@ -348,7 +353,9 @@ class SpecPePt(SpecPe):
             sigma = plist.pop()
             A = plist.pop()
             m = xlist.pop()
-            mgaussTrans += gaussTrans(t, m, A, sigma, toff, Eoff, lscale)
+            gt = gaussTrans(t, m, A, sigma, toff, Eoff, lscale)
+            gt_fixed = np.nan_to_num(gt)
+            mgaussTrans += gt_fixed
             #mgaussTrans += gaussTrans(t, m, A, sigma, toff, Eoff)
         return mgaussTrans
     
@@ -400,6 +407,7 @@ class SpecPePt(SpecPe):
             raise ValueError('cutoff must be between 0 and %.2f. Got %.1f instead.'%(xdata.max(), cutoff))
         peakPar = [p for p in peakParRef if np.sqrt(self._pFactor/(self._hv-p[0]))<tof_max and p[1]>rel_y_min]
         fitValues = {'fitPeakPos': self.__fit_peakpos_trans(peakPar),
+        #fitValues = {'fitPeakPos': [p[0] for p in peakPar],  # self.__fit_peakpos_trans(peakPar),
                      'fitXdataKey': xdata_key, 'fitYdataKey': ydata_key,
                      'fitConstrains': {constrain_par: constrain},
                      'fitCutoff': cutoff}
