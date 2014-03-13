@@ -10,7 +10,7 @@ from ase.atoms import Atoms
 from ase.data import chemical_symbols
 import sys
 sys.path.append('/home/kiran/git/delay/src')
-from filestorage import load_xml, load_pickle
+from filestorage import load_xml, load_pickle, load_json
 #import config
 
 
@@ -182,9 +182,13 @@ class LegacyData(object):
     def find_statefile(self):
         dat_file_name = os.path.splitext(os.path.basename(self.metadata['datFileOrig']))[0]
         dat_file_dir = os.path.dirname(self.metadata['datFileOrig'])
+        statefile_json = os.path.join(dat_file_dir, dat_file_name + '.json')
         statefile_xml = os.path.join(dat_file_dir, dat_file_name + '.xml')
         statefile_pickle = os.path.join(dat_file_dir, dat_file_name + '.pickle')
-        if os.path.isfile(statefile_xml):
+        if os.path.isfile(statefile_json):
+            state_dict = load_json(statefile_json)
+            self.metadata['cfgFileOrig'] = statefile_json
+        elif os.path.isfile(statefile_xml):
             state_dict = load_xml(statefile_xml)
             self.metadata['cfgFileOrig'] = statefile_xml
         elif os.path.isfile(statefile_pickle):
