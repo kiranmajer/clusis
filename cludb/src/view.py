@@ -84,6 +84,16 @@ class View(object):
             raise ValueError('text_pos must be one of: left, right. Got "%s" instead.'%(str(text_pos)))
         ax.text(pos_x, pos_y, cluster_id, transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
         
+        
+    def _addtext_info(self, ax, info_text, text_pos='left', fontsize=12):
+        if text_pos == 'left':
+            pos_x, pos_y = 0.05, 0.4
+        elif text_pos == 'right':
+            pos_x, pos_y = 0.95, 0.4
+        else:
+            raise ValueError('text_pos must be one of: left, right. Got "%s" instead.'%(str(text_pos)))        
+        ax.text(pos_x, pos_y, info_text, transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)        
+        
     
     def _set_xlabel_time(self, ax, label, time_unit):
         if time_unit not in [1, 1e-3, 1e-6, 1e-9]:
@@ -225,7 +235,7 @@ class View(object):
                             xlim_scale)
             
             
-    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None):
+    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False):
         self._single_fig_output()
         # set data keys
         key_deps = {'idx': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']}
@@ -235,11 +245,13 @@ class View(object):
         self.ax.set_ylabel('Intensity (a.u.)')        
         self._addtext_file_id(self.ax)
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
+        if show_info:
+            self._addtext_info(self.ax, self.spec.mdata.data('info'), text_pos='right')
         self.fig.show()
 
 
     def show_tof(self, xdata_key='auto', ydata_key='auto', time_label='Time',
-                 time_unit=1e-6, xlim=['auto', 'auto'], xlim_scale=None):     
+                 time_unit=1e-6, xlim=['auto', 'auto'], xlim_scale=None, show_info=False):     
         self._single_fig_output()
         # set data keys
         key_deps = {'tof': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'],
@@ -251,6 +263,8 @@ class View(object):
         self.ax.set_ylabel('Intensity (a.u.)')
         self._addtext_file_id(self.ax)
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
+        if show_info:
+            self._addtext_info(self.ax, self.spec.mdata.data('info'), text_pos='right')
         self.fig.show()
         
         
@@ -309,21 +323,21 @@ class ViewPes(View):
                             xlim_scale)
 
 
-    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None):
-        View.show_idx(self, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
+    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False):
+        View.show_idx(self, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right')
         self.fig.show()
 
         
     def show_tof(self, xdata_key='auto', ydata_key='auto', time_label='Flight Time',
-                 time_unit=1e-6, xlim=[0, 'auto'], xlim_scale=None):
+                 time_unit=1e-6, xlim=[0, 'auto'], xlim_scale=None, show_info=False):
         View.show_tof(self, xdata_key=xdata_key, ydata_key=ydata_key, time_label=time_label, 
-                      time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale)
+                      time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right')        
         self.fig.show()
         
 
-    def show_ekin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None):
+    def show_ekin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False):
         self._single_fig_output()
         # set data keys
         key_deps = {'ekin': ['jIntensity', 'jIntensitySub'],
@@ -334,11 +348,13 @@ class ViewPes(View):
         self.ax.set_ylabel('Intensity (a.u.)')     
         self._addtext_file_id(self.ax)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right')
-        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)        
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
+        if show_info:
+            self._addtext_info(self.ax, self.spec.mdata.data('info'), text_pos='right')        
         self.fig.show()
 
 
-    def show_ebin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None):
+    def show_ebin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False):
         self._single_fig_output()
         # set data keys
         key_deps = {'ebin': ['jIntensity', 'jIntensitySub'],
@@ -349,7 +365,9 @@ class ViewPes(View):
         self.ax.set_ylabel('Intensity (a.u.)')      
         self._addtext_file_id(self.ax)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid())
-        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)             
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
+        if show_info:
+            self._addtext_info(self.ax, self.spec.mdata.data('info'))             
         self.fig.show()
         
         

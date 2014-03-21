@@ -40,6 +40,10 @@ class ViewList(object):
             fname = os.path.join(os.path.expanduser('~'), 'export.pdf')
             pdf_file = Pdf.PdfPages(fname)        
         print('keywords:', keywords)
+        # calc margins and padding
+        margin = 0.03
+        hspace = 0.028*layout[0]
+        wspace = 0.03*layout[1]
         subplt_idx = self._build_idx_list(layout)
         total_plots = len(self.speclist.pfile_list)
         plotcount = 0
@@ -48,8 +52,8 @@ class ViewList(object):
             # create page
             print('Plotting page', figidx)
             fig = plt.figure(figidx, figsize=(0.21/constants.inch, 0.297/constants.inch))
-            plt.subplots_adjust(left  = 0.03, right = 0.97, bottom = 0.03, top = 0.97,
-                                wspace = 0.1, hspace = 0.14)
+            plt.subplots_adjust(left  = margin, right = 1-margin, bottom = margin, top = 1-margin,
+                                wspace = wspace, hspace = hspace)
             plotidx = 0
             while plotidx < layout[0]*layout[1] and plotcount < total_plots:
                 #print('Creating plot', plotidx)
@@ -67,30 +71,34 @@ class ViewList(object):
         if pdf:    
             pdf_file.close()
                
-    def _show_idx(self, spec, axes, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None):
+    def _show_idx(self, spec, axes, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False):
         key_deps = {'idx': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']}
         x_key, y_key = spec._auto_key_selection(xdata_key='idx', ydata_key=ydata_key, key_deps=key_deps) 
         spec.view.plot_idx(axes, x_key, y_key, xlim, xlim_scale=None, color='black')
         spec.view._addtext_file_id(axes) 
+        if show_info:
+            spec.view._addtext_info(axes, spec.mdata.data('info'), fontsize=6, text_pos='right')  
         
     def _show_tof(self, spec, axes, xdata_key='auto', ydata_key='auto', time_unit=1e-6,
-                  xlim=['auto', 'auto'], xlim_scale=None):
+                  xlim=['auto', 'auto'], xlim_scale=None, show_info=False):
         key_deps = {'tof': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'],
                     'tofGauged': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']} 
         xdata_key, ydata_key = spec._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key, key_deps=key_deps)      
-        spec.view.plot_tof(axes, xdata_key=xdata_key, ydata_key=ydata_key,
-                      time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale)
+        spec.view.plot_tof(axes, xdata_key=xdata_key, ydata_key=ydata_key, time_unit=time_unit, 
+                           xlim=xlim, xlim_scale=xlim_scale)
         spec.view._addtext_file_id(axes)
-        spec.view._addtext_statusmarker(axes, xdata_key=xdata_key, ydata_key=ydata_key, text_pos='left')          
+        spec.view._addtext_statusmarker(axes, xdata_key=xdata_key, ydata_key=ydata_key, text_pos='left')
+        if show_info:
+            spec.view._addtext_info(axes, spec.mdata.data('info'), fontsize=6, text_pos='right')           
     
     
-    def show_idx(self, layout=[5,4], ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, pdf=False):
-        self._show(self._show_idx, layout=layout, pdf=pdf, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
+    def show_idx(self, layout=[5,4], ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, pdf=False, show_info=False):
+        self._show(self._show_idx, layout=layout, pdf=pdf, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info)
 
     def show_tof(self, layout=[5,4], xdata_key='auto', ydata_key='auto', time_unit=1e-6,
-                 xlim=['auto', 'auto'], xlim_scale=None, pdf=False):
+                 xlim=['auto', 'auto'], xlim_scale=None, pdf=False, show_info=False):
         self._show(self._show_tof, layout=layout, pdf=pdf, xdata_key=xdata_key, ydata_key=ydata_key,
-                   time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale)
+                   time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info)
 
 
 
@@ -99,28 +107,30 @@ class ViewPesList(ViewList):
         self.speclist = speclist
 
 
-    def _show_idx(self, spec, ax, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None):
-        ViewList._show_idx(self, spec, ax, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
-        spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), fontsize=10)
+    def _show_idx(self, spec, ax, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False):
+        ViewList._show_idx(self, spec, ax, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info)
+        spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), fontsize=10, text_pos='right')
         spec.view._addtext_statusmarker(ax, xdata_key='idx', ydata_key=ydata_key, text_pos='left')
         
     def _show_tof(self, spec, ax, xdata_key='auto', ydata_key='auto', time_unit=1e-6,
-                  xlim=['auto', 'auto'], xlim_scale=None):
+                  xlim=['auto', 'auto'], xlim_scale=None, show_info=False):
         ViewList._show_tof(self, spec, ax, xdata_key=xdata_key, ydata_key=ydata_key,
-                   time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale)
-        spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), fontsize=10)
+                   time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info)
+        spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), fontsize=10, text_pos='right')
         spec.view._addtext_statusmarker(ax, xdata_key=xdata_key, ydata_key=ydata_key, text_pos='left')          
         
-    def _show_ekin(self, spec, ax, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None):
+    def _show_ekin(self, spec, ax, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False):
         key_deps = {'ekin': ['jIntensity', 'jIntensitySub'],
                     'ekinGauged': ['jIntensityGauged', 'jIntensityGaugedSub']} 
         xdata_key, ydata_key = spec._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key, key_deps=key_deps)        
         spec.view.plot_ekin(ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
         spec.view._addtext_file_id(ax)
         spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), text_pos='right', fontsize=10)
-        spec.view._addtext_statusmarker(ax, xdata_key=xdata_key, ydata_key=ydata_key, text_pos='left') 
+        spec.view._addtext_statusmarker(ax, xdata_key=xdata_key, ydata_key=ydata_key, text_pos='left')
+        if show_info:
+            spec.view._addtext_info(ax, spec.mdata.data('info'), fontsize=6, text_pos='right')  
         
-    def _show_ebin(self, spec, ax, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None):
+    def _show_ebin(self, spec, ax, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False):
         key_deps = {'ebin': ['jIntensity', 'jIntensitySub'],
                     'ebinGauged': ['jIntensityGauged', 'jIntensityGaugedSub']} 
         xdata_key, ydata_key = spec._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key, key_deps=key_deps)         
@@ -128,18 +138,20 @@ class ViewPesList(ViewList):
         spec.view._addtext_file_id(ax)
         spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), fontsize=10)
         spec.view._addtext_statusmarker(ax, xdata_key=xdata_key, ydata_key=ydata_key, text_pos='left')
+        if show_info:
+            spec.view._addtext_info(ax, spec.mdata.data('info'), fontsize=6) 
         
               
         
     def show_ekin(self, layout=[5,4], xdata_key='auto', ydata_key='auto',
-                  xlim=['auto', 'auto'], xlim_scale=None, pdf=False):
+                  xlim=['auto', 'auto'], xlim_scale=None, pdf=False, show_info=False):
         self._show(self._show_ekin, layout=layout, pdf=pdf, xdata_key=xdata_key,
-                   ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
+                   ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info)
         
     def show_ebin(self, layout=[5,4], xdata_key='auto', ydata_key='auto',
-                  xlim=['auto', 'auto'], xlim_scale=None, pdf=False):
+                  xlim=['auto', 'auto'], xlim_scale=None, pdf=False, show_info=False):
         self._show(self._show_ebin, layout=layout, pdf=pdf, xdata_key=xdata_key,
-                   ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)        
+                   ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info)        
         
         
 
