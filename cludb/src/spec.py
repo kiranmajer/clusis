@@ -353,7 +353,10 @@ class SpecPePt(SpecPe):
             sigma = plist.pop()
             A = plist.pop()
             m = xlist.pop()
+            #print('Calling gaussTrans ...')
+            #gt = np.where(lscale*(1/t**2 - Eoff/self._pFactor) > 0, gaussTrans(t, m, A, sigma, toff, Eoff, lscale), 0.3)
             gt = gaussTrans(t, m, A, sigma, toff, Eoff, lscale)
+            #print(gt)
             gt_fixed = np.nan_to_num(gt)
             mgaussTrans += gt_fixed
             #mgaussTrans += gaussTrans(t, m, A, sigma, toff, Eoff)
