@@ -152,7 +152,13 @@ class ViewPesList(ViewList):
         if show_info:
             spec.view._addtext_info(ax, spec.mdata.data('info'), fontsize=6) 
         
-              
+
+
+    def show_tof(self, layout=[7,3], xdata_key='auto', ydata_key='auto', time_unit=1e-6,
+                 xlim=['auto', 'auto'], xlim_scale=None, pdf=False, show_info=False):
+        self._show(self._show_tof, xlabel_str=self._format_time_label('Flight Time', time_unit), layout=layout, pdf=pdf,
+                   xdata_key=xdata_key, ydata_key=ydata_key, time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale,
+                   show_info=show_info)              
         
     def show_ekin(self, layout=[7,3], xdata_key='auto', ydata_key='auto',
                   xlim=['auto', 'auto'], xlim_scale=None, pdf=False, show_info=False):
@@ -208,7 +214,7 @@ class ViewPtFitList(ViewPesList):
     def show_tof_fit(self, layout=[7,3], fit_par='fitPar', time_unit=1e-6,
                      xlim=[0, 'auto'], xlim_scale=None, pdf=False):
         self._show(self._show_tof_fit, xlabel_str=self._format_time_label('Flight Time', time_unit),
-                   layout=layout, fit_par=fit_par, time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale)
+                   layout=layout, pdf=pdf, fit_par=fit_par, time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale)
             
     def show_ekin_fit(self, layout=[7,3], fit_par='fitPar', xlim=['auto', 'auto'],
                       xlim_scale=None, pdf=False):

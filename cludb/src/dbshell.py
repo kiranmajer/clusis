@@ -199,8 +199,13 @@ class Db(object):
                 dats.append(datFileName)
             else:
                 raise ValueError('datFileName must be a list or a str.')
-            for f in dats:
-                datsQuery+='datFile GLOB "*%s*" AND '%f
+            if len(dats) > 1:
+                datsQuery = '('
+                for f in dats[:-1]:
+                    datsQuery+='datFile GLOB "*%s*" OR '%f
+                datsQuery += 'datFile GLOB "*{}*") AND '.format(dats[-1])
+            else:
+                datsQuery = 'datFile GLOB "*{}*" AND '.format(dats[0])
             return datsQuery
         
         def sqlformat_WaveLength(waveLength, key):
