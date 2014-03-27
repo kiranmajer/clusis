@@ -35,7 +35,14 @@ class ViewList(object):
         ax.lines[0].set_linewidth(.3)
         ax.grid(linewidth=.1, linestyle=':', color='black')
         
-    def _show(self, show_fct, layout=[7,3], pdf=False, **keywords):
+    def _format_time_label(self, label, time_unit):
+        if time_unit not in [1, 1e-3, 1e-6, 1e-9]:
+            raise ValueError('time_unit must be one of: 1, 1e-3, 1e-6, 1e-9.')
+        prefix_map = ['', 'm', '\mu ', 'n']
+        prefix = prefix_map[int(abs(np.log10(time_unit)/3))]
+        return r'{0} (${1}s$)'.format(label, prefix)        
+        
+    def _show(self, show_fct, xlabel_str, layout=[7,3], pdf=False, **keywords):
         if pdf:
             fname = os.path.join(os.path.expanduser('~'), 'export.pdf')
             pdf_file = Pdf.PdfPages(fname)        
@@ -52,7 +59,7 @@ class ViewList(object):
             # create page
             print('Plotting page', figidx)
             fig = plt.figure(figidx, figsize=(0.21/constants.inch, 0.297/constants.inch))
-            plt.subplots_adjust(left  = margin, right = 1-margin, bottom = margin, top = 1-margin,
+            plt.subplots_adjust(left  = margin, right = 1-margin, bottom = margin+0.01, top = 1-margin,
                                 wspace = wspace, hspace = hspace)
             plotidx = 0
             while plotidx < layout[0]*layout[1] and plotcount < total_plots:
@@ -61,6 +68,8 @@ class ViewList(object):
                 ax = fig.add_subplot(layout[0], layout[1], subplt_idx[plotidx])
                 show_fct(cs, ax, **keywords)
                 self._format_overview_plot(ax)
+                if (plotidx + 1) % layout[0] == 0 or plotcount + 1 == total_plots:
+                    ax.set_xlabel(xlabel_str, fontsize=8)
                 del cs
                 plotidx += 1
                 plotcount += 1
@@ -93,12 +102,14 @@ class ViewList(object):
     
     
     def show_idx(self, layout=[7,3], ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, pdf=False, show_info=False):
-        self._show(self._show_idx, layout=layout, pdf=pdf, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info)
+        self._show(self._show_idx, xlabel_str='Index', layout=layout, pdf=pdf, ydata_key=ydata_key, xlim=xlim,
+                   xlim_scale=xlim_scale, show_info=show_info)
 
     def show_tof(self, layout=[7,3], xdata_key='auto', ydata_key='auto', time_unit=1e-6,
                  xlim=['auto', 'auto'], xlim_scale=None, pdf=False, show_info=False):
-        self._show(self._show_tof, layout=layout, pdf=pdf, xdata_key=xdata_key, ydata_key=ydata_key,
-                   time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info)
+        self._show(self._show_tof, xlabel_str=self._format_time_label('Time', time_unit), layout=layout, pdf=pdf,
+                   xdata_key=xdata_key, ydata_key=ydata_key, time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale,
+                   show_info=show_info)
 
 
 
@@ -145,12 +156,12 @@ class ViewPesList(ViewList):
         
     def show_ekin(self, layout=[7,3], xdata_key='auto', ydata_key='auto',
                   xlim=['auto', 'auto'], xlim_scale=None, pdf=False, show_info=False):
-        self._show(self._show_ekin, layout=layout, pdf=pdf, xdata_key=xdata_key,
+        self._show(self._show_ekin, xlabel_str='E$_{kin}$ (eV)', layout=layout, pdf=pdf, xdata_key=xdata_key,
                    ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info)
         
     def show_ebin(self, layout=[7,3], xdata_key='auto', ydata_key='auto',
                   xlim=['auto', 'auto'], xlim_scale=None, pdf=False, show_info=False):
-        self._show(self._show_ebin, layout=layout, pdf=pdf, xdata_key=xdata_key,
+        self._show(self._show_ebin, xlabel_str='E$_{bin}$ (eV)', layout=layout, pdf=pdf, xdata_key=xdata_key,
                    ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info)        
         
         
@@ -196,16 +207,18 @@ class ViewPtFitList(ViewPesList):
         
     def show_tof_fit(self, layout=[7,3], fit_par='fitPar', time_unit=1e-6,
                      xlim=[0, 'auto'], xlim_scale=None, pdf=False):
-        self._show(self._show_tof_fit, layout=layout, fit_par=fit_par, time_unit=time_unit,
-                   xlim=xlim, xlim_scale=xlim_scale)
+        self._show(self._show_tof_fit, xlabel_str=self._format_time_label('Flight Time', time_unit),
+                   layout=layout, fit_par=fit_par, time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale)
             
     def show_ekin_fit(self, layout=[7,3], fit_par='fitPar', xlim=['auto', 'auto'],
                       xlim_scale=None, pdf=False):
-        self._show(self._show_ekin_fit, layout=layout, pdf=pdf, fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
+        self._show(self._show_ekin_fit, xlabel_str='E$_{kin}$ (eV)', layout=layout, pdf=pdf,
+                   fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
         
     def show_ebin_fit(self, layout=[7,3], fit_par='fitPar', xlim=['auto', 'auto'],
                       xlim_scale=None, pdf=False):
-        self._show(self._show_ebin_fit, layout=layout, pdf=pdf, fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)    
+        self._show(self._show_ebin_fit, xlabel_str='E$_{bin}$ (eV)', layout=layout, pdf=pdf, fit_par=fit_par,
+                   xlim=xlim, xlim_scale=xlim_scale)    
 
 
 
@@ -263,13 +276,13 @@ class ViewWaterFitList(ViewPesList):
 
     def show_tof_fit(self, layout=[7,3], fit_par='fitPar', time_unit=1e-6,
                      xlim=[0, 'auto'], xlim_scale=None, pdf=False):
-        self._show(self._show_tof_fit, layout=layout, pdf=pdf, fit_par=fit_par, time_unit=time_unit,
-                   xlim=xlim, xlim_scale=xlim_scale)
+        self._show(self._show_tof_fit, xlabel_str=self._format_time_label('Flight Time', time_unit), layout=layout,
+                   pdf=pdf, fit_par=fit_par, time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale)
 
-    def show_ekin_fit(self, layout=[7,3], fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, pdf=False):
+    def show_ekin_fit(self, xlabel_str='E$_{kin}$ (eV)', layout=[7,3], fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, pdf=False):
         self._show(self._show_ekin_fit, layout=layout, pdf=pdf, fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
         
-    def show_ebin_fit(self, layout=[7,3], fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, pdf=False):
+    def show_ebin_fit(self, xlabel_str='E$_{bin}$ (eV)', layout=[7,3], fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, pdf=False):
         self._show(self._show_ebin_fit, layout=layout, pdf=pdf, fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale) 
 
 

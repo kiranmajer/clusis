@@ -207,7 +207,7 @@ class View(object):
               
         
     def plot_tof(self, ax, xdata_key, ydata_key, time_unit, xlim, xlim_scale=None, color='black'):
-        print('plot_tof called with xlim =', xlim)
+        #print('plot_tof called with xlim =', xlim)
         
 #        self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key,
 #                                 xkeys=['tof', 'tofGauged'],
