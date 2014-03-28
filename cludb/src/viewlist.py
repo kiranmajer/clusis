@@ -76,6 +76,7 @@ class ViewList(object):
             if pdf:
                 fig.savefig(pdf_file, dpi=None, facecolor='w', edgecolor='w',
                             orientation='portrait', papertype='a4', format='pdf')
+                plt.close(fig) # may produce some console noise (which can be ignored)
             figidx += 1
         if pdf:    
             pdf_file.close()
