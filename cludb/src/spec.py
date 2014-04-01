@@ -21,7 +21,7 @@ import load
 class Spec(object):
     def __init__(self, mdata, xdata, ydata, cfg):
         self.mdata_ref = cfg.mdata_ref['spec'].copy()
-        self.mdata = Mdata(mdata, self.mdata_ref)
+        self.mdata = Mdata(mdata, self.mdata_ref, cfg.mdata_systemtags)
         self.xdata = xdata
         self.ydata = ydata
         self.cfg = cfg

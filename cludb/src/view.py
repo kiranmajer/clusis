@@ -21,15 +21,17 @@ class View(object):
             self.ax = self.fig.add_subplot(1,1,1)    
 
 
-    def _addtext_file_id(self, ax, fontsize=6):
-        ax.text(1.0, 1.01, '%s'%(os.path.basename(self.spec.mdata.data('datFile'))),
+    def _addtext_file_id(self, ax, fontsize=6, layout_y=3):
+        ypos = 1 + layout_y*0.01/3
+        ax.text(1.0, ypos, '%s'%(os.path.basename(self.spec.mdata.data('datFile'))),
                 transform = ax.transAxes, fontsize=fontsize, horizontalalignment='right')  
 
         
-    def _addtext_statusmarker(self, ax, xdata_key, ydata_key, text_pos='center', fontsize=6):
+    def _addtext_statusmarker(self, ax, xdata_key, ydata_key, text_pos='center', fontsize=6, layout_y=3):
         xpos = {'left': 0.0,
                 'center': 0.5,
                 'right': 1.0}
+        ypos = 1 + layout_y*0.01/3
         stats = []
         if 'Gauged' in xdata_key:
             stats.append('gauged')
@@ -37,7 +39,7 @@ class View(object):
             stats.append('subtracted')
         if len(stats) > 0:
             stat_text = ', '.join(stats)
-            ax.text(xpos[text_pos], 1.01, stat_text, transform = ax.transAxes,
+            ax.text(xpos[text_pos], ypos, stat_text, transform = ax.transAxes,
                     fontsize=fontsize, horizontalalignment=text_pos)
     
     

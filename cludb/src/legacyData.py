@@ -77,7 +77,7 @@ class LegacyData(object):
         print('Building mdata reference...')
         self.mdata_ref = self.build_mdata_ref(self.metadata['specTypeClass'])
         print('mdata ref.:', self.mdata_ref)
-        self.mdata = Mdata({}, self.mdata_ref) 
+        self.mdata = Mdata({}, self.mdata_ref, cfg.mdata_systemtags) 
         self.mdata.add(self.metadata)
         if len(commonMdata) > 0:
             print('Importing commonMdata', commonMdata)

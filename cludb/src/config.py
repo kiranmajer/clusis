@@ -169,21 +169,8 @@ class Cfg():
                                      },
                           }
 
-#                    Legacy mdata:
-#                    'fitCovarTof': [np.ndarray, ['pes'], False],
-#                    
-#                    'fitCutoffTof': [float, ['pes'], False],
-#                    'fitGauged': [[True,False], ['pes'], False],
-#                    'fitGaugedTof': [[True,False], ['pes'], False],
-#                    
-#                    'fitInfoTof': [list, ['pes'], False],
-#                    
-#                    'fitPar0Tof': [np.ndarray, ['pes'], False],
-#                    'fitParTof': [np.ndarray, ['pes'], False],
-#                    
-#                    'fitPeakPosTof': [list, ['pes'], False],
-#                    'fitSubtractBg': [[True,False], ['pes'], False],
-#                    'fitSubtractBgTof': [[True,False], ['pes'], False], 
+
+        self.mdata_systemtags = ['trash', 'background', 'fitted', 'gauged', 'subtracted', 'up/down']
                     
         
         ''' Values used when importing legacy data'''

@@ -194,14 +194,14 @@ class SpecPePtFitList(SpecPeList):
             lastDate = format_recTime(row[0])
             
             
-    def plot_fit_par(self):
+    def plot_fit_par(self, max_tof=10e-6):
         fig = plt.figure()
         #print 'Figure created.'
         ax = fig.add_subplot(1,1,1)
         ax.set_xlabel('tof ($\mu$s)')
         ax.set_ylabel('corrected tof ($\mu$s)')
         ax.grid()
-        fx=np.arange(0, 10e-6, 1e-7)
+        fx=np.arange(0, max_tof, 1e-7)
         def g_time(xdata, lscale, Eoff, toff, pFactor):
             return 1/np.sqrt(lscale*(1/(xdata)**2 - Eoff/pFactor)) - toff        
         

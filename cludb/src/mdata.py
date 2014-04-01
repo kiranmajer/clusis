@@ -4,9 +4,10 @@ import re
 class Mdata(object):
     
     
-    def __init__(self, mdataDict, mdata_ref):
+    def __init__(self, mdataDict, mdata_ref, systemtags_ref):
         self.__reference = mdata_ref
         self.__mdata = mdataDict
+        self.__systemtags_ref = systemtags_ref
     
      
 #    def __key_isvalid(self, key):
@@ -83,6 +84,10 @@ class Mdata(object):
     
     def add_tag(self, tag, tagkey='userTags'):
         tag = str(tag)
+        if tag in self.__systemtags_ref:
+            tagkey = 'systemTags'
+        if tagkey == 'systemTags' and tag not in self.__systemtags_ref:
+            raise ValueError('{} not a valid system tag.'.format(tag))
         current_tags = self.__mdata[tagkey]
         if current_tags.count(tag) == 0:
             current_tags.append(tag)
