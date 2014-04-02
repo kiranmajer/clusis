@@ -93,22 +93,26 @@ class View(object):
         ax.text(pos_x, pos_y, cluster_id, transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
         
         
-    def _addtext_info(self, ax, info_text, text_pos='left', fontsize=12):
-        if text_pos == 'left':
-            pos_x, pos_y = 0.05, 0.5
-        elif text_pos == 'right':
-            pos_x, pos_y = 0.95, 0.5
-        else:
-            raise ValueError('text_pos must be one of: left, right. Got "%s" instead.'%(str(text_pos)))        
-        ax.text(pos_x, pos_y, info_text, transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)        
+    def _addtext_info(self, ax, info_text, text_pos='left', text_vpos='center', fontsize=12):
+#         if text_pos == 'left':
+#             pos_x = 0.05
+#         elif text_pos == 'right':
+#             pos_x= 0.95
+#         else:
+#             raise ValueError('text_pos must be one of: left, right. Got "%s" instead.'%(str(text_pos)))
+        txt_pos = {'left': 0.05, 'right': 0.95,
+                   'top': 0.9, 'center': 0.5, 'bottom': 0.1}
+             
+        ax.text(txt_pos[text_pos], txt_pos[text_vpos], info_text, transform = ax.transAxes, fontsize=fontsize,
+                horizontalalignment=text_pos, verticalalignment=text_vpos)        
 
     def _pretty_print_info(self, mdata_key):
         if mdata_key in self.spec.mdata.data().keys():
             if mdata_key == 'trapTemp':
                 if self.spec.mdata.data(mdata_key) is not None:
-                    info_str = 'trap temp: {} K'.format(round(self.spec.mdata.data(mdata_key)))
+                    info_str = 'T$_{trap}$: ' + '{:.0f} K'.format(self.spec.mdata.data(mdata_key))
                 else:
-                    info_str = 'trap temp: not set' 
+                    info_str = 'T$_{trap}$: not set' 
             else:
                 info_str = str(self.spec.mdata.data(mdata_key))
         else:
@@ -419,15 +423,6 @@ class ViewPt(ViewPes):
                                         self.spec.mdata.data('flightLength')*1000*
                                         (1/sqrt(self.spec.mdata.data(fit_par)[-1]) -1)),
                 transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
-        
-        
-#        ax.text(pos_x, pos_y-0.05, 't$_{offset}$: %.3f ns'%(self.spec.mdata.data(fit_par)[-2]*1e9),
-#                transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
-#        ax.text(pos_x, pos_y-0.1, 'l$_{scale}$: %.3f'%(self.spec.mdata.data(fit_par)[-1]),
-#                transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
-#        ax.text(pos_x, pos_y-0.15, '$\Delta$l: %.1f mm'%(self.spec.mdata.data('flightLength')*1000*
-#                                                      (1/sqrt(self.spec.mdata.data(fit_par)[-1]) -1)),
-#                transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
                
     
     def plot_tof_fit(self, ax, fit_par, time_unit, color='blue', color_peaks='DimGray', single_peaks=False):        
@@ -525,7 +520,7 @@ class ViewWater(ViewPes):
             prefix = prefix_map[int(abs(log10(time_unit)/3))]
             return prefix
         
-        peak_width = round(self.spec._get_peak_width(), 3)
+        #peak_width = round(self.spec._get_peak_width(), 3)
         
         if plot_type == 'ebin' and 'tof' in self.spec.mdata.data('fitXdataKey'):
             peak_values = list(self.spec.ebin(self.spec.mdata.data(fit_par)[:-2:2]))
@@ -540,20 +535,23 @@ class ViewWater(ViewPes):
             raise ValueError("Can't add values for this plot combination.")
             
         if text_pos == 'left':
-            pos_x, pos_y = 0.05, 0.6
+            pos_x, pos_y = 0.05, 0.5
         elif text_pos == 'right':
-            pos_x, pos_y = 0.95, 0.6
+            pos_x, pos_y = 0.95, 0.5
         else:
             raise ValueError('text_pos must be one of: left, right. Got "%s" instead.'%(str(text_pos)))
-        peak_number = 1
-        for peak in peak_values:
-            ax.text(pos_x, pos_y, '%i. Peak: %.2f %s'%(peak_number, round(peak/time_unit, 3), peakPos_unit),
-                    transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
-            peak_number+=1
-            pos_y-=0.05
-        ax.text(pos_x, pos_y-0.025, 'fwhm: %.3f eV'%(peak_width),
-                transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
-
+#         peak_number = 1
+#         for peak in peak_values:
+#             ax.text(pos_x, pos_y, '%i. Peak: %.2f %s'%(peak_number, round(peak/time_unit, 3), peakPos_unit),
+#                     transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
+#             peak_number+=1
+#             pos_y-=0.05
+#         ax.text(pos_x, pos_y-0.025, 'fwhm: %.3f eV'%(peak_width),
+#                 transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
+        fit_values_str = '\n'.join(['{:.2f} {}'.format(p/time_unit, peakPos_unit) for p in peak_values])
+        fit_values_str += '\n\nfwhm: {:.3f} eV'.format(self.spec._get_peak_width())
+        ax.text(pos_x, pos_y, fit_values_str,transform = ax.transAxes, fontsize=fontsize, 
+                horizontalalignment=text_pos, verticalalignment='center')
    
    
     

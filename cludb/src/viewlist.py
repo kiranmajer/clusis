@@ -261,9 +261,9 @@ class ViewWaterFitList(ViewPesList):
         spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), text_pos='right', fontsize=10)
         spec.view._addtext_fitvalues(ax, plot_type='tof', fit_par=fit_par, time_unit=time_unit, text_pos='right', fontsize=6)
         if show_mdata is not None:
-            spec.view._addtext_info(ax, spec.view._pretty_print_info(show_mdata), fontsize=6)
+            spec.view._addtext_info(ax, spec.view._pretty_print_info(show_mdata), fontsize=6, text_vpos='top')
 
-    def _show_energy_fit(self, spec, ax, layout_y, plot_type, fit_par, xlim, xlim_scale, show_mdata):
+    def _show_energy_fit(self, spec, ax, layout_y, plot_type, fit_par, xlim, xlim_scale):
         'TODO: use method from View instead (after minimal modification).'
         plot_key_map = {'ekin': {'tof_intensity': [spec.view.plot_ekin, 'ekin', 'jIntensity'],
                                  'tof_intensitySub': [spec.view.plot_ekin, 'ekin', 'jIntensitySub'],
@@ -283,20 +283,21 @@ class ViewWaterFitList(ViewPesList):
                              fit_xdata_key=spec.view.spec.mdata.data('fitXdataKey'))       
         spec.view._addtext_file_id(ax, layout_y=layout_y)
         spec.view._addtext_statusmarker(ax, xdata_key=xdata_key, ydata_key=ydata_key, text_pos='left', layout_y=layout_y)
-        if show_mdata is not None:
-            spec.view._addtext_info(ax, spec.view._pretty_print_info(show_mdata), fontsize=6)
 
 
     def _show_ekin_fit(self, spec, ax, layout_y, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, show_mdata=None):
-        self._show_energy_fit(spec, ax, layout_y, plot_type='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata)
+        self._show_energy_fit(spec, ax, layout_y, plot_type='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
         spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), text_pos='right', fontsize=10) 
         spec.view._addtext_fitvalues(ax, plot_type='ekin', fit_par=fit_par, text_pos='right', fontsize=6)
-
+        if show_mdata is not None:
+            spec.view._addtext_info(ax, spec.view._pretty_print_info(show_mdata), fontsize=6, text_vpos='top')
 
     def _show_ebin_fit(self, spec, ax, layout_y, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, show_mdata=None):
-        self._show_energy_fit(spec, ax, layout_y, plot_type='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata)
+        self._show_energy_fit(spec, ax, layout_y, plot_type='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
         spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), fontsize=10) 
         spec.view._addtext_fitvalues(ax, plot_type='ebin', fit_par=fit_par, fontsize=6)
+        if show_mdata is not None:
+            spec.view._addtext_info(ax, spec.view._pretty_print_info(show_mdata), fontsize=6, text_pos='right', text_vpos='top')
 
 
     def show_tof_fit(self, layout=[7,3], fit_par='fitPar', time_unit=1e-6,
