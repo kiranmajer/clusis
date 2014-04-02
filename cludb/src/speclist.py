@@ -304,7 +304,7 @@ class SpecPeWaterFitList(SpecPeList):
               'lambda'.ljust(6+3),
               'recTime'.ljust(10+3),
               'cutoff'.ljust(6+3),
-              'chi2*3'.ljust(5+3),
+              'chi2*1e3'.ljust(7+3),
               'fwhm'.ljust(5+3),
               'Ebin of peaks [eV]')
         last_size = 0
@@ -318,7 +318,7 @@ class SpecPeWaterFitList(SpecPeList):
                 print('None'.ljust(6+3), end=' ')
             else:                                       
                 print(str(round(row[3]*1e6, 2)).ljust(6+3), end=' ')
-            print(str(round(row[4]*1e3, 3)).ljust(5+3),
+            print(str(round(row[4]*1e3, 3)).ljust(7+3),
                   str(row[6]).ljust(5+3),
                   format_fitpeaks(row[5]))
             last_size = row[0]

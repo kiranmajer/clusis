@@ -632,7 +632,7 @@ class SpecPeWater(SpecPe):
             fit_type = 'energy'
         if fit_par is None:
             fit_par = self.mdata.data('fitPar')
-            fit_par[-2:] = [0.2, 0.2]
+            #fit_par[-2:] = [0.2, 0.2]
         if cutoff is None:
             cutoff = self.mdata.data('fitCutoff')
         self.fit(fitPar0=fit_par,
