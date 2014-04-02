@@ -33,12 +33,18 @@ class View(object):
                 'right': 1.0}
         ypos = 1 + layout_y*0.01/3
         stats = []
+        if 'waveLength' in self.spec.mdata.data().keys():
+            human_wl = '{} nm'.format(round(self.spec.mdata.data('waveLength')*1e9))
+            stats.append(human_wl)
         if 'Gauged' in xdata_key:
             stats.append('gauged')
         if 'Sub' in ydata_key:
             stats.append('subtracted')
+        if 'background' in self.spec.mdata.data('systemTags'):
+            stats.append('background')
         if len(stats) > 0:
             stat_text = ', '.join(stats)
+            #print(self.spec.mdata.data('datFile'), 'Adding status marker(s): ', stat_text)
             ax.text(xpos[text_pos], ypos, stat_text, transform = ax.transAxes,
                     fontsize=fontsize, horizontalalignment=text_pos)
     
@@ -89,13 +95,27 @@ class View(object):
         
     def _addtext_info(self, ax, info_text, text_pos='left', fontsize=12):
         if text_pos == 'left':
-            pos_x, pos_y = 0.05, 0.4
+            pos_x, pos_y = 0.05, 0.5
         elif text_pos == 'right':
-            pos_x, pos_y = 0.95, 0.4
+            pos_x, pos_y = 0.95, 0.5
         else:
             raise ValueError('text_pos must be one of: left, right. Got "%s" instead.'%(str(text_pos)))        
         ax.text(pos_x, pos_y, info_text, transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)        
+
+    def _pretty_print_info(self, mdata_key):
+        if mdata_key in self.spec.mdata.data().keys():
+            if mdata_key == 'trapTemp':
+                if self.spec.mdata.data(mdata_key) is not None:
+                    info_str = 'trap temp: {} K'.format(round(self.spec.mdata.data(mdata_key)))
+                else:
+                    info_str = 'trap temp: not set' 
+            else:
+                info_str = str(self.spec.mdata.data(mdata_key))
+        else:
+            info_str = ''
         
+        
+        return info_str
     
     def _set_xlabel_time(self, ax, label, time_unit):
         if time_unit not in [1, 1e-3, 1e-6, 1e-9]:
@@ -533,9 +553,6 @@ class ViewWater(ViewPes):
             pos_y-=0.05
         ax.text(pos_x, pos_y-0.025, 'fwhm: %.3f eV'%(peak_width),
                 transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
-        
-        #textScale = ax.text(0.05, 0.55, 'Scale: %s'%(round(self.spec.mdata.data('fitPar')[-2], 2)),
-        #                        transform = self.spec.view.ax.transAxes, fontsize=12) 
 
    
    
