@@ -141,7 +141,7 @@ class Spec(object):
         apply the same gauge reference.
         
         In all other cases one needs to adjust both xdata and ydata sets to match a common 
-        time range before subtraction!  
+        time range before subtraction! This is NOT covert by this method. 
         '''
         bgSpec = load.load_pickle(self.cfg, bgFile)
         if not self.mdata.data('specTypeClass') == bgSpec.mdata.data('specTypeClass'):
@@ -403,7 +403,8 @@ class SpecPePt(SpecPe):
         ydata = self.ydata[ydata_key]
         constrain_par_map = {'lscale': -1, 'toff': -2,'Eoff': -3}
         if cutoff == None:
-            tof_max = xdata.max() + np.abs(Eoff)
+            'FIXME: are we mixing units here? Not a good idea.'
+            tof_max = xdata.max() + np.abs(Eoff) 
         elif 0 < cutoff < xdata.max() + np.abs(Eoff):
             tof_max =cutoff
         else:
@@ -458,6 +459,35 @@ class SpecPePt(SpecPe):
                                                   constrain_par, constrain)
         self.mdata.update(fitValues)
         self.mdata.add_tag('fitted', tagkey='systemTags')
+        
+    def _regauge(self, rel_y_min=None, cutoff=None):
+        if 'fitted' not in self.mdata.data('systemTags'):
+            raise ValueError('This spec was not gauged before.')
+        if rel_y_min is None: # find value for rel_y_min, if any
+            if self.mdata.data('fitCutoff') is None:
+                peak_ref_hights = [p[1] for p in self.cfg.pt_peakpar[self.mdata.data('waveLength')]]
+            else:
+                peak_ref_hights = [p[1] for p in self.cfg.pt_peakpar[self.mdata.data('waveLength')] if np.sqrt(self._pFactor/(self._hv-p[0]))<self.mdata.data('fitCutoff')]
+            if len(self.mdata.data('fitPeakPos')) < len(peak_ref_hights):
+                print('Some peaks were skipped during last fit.')
+                dn = len(peak_ref_hights) - len(self.mdata.data('fitPeakPos'))
+                peak_ref_hights.sort()
+                rel_y_min = peak_ref_hights[dn -1]
+                print('Setting rel_y_min to ', rel_y_min)
+            else:
+                rel_y_min = 0
+        if cutoff is None:
+            cutoff=self.mdata.data('fitCutoff')
+                
+        self.gauge(xdata_key=self.mdata.data('fitXdataKey'), ydata_key=self.mdata.data('fitYdataKey'),
+                   rel_y_min=rel_y_min,
+                   lscale=self.mdata.data('fitPar')[-1],
+                   Eoff=self.mdata.data('fitPar')[-3],
+                   toff=self.mdata.data('fitPar')[-2],
+                   constrain_par=next(iter(self.mdata.data('fitConstrains').keys())), 
+                   constrain=next(iter(self.mdata.data('fitConstrains').values())),
+                   cutoff=cutoff,
+                   peakpar_ref=None)
 
 
 
@@ -626,6 +656,8 @@ class SpecPeWater(SpecPe):
                     
                     
     def _refit(self, fit_par=None, cutoff=None):
+        if 'fitted' not in self.mdata.data('systemTags'):
+            raise ValueError('This spec was not fitted before.')
         if 'tof' in self.mdata.data('fitXdataKey'):
             fit_type = 'time'
         else:

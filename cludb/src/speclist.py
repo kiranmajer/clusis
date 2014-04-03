@@ -104,10 +104,20 @@ class SpecPeList(SpecList):
         self.view = viewlist.ViewPesList(self)
         
         
-    def gauge(self, gauge_ref):
+    def gauge(self, gauge_ref=None):
+        '''
+        Gauge all spectra in list with gauge_ref or
+        re-gauge them with their previous gauge_ref.
+        '''
         for s in self.dbanswer:
             cs = load_pickle(self.cfg, s['pickleFile'])
-            cs.gauge(gauge_ref)
+            if gauge_ref is not None:
+                cs.gauge(gauge_ref)
+            elif 'gaugeRef' in cs.mdata.data().keys():
+                cs.gauge(cs.mdata.data('gaugeRef'))
+            else:
+                print('Spec has no gauge reference yet; skipping.')
+            
             del cs
 
 
@@ -120,6 +130,10 @@ class SpecPePtList(SpecPeList):
                                      notInTags=notInTags, datFileName=datFileName,
                                      waveLength=waveLength)
         self.view = viewlist.ViewPesList(self)
+        
+    def gauge(self):
+        '''Overwrites inherited gauge method.'''
+        raise ValueError('gauge() is not applicable for a pt pes list.')
 
 
 
@@ -219,6 +233,14 @@ class SpecPePtFitList(SpecPeList):
         ax.legend(loc=2)
         fig.show()            
 
+
+    def regauge(self, rel_y_min=None, cutoff=None):
+        for s in self.dbanswer:
+            cs = load_pickle(self.cfg,s[str('pickleFile')])
+            cs._regauge(rel_y_min=rel_y_min, cutoff=cutoff)
+            cs.commit()
+            del cs
+            
 
 
 class SpecPeWaterList(SpecPeList):
