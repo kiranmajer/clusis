@@ -731,22 +731,37 @@ class ViewMs(View):
         View.__init__(self, spec)   
         
         
-    def plot_ms(self, ax, massKey):
-        if massKey == 'cluster':
-            ax.set_xlabel('Cluster Size (#%s)'%self.spec.mdata.data('clusterBaseUnit'))
-        elif massKey == 's_u':
-            ax.set_xlabel('Cluster Mass (simplified u)')
+    def _xlabel_str(self, mass_key):
+        if mass_key == 'cluster':
+            xlabel = 'Cluster Size (#%s)'%self.spec.mdata.data('clusterBaseUnit')
+        elif mass_key == 's_u':
+            xlabel = 'Cluster Mass (simplified u)'
         else:
-            ax.set_xlabel('Cluster Mass (u)')
-        ax.set_ylabel('Intensity (a.u.)')
-        ax.plot(self.spec.xdata[massKey], self.spec.ydata['intensity'], color='black')
-        ax.relim()
-        ax.autoscale()
+            xlabel = 'Cluster Mass (u)'
+            
+        return xlabel        
+
+    
+    def plot_ms(self, ax, mass_key, xlim, xlim_scale=None, color='black'):
+        ax.plot(self.spec.xdata[mass_key], self.spec.ydata['intensity'], color=color)
+        # set axes limits
+        xlim_auto = [self.spec.xdata[mass_key][0], self.spec.xdata[mass_key][-1]]
+        xlim_plot = self._set_xlimit(ax, xlim, xlim_auto)
+        if xlim_scale is None:
+            self._auto_ylim(ax, self.spec.xdata[mass_key], self.spec.ydata['intensity'],
+                            xlim_plot)
+        else:
+            self._auto_ylim(ax, self.spec.xdata[mass_key], self.spec.ydata['intensity'],
+                            xlim_scale)
+#         ax.relim()
+#         ax.autoscale()
         
         
-    def show_ms(self, massKey='cluster'):
+    def show_ms(self, mass_key='cluster', xlim=['auto', 'auto'], xlim_scale=None, color='black'):
         self._single_fig_output()
-        self.plot_ms(ax=self.ax, massKey=massKey)
+        self.plot_ms(ax=self.ax, mass_key=mass_key, xlim=xlim, xlim_scale=xlim_scale, color=color)
+        self.ax.set_xlabel(self._xlabel_str(mass_key))
+        self.ax.set_ylabel('Intensity (a.u.)')
         self._addtext_file_id(self.ax)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(ms=True))
         self.fig.show()

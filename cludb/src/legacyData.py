@@ -64,12 +64,14 @@ class LegacyData(object):
             if self.metadata['specType'] in ['ms']:
                 print('Parsing ms datfile name ...')
                 self.parse_datfile_name()
-                print('Fetching clusterBaseUnit mass for {} ...'.format(self.metadata['clusterBaseUnit']))
-                self.metadata['clusterBaseUnitMass'] = Atoms(self.metadata['clusterBaseUnit']).get_masses().sum()
+                
         print('Evaluating element name: ', self.metadata['clusterBaseUnit'])
         cbu = self.eval_element_name(self.metadata['clusterBaseUnit'], chemical_symbols)
         self.metadata['clusterBaseUnit'] = cbu
         print('Element name changed to: ', self.metadata['clusterBaseUnit'])
+        if self.metadata['specType'] in ['ms']:
+            print('Fetching clusterBaseUnit mass for {} ...'.format(self.metadata['clusterBaseUnit']))
+            self.metadata['clusterBaseUnitMass'] = Atoms(self.metadata['clusterBaseUnit']).get_masses().sum()
         print('Setting specTypeClass ...')
         self.set_spectype_class()
         print('... {}'.format(self.metadata['specTypeClass']))

@@ -309,15 +309,16 @@ class Db(object):
                 
             def print_head_ms():
                 print('Idx'.rjust(6),
+                      'element'.ljust(7+3),
                       'recTime'.ljust(12),
-                      'datFile'.ljust(16),
+                      'datFile'.ljust(28+3),
                       'tags')
                 
             def print_data_ms(row):
                 print(('%s  '%idx).rjust(6),
                       row['clusterBaseUnit'].ljust(7+3),    
                       format_RecTime(row['recTime']).ljust(12),
-                      format_DatFile(row['datFile']).ljust(16),
+                      format_DatFile(row['datFile']).ljust(28+3),
                       end=" "
                       )            
                 

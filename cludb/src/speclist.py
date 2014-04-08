@@ -512,6 +512,27 @@ class SpecPeWaterFitList(SpecPeList):
             
 
 
+
+
+class SpecMList(SpecList):
+    def __init__(self, cfg, clusterBaseUnit=None, clusterBaseUnitNumber=None,
+                 clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
+                 inTags=None, notInTags=None, datFileName=None, trapTemp=None,
+                 trapTempRange=None):
+        self.cfg = cfg
+        self.spec_type = 'ms'
+        with Db('casi', self.cfg) as db:
+            self.dbanswer = db.query(self.spec_type, clusterBaseUnit=clusterBaseUnit,
+                                     clusterBaseUnitNumber=clusterBaseUnitNumber,
+                                     clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
+                                     recTime=recTime, recTimeRange=recTimeRange, inTags=inTags,
+                                     notInTags=notInTags, datFileName=datFileName,
+                                     trapTemp=trapTemp,
+                                     trapTempRange=trapTempRange)
+        self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
+        self.view = viewlist.ViewMsList(self)
+
+
 # class Batch(object):
 #     def __init__(self, cfg, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None,
 #                  clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
