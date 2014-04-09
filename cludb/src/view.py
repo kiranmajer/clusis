@@ -426,11 +426,27 @@ class ViewPt(ViewPes):
                
     
     def plot_tof_fit(self, ax, fit_par, time_unit, color='blue', color_peaks='DimGray', single_peaks=False):        
-        ax.plot(self.spec.xdata['tof']/time_unit,
-                self.spec._multi_gauss_trans(self.spec.xdata['tof'],
-                                             self.spec.mdata.data('fitPeakPos'),
-                                             self.spec.mdata.data(fit_par)),
-                color=color) 
+        if self.spec.mdata.data('fitCutoff') is None:
+            ax.plot(self.spec.xdata['tof']/time_unit,
+                    self.spec._multi_gauss_trans(self.spec.xdata['tof'],
+                                                 self.spec.mdata.data('fitPeakPos'),
+                                                 self.spec.mdata.data(fit_par)),
+                    color=color)
+            cutoff_idx = len(self.spec.xdata['tof'])
+        else:
+            cutoff_idx = (abs(self.spec.xdata['tof'] - self.spec.mdata.data('fitCutoff'))).argmin()
+            
+            ax.plot(self.spec.xdata['tof'][:cutoff_idx]/time_unit,
+                    self.spec._multi_gauss_trans(self.spec.xdata['tof'][:cutoff_idx],
+                                                 self.spec.mdata.data('fitPeakPos'),
+                                                 self.spec.mdata.data(fit_par)),
+                    color=color)
+            ax.plot(self.spec.xdata['tof'][cutoff_idx:]/time_unit,
+                    self.spec._multi_gauss_trans(self.spec.xdata['tof'][cutoff_idx:],
+                                                 self.spec.mdata.data('fitPeakPos'),
+                                                 self.spec.mdata.data(fit_par)),
+                    color=color, ls='--')
+         
         # plot single peaks, if there are more than one
         if single_peaks and len(self.spec.mdata.data(fit_par)) > 4:        
             plist = list(self.spec.mdata.data(fit_par))
@@ -442,20 +458,39 @@ class ViewPt(ViewPes):
                 sigma = plist.pop()
                 A = plist.pop()
                 m = xlist.pop()
-                ax.plot(self.spec.xdata['tof']/time_unit,
-                        self.spec._multi_gauss_trans(self.spec.xdata['tof'],
+                
+                ax.plot(self.spec.xdata['tof'][:cutoff_idx]/time_unit,
+                        self.spec._multi_gauss_trans(self.spec.xdata['tof'][:cutoff_idx],
                                                      [m],
                                                      [A, sigma, Eoff, toff, lscale]),
                         color=color_peaks)
     
                
     def plot_energy_fit(self, ax, fit_par, xdata_key, color='blue'):
-        ax.plot(self.spec.xdata[xdata_key],
-                self.spec.jtrans(self.spec._multi_gauss_trans(self.spec.xdata['tof'],
-                                                              self.spec.mdata.data('fitPeakPos'),
-                                                              self.spec.mdata.data(fit_par)),
-                                 self.spec.xdata['tof']),
-                color=color) 
+        if self.spec.mdata.data('fitCutoff') is None:
+            ax.plot(self.spec.xdata[xdata_key],
+                    self.spec.jtrans(self.spec._multi_gauss_trans(self.spec.xdata['tof'],
+                                                                  self.spec.mdata.data('fitPeakPos'),
+                                                                  self.spec.mdata.data(fit_par)),
+                                     self.spec.xdata['tof']),
+                    color=color)
+        else:
+            cutoff_idx = (abs(self.spec.xdata['tof'] - self.spec.mdata.data('fitCutoff'))).argmin()
+            ax.plot(self.spec.xdata[xdata_key][:cutoff_idx],
+                    self.spec.jtrans(self.spec._multi_gauss_trans(self.spec.xdata['tof'][:cutoff_idx],
+                                                                  self.spec.mdata.data('fitPeakPos'),
+                                                                  self.spec.mdata.data(fit_par)),
+                                     self.spec.xdata['tof'][:cutoff_idx]),
+                    color=color)
+            ax.plot(self.spec.xdata[xdata_key][cutoff_idx:],
+                    self.spec.jtrans(self.spec._multi_gauss_trans(self.spec.xdata['tof'][cutoff_idx:],
+                                                                  self.spec.mdata.data('fitPeakPos'),
+                                                                  self.spec.mdata.data(fit_par)),
+                                     self.spec.xdata['tof'][cutoff_idx:]),
+                    color=color, ls='--')            
+            
+            
+               
 
     
     def show_tof_fit(self, fit_par='fitPar', time_unit=1e-6, time_label='Flight Time', xlim=[0, 'auto'], xlim_scale=None, single_peaks=True):
@@ -556,10 +591,19 @@ class ViewWater(ViewPes):
    
     
     def plot_tof_fit(self, ax, xdata_key, ydata_key, fit_par, time_unit, color='blue', color_peaks='DimGray'):
-        xdata = self.spec.xdata[xdata_key]/time_unit
-        ax.plot(xdata,
-                self.spec.multi_gl_trans(self.spec.xdata[xdata_key], self.spec.mdata.data(fit_par)),
-                color=color)
+        if self.spec.mdata.data('fitCutoff') is None:
+            ax.plot(self.spec.xdata[xdata_key]/time_unit,
+                    self.spec.multi_gl_trans(self.spec.xdata[xdata_key], self.spec.mdata.data(fit_par)),
+                    color=color)
+            cutoff_idx = len(self.spec.xdata[xdata_key])
+        else:
+            cutoff_idx = (abs(self.spec.xdata[xdata_key] - self.spec.mdata.data('fitCutoff'))).argmin()            
+            ax.plot(self.spec.xdata[xdata_key][:cutoff_idx]/time_unit,
+                    self.spec.multi_gl_trans(self.spec.xdata[xdata_key][:cutoff_idx], self.spec.mdata.data(fit_par)),
+                    color=color)
+            ax.plot(self.spec.xdata[xdata_key][cutoff_idx:]/time_unit,
+                    self.spec.multi_gl_trans(self.spec.xdata[xdata_key][cutoff_idx:], self.spec.mdata.data(fit_par)),
+                    color=color, ls='--')
         ax.relim()
         # plot single peaks, if there are more than one
         if len(self.spec.mdata.data(fit_par)) > 4:        
@@ -569,17 +613,41 @@ class ViewWater(ViewPes):
             while len(plist) >= 2:
                 A = plist.pop()
                 xmax = plist.pop()
-                ax.plot(xdata,
-                        self.spec.multi_gl_trans(self.spec.xdata[xdata_key], [xmax,A,sg,sl]),
-                        color=color_peaks)     
-    
+                if self.spec.mdata.data('fitCutoff') is None:
+                    ax.plot(self.spec.xdata[xdata_key]/time_unit,
+                            self.spec.multi_gl_trans(self.spec.xdata[xdata_key], [xmax,A,sg,sl]),
+                            color=color_peaks)
+                else:
+                    ax.plot(self.spec.xdata[xdata_key][:cutoff_idx]/time_unit,
+                            self.spec.multi_gl_trans(self.spec.xdata[xdata_key][:cutoff_idx], [xmax,A,sg,sl]),
+                            color=color_peaks) 
+                    ax.plot(self.spec.xdata[xdata_key][cutoff_idx:]/time_unit,
+                            self.spec.multi_gl_trans(self.spec.xdata[xdata_key][cutoff_idx:], [xmax,A,sg,sl]),
+                            color=color_peaks, ls='--')
+                    
+                    
     
     def plot_energy_fit(self, ax, fit_par, xdata_key, fit_xdata_key, color='blue', color_peaks='DimGray'):
-        ax.plot(self.spec.xdata[xdata_key],
-                self.spec.jtrans(self.spec.multi_gl_trans(self.spec.xdata[fit_xdata_key],
-                                                              self.spec.mdata.data(fit_par)),
-                                 self.spec.xdata[fit_xdata_key]),
-                color=color)
+        if self.spec.mdata.data('fitCutoff') is None:
+            ax.plot(self.spec.xdata[xdata_key],
+                    self.spec.jtrans(self.spec.multi_gl_trans(self.spec.xdata[fit_xdata_key],
+                                                                  self.spec.mdata.data(fit_par)),
+                                     self.spec.xdata[fit_xdata_key]),
+                    color=color)
+            cutoff_idx = len(self.spec.xdata[xdata_key])
+        else:
+            cutoff_idx = (abs(self.spec.xdata[fit_xdata_key] - self.spec.mdata.data('fitCutoff'))).argmin()
+            ax.plot(self.spec.xdata[xdata_key][:cutoff_idx],
+                    self.spec.jtrans(self.spec.multi_gl_trans(self.spec.xdata[fit_xdata_key][:cutoff_idx],
+                                                                  self.spec.mdata.data(fit_par)),
+                                     self.spec.xdata[fit_xdata_key][:cutoff_idx]),
+                    color=color)
+            ax.plot(self.spec.xdata[xdata_key][cutoff_idx:],
+                    self.spec.jtrans(self.spec.multi_gl_trans(self.spec.xdata[fit_xdata_key][cutoff_idx:],
+                                                                  self.spec.mdata.data(fit_par)),
+                                     self.spec.xdata[fit_xdata_key][cutoff_idx:]),
+                    color=color, ls='--')
+                    
         ax.relim()
         # plot single peaks, if there are more than one
         if len(self.spec.mdata.data(fit_par)) > 4:
@@ -589,11 +657,23 @@ class ViewWater(ViewPes):
             while len(plist) >= 2:
                 A = plist.pop()
                 xmax = plist.pop()
-                ax.plot(self.spec.xdata[xdata_key],
-                        self.spec.jtrans(self.spec.multi_gl_trans(self.spec.xdata[fit_xdata_key],
-                                                            [xmax,A,sg,sl]),
-                                         self.spec.xdata[fit_xdata_key]),
-                        color=color_peaks)    
+                if self.spec.mdata.data('fitCutoff') is None:
+                    ax.plot(self.spec.xdata[xdata_key],
+                            self.spec.jtrans(self.spec.multi_gl_trans(self.spec.xdata[fit_xdata_key],
+                                                                [xmax,A,sg,sl]),
+                                             self.spec.xdata[fit_xdata_key]),
+                            color=color_peaks)
+                else:
+                    ax.plot(self.spec.xdata[xdata_key][:cutoff_idx],
+                            self.spec.jtrans(self.spec.multi_gl_trans(self.spec.xdata[fit_xdata_key][:cutoff_idx],
+                                                                [xmax,A,sg,sl]),
+                                             self.spec.xdata[fit_xdata_key][:cutoff_idx]),
+                            color=color_peaks)
+                    ax.plot(self.spec.xdata[xdata_key][cutoff_idx:],
+                            self.spec.jtrans(self.spec.multi_gl_trans(self.spec.xdata[fit_xdata_key][cutoff_idx:],
+                                                                [xmax,A,sg,sl]),
+                                             self.spec.xdata[fit_xdata_key][cutoff_idx:]),
+                            color=color_peaks, ls='--')
     
     
 #    'TODO: implement gauging!'

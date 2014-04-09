@@ -63,10 +63,10 @@ class ViewList(object):
         subplt_idx = self._build_idx_list(layout)
         total_plots = len(self.speclist.pfile_list)
         plotcount = 0
-        figidx = 1
+        figidx = 101 # prevents reusing open plot windows
         while plotcount < total_plots:
             # create page
-            print('Plotting page', figidx)
+            print('Plotting page', figidx -100)
             fig = plt.figure(figidx, figsize=(0.21/constants.inch, 0.297/constants.inch))
             plt.subplots_adjust(left  = margin, right = 1-margin, bottom = margin+0.01, top = 1-margin,
                                 wspace = wspace, hspace = hspace)

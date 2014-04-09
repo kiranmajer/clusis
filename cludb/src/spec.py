@@ -467,6 +467,12 @@ class SpecPePt(SpecPe):
         self.mdata.add_tag('fitted', tagkey='systemTags')
         
     def _regauge(self, rel_y_min=None, cutoff=None):
+        '''
+        cutoff can be one of:
+        * cutoff time
+        * None: use previous value
+        * 'reset': remove cutoff
+        '''
         if 'fitted' not in self.mdata.data('systemTags'):
             raise ValueError('This spec was not gauged before.')
         if rel_y_min is None: # find value for rel_y_min, if any
@@ -484,6 +490,8 @@ class SpecPePt(SpecPe):
                 rel_y_min = 0
         if cutoff is None:
             cutoff=self.mdata.data('fitCutoff')
+        elif cutoff == 'reset':
+            cutoff = None
                 
         self.gauge(xdata_key=self.mdata.data('fitXdataKey'), ydata_key=self.mdata.data('fitYdataKey'),
                    rel_y_min=rel_y_min,
