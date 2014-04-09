@@ -181,7 +181,13 @@ class SpecPe(Spec):
     
     # basic methods    
     def _idx2time(self, idx, time_per_point, trigger_offset, lscale, Eoff, toff):
-        return 1/np.sqrt(lscale*(1/(idx*time_per_point - trigger_offset)**2 - Eoff/self._pFactor)) - toff
+        #return 1/np.sqrt(lscale*(1/(idx*time_per_point - trigger_offset)**2 - Eoff/self._pFactor)) - toff
+        ta = 1/np.sqrt(lscale*(1/(idx*time_per_point - trigger_offset)**2 - Eoff/self._pFactor)) - toff
+        #print('maximum in time array:', np.nanmax(ta))
+        hasNaNs = np.isnan(ta) # check for NaNs introduced by gauging with high Eoff
+        ta[hasNaNs] = np.nanmax(ta) # setting all NaNs to maximum valid time
+        return ta
+        
         #return 1/np.sqrt(1/(lscale*(idx*time_per_point - trigger_offset + toff)**2) - Eoff/self._pFactor)
     
     def ekin(self, t):  #, lscale, Eoff, toff):
