@@ -28,9 +28,9 @@ def smooth(x,window_len=11,window='hanning'):
     
     numpy.hanning, numpy.hamming, numpy.bartlett, numpy.blackman, numpy.convolve
     scipy.signal.lfilter
- 
-    TODO: the window parameter could be the window itself if an array instead of a string   
     """
+
+    'TODO: the window parameter could be the window itself if an array instead of a string'   
 
     if x.ndim != 1:
         raise ValueError("smooth only accepts 1 dimension arrays.")

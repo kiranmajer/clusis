@@ -160,7 +160,7 @@ class Db(object):
             return timesQuery
         
         def sqlformat_RecTimeRange(recTimeRange, key):
-            '''TODO: check if t0<t1'''
+            'TODO: check if t0<t1'
             if type(recTimeRange) is list and len(recTimeRange) == 2:
                 startTime = time.mktime(time.strptime(recTimeRange[0], '%d.%m.%Y'))
                 endTime = time.mktime(time.strptime(recTimeRange[1], '%d.%m.%Y')) + 86400

@@ -43,7 +43,7 @@ def archive(cfg, mdata):
     new_file = abs_path(cfg, mdata['datFile'])
     if not os.path.exists(os.path.dirname(new_file)):
         os.makedirs(os.path.dirname(new_file))
-    '''TODO: catch io exceptions'''
+    'TODO: catch io exceptions'
     if not os.path.exists(new_file):
         os.rename(old_file, new_file)
         movedFiles = [[new_file, old_file]]
@@ -267,7 +267,7 @@ def import_export_speclist(cfg, export_dir):
                     if os.path.isfile(old_file):
                         new_file = os.path.join(cfg.path['base'], cs.mdata.data(k))
                         if not os.path.isdir(os.path.dirname(new_file)):
-                            os.mkdir(os.path.dirname(new_file))
+                            os.makedirs(os.path.dirname(new_file))
                         os.rename(old_file, new_file)
                         moved.append([old_file, new_file])
                     else:

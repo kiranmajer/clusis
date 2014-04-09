@@ -2,7 +2,7 @@ import matplotlib as mpl
 import matplotlib.backends.backend_pdf as Pdf
 import matplotlib.pyplot as plt
 import scipy.constants as constants
-import load
+#import load
 import os
 import numpy as np
 
