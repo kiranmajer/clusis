@@ -658,18 +658,18 @@ class SpecPeWater(SpecPe):
         self.mdata.add_tag('fitted', tagkey='systemTags')
         
         
-    def _ask_for_refit(self, reason):
+    def _ask_for_refit(self, reason, refit=None, commit_after=False):
         if 'fitted' in self.mdata.data('systemTags'):
             print("Warning: {} will most likely make previous fit useless.".format(reason))
-            refit=''
+            #refit=''
             while refit not in ['y', 'n']:
                 q = 'Fit again using previous fit parameters as start parameter [y|n]?: '
                 refit = input(q)
-                if refit == 'y':
-                    self._refit()
+            if refit == 'y':
+                self._refit(commit_after=commit_after)
                     
                     
-    def _refit(self, fit_par=None, cutoff=None):
+    def _refit(self, fit_par=None, cutoff=None, commit_after=False):
         if 'fitted' not in self.mdata.data('systemTags'):
             raise ValueError('This spec was not fitted before.')
         if 'tof' in self.mdata.data('fitXdataKey'):
@@ -684,6 +684,8 @@ class SpecPeWater(SpecPe):
         self.fit(fitPar0=fit_par,
                  fit_type=fit_type,
                  cutoff=cutoff)
+        if commit_after:
+            self.commit()
         
     def _get_peak_width(self):
         #pw = np.sum(self.mdata.data('fitPar')[-2:])
@@ -694,9 +696,9 @@ class SpecPeWater(SpecPe):
         
         
         
-    def gauge(self, gaugeRef):
+    def gauge(self, gaugeRef, refit=None, commit_after=False):
         SpecPe.gauge(self, gaugeRef)
-        self._ask_for_refit('gauging')
+        self._ask_for_refit('gauging', refit=refit, commit_after=commit_after)
 
                     
                     

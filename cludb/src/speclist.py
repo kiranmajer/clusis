@@ -510,6 +510,25 @@ class SpecPeWaterFitList(SpecPeList):
             cs.commit()
             del cs
             
+    def gauge(self, gauge_ref=None, refit='y', commit_after=True):
+        '''
+        Gauge all spectra in list with gauge_ref or
+        re-gauge them with their previous gauge_ref.
+        refit:  None - ask if you want to refit
+                'y'  - do all refits
+                'n'  - skip refittting
+        '''
+        #SpecPeList.gauge(gauge_ref=gauge_ref, refit=refit)
+        for s in self.dbanswer:
+            cs = load_pickle(self.cfg, s['pickleFile'])
+            if gauge_ref is not None:
+                cs.gauge(gauge_ref, refit=refit, commit_after=commit_after)
+            elif 'gaugeRef' in cs.mdata.data().keys():
+                cs.gauge(cs.mdata.data('gaugeRef'), refit=refit, commit_after=commit_after)
+            else:
+                print('Spec has no gauge reference yet; skipping.')
+            
+            del cs    
 
 
 
