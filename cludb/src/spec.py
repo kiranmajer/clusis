@@ -422,7 +422,7 @@ class SpecPePt(SpecPe):
                      'fitConstrains': {constrain_par: constrain},
                      'fitCutoff': cutoff}
         xcenter = peakParRef[0][0]
-        yscale = self.__get_y_scale(self.xdata['ebin'], self.ydata['jIntensity'], xcenter, 1) # better use actual intensity values
+        yscale = self.__get_y_scale(self.xdata['ebin'], self.ydata['jIntensity'], xcenter, .6) # better use actual intensity values
         fitValues['fitPar0'] = self.__fit_par0_trans(peakPar, yscale, Eoff, toff, lscale)
         try:
             p, covar, info, mess, ierr = leastsq(self.__err_multi_gauss_trans, fitValues['fitPar0'], 
@@ -502,6 +502,15 @@ class SpecPePt(SpecPe):
                    constrain=next(iter(self.mdata.data('fitConstrains').values())),
                    cutoff=cutoff,
                    peakpar_ref=None)
+
+
+
+class SpecPeIr(SpecPePt):
+    def __init__(self, mdata, xdata, ydata, cfg):
+        SpecPePt.__init__(self, mdata, xdata, ydata, cfg)
+        self._update_mdata_reference('specPePt')
+        self.view = view.ViewPt(self)
+
 
 
 

@@ -184,6 +184,7 @@ def load_pickle(cfg, pickleFile):
                  'specMs': SpecMs,
                  'specPe': SpecPe,
                  'specPePt': SpecPePt,
+                 'specPeIr': SpecPeIr,
                  'specPeWater': SpecPeWater,
                  'specPf': SpecPf}
     with open(pickleFile, 'rb') as f:

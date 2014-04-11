@@ -89,7 +89,7 @@ class Cfg():
                                    'recTime': [float, True],
                                    'sha1': [str, True],
                                    'specType': [['ms', 'pes', 'pfs', 'generic'], True],
-                                   'specTypeClass': [['spec', 'specMs', 'specPe', 'specPePt', 'specPeWater', 'specPf'], True],
+                                   'specTypeClass': [['spec', 'specMs', 'specPe', 'specPePt', 'specPeIr', 'specPeWater', 'specPf'], True],
                                    'sweeps': [int, False],
                                    'systemTags': [list, True],
                                    'tags': [list, True], # combined tags of systemTags and userTags (for db)
@@ -312,6 +312,22 @@ class Cfg():
                                         (6.30095, 2.20, 0.001)
                                         ]
                                }
+        
+        
+        self.ir_peakpar = {308e-9: [(1.56436, 1, 0.03),
+                                    (1.915853, 4.5, 0.03),
+                                    (2.281561, 0.6, 0.02),
+                                    (2.348425, 2.9, 0.02),
+                                    (2.445467, 1.04, 0.02),
+                                    (2.789019, 0.28, 0.01),
+                                    #(3.170162, 0.5, 0.01),
+                                    (3.187053, 7.1, 0.01),
+                                    (3.292675, 1.5, 0.01),
+                                    (3.560917, 1.0, 0.01),
+                                    (3.768705, 2.1, 0.005),
+                                    (3.993613, 2.5, 0.004)
+                                    ]
+                           }
         
         
         self.pt_level_nist = [2.12800, 2.22420, 2.23013, 2.88926, 2.94227, 3.38232,
