@@ -441,7 +441,7 @@ class SpecPePt(SpecPe):
        
 
     def gauge(self, xdata_key=None, ydata_key=None, rel_y_min=0, lscale=1, Eoff=0, toff=42e-9,
-              constrain_par='toff', constrain=[35e-9, 65e-9], cutoff=None, peakpar_ref=None):
+              constrain_par='toff', constrain=[30e-9, 70e-9], cutoff=None, peakpar_ref=None):
         'TODO: data_key parameters usage is not foolproof'
         '''
         Fits a multiple gauss to the pes in time domain.
