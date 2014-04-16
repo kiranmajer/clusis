@@ -440,7 +440,7 @@ class SpecPePt(SpecPe):
             return fitValues
        
 
-    def gauge(self, xdata_key=None, ydata_key=None, rel_y_min=0, lscale=1, Eoff=0, toff=42e-9,
+    def gauge(self, xdata_key=None, ydata_key=None, rel_y_min=0, lscale=1.007, Eoff=0, toff=42e-9,
               constrain_par='toff', constrain=[30e-9, 70e-9], cutoff=None, peakpar_ref=None):
         'TODO: data_key parameters usage is not foolproof'
         '''
@@ -478,9 +478,22 @@ class SpecPePt(SpecPe):
         if rel_y_min is None: # find value for rel_y_min, if any
             if self.mdata.data('fitCutoff') is None:
                 peak_ref_hights = [p[1] for p in self.cfg.pt_peakpar[self.mdata.data('waveLength')]]
-            else:
-                peak_ref_hights = [p[1] for p in self.cfg.pt_peakpar[self.mdata.data('waveLength')] if np.sqrt(self._pFactor/(self._hv-p[0]))<self.mdata.data('fitCutoff')]
+                'FIXME: are we mixing units here? Not a good idea.'
+                xdata = self.xdata[self.mdata.data('fitXdataKey')]
+                tof_max = xdata.max() + np.abs(self.mdata.data('fitPar')[-3])
+        if cutoff == None:
+ 
+        elif 0 < cutoff < xdata.max() + np.abs(Eoff):
+            tof_max =cutoff
+        else:
+            raise ValueError('cutoff must be between 0 and %.2f. Got %.1f instead.'%(xdata.max(), cutoff))
+        peakPar = [p for p in peakParRef if np.sqrt(self._pFactor/(self._hv-p[0]))<tof_max and p[1]>rel_y_min]
+
+            
+                        
+            peak_ref_hights = [p[1] for p in self.cfg.pt_peakpar[self.mdata.data('waveLength')] if np.sqrt(self._pFactor/(self._hv-p[0]))<self.mdata.data('fitCutoff')]
             if len(self.mdata.data('fitPeakPos')) < len(peak_ref_hights):
+                print('Previously fitted peaks: {}, number of peaks in peak ref: {}'.format(len(self.mdata.data('fitPeakPos')), len(peak_ref_hights)))
                 print('Some peaks were skipped during last fit.')
                 dn = len(peak_ref_hights) - len(self.mdata.data('fitPeakPos'))
                 peak_ref_hights.sort()
