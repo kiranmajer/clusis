@@ -409,9 +409,9 @@ class SpecPePt(SpecPe):
         ydata = self.ydata[ydata_key]
         constrain_par_map = {'lscale': -1, 'toff': -2,'Eoff': -3}
         if cutoff == None:
-            'FIXME: are we mixing units here? Not a good idea.'
-            tof_max = xdata.max() + np.abs(Eoff) 
-        elif 0 < cutoff < xdata.max() + np.abs(Eoff):
+            'TODO: How do we handle peaks near the border, when tof is quite off?'
+            tof_max = xdata.max() 
+        elif 0 < cutoff < xdata.max():
             tof_max =cutoff
         else:
             raise ValueError('cutoff must be between 0 and %.2f. Got %.1f instead.'%(xdata.max(), cutoff))
@@ -475,23 +475,14 @@ class SpecPePt(SpecPe):
         '''
         if 'fitted' not in self.mdata.data('systemTags'):
             raise ValueError('This spec was not gauged before.')
-        if rel_y_min is None: # find value for rel_y_min, if any
+        if rel_y_min is None: # find value of previously used rel_y_min, if any
             if self.mdata.data('fitCutoff') is None:
-                peak_ref_hights = [p[1] for p in self.cfg.pt_peakpar[self.mdata.data('waveLength')]]
-                'FIXME: are we mixing units here? Not a good idea.'
+                'TODO: How do we handle peaks near the border, when tof is quite off?'
                 xdata = self.xdata[self.mdata.data('fitXdataKey')]
-                tof_max = xdata.max() + np.abs(self.mdata.data('fitPar')[-3])
-        if cutoff == None:
- 
-        elif 0 < cutoff < xdata.max() + np.abs(Eoff):
-            tof_max =cutoff
-        else:
-            raise ValueError('cutoff must be between 0 and %.2f. Got %.1f instead.'%(xdata.max(), cutoff))
-        peakPar = [p for p in peakParRef if np.sqrt(self._pFactor/(self._hv-p[0]))<tof_max and p[1]>rel_y_min]
-
-            
-                        
-            peak_ref_hights = [p[1] for p in self.cfg.pt_peakpar[self.mdata.data('waveLength')] if np.sqrt(self._pFactor/(self._hv-p[0]))<self.mdata.data('fitCutoff')]
+                tof_max = xdata.max()
+            else:
+                tof_max = self.mdata.data('fitCutoff')
+            peak_ref_hights = [p[1] for p in self.cfg.pt_peakpar[self.mdata.data('waveLength')] if np.sqrt(self._pFactor/(self._hv-p[0]))<tof_max]
             if len(self.mdata.data('fitPeakPos')) < len(peak_ref_hights):
                 print('Previously fitted peaks: {}, number of peaks in peak ref: {}'.format(len(self.mdata.data('fitPeakPos')), len(peak_ref_hights)))
                 print('Some peaks were skipped during last fit.')
@@ -501,6 +492,7 @@ class SpecPePt(SpecPe):
                 print('Setting rel_y_min to ', rel_y_min)
             else:
                 rel_y_min = 0
+                
         if cutoff is None:
             cutoff=self.mdata.data('fitCutoff')
         elif cutoff == 'reset':
