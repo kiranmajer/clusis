@@ -268,6 +268,8 @@ class SpecPe(Spec):
             self._calc_jacoby_intensity(new_key='jIntensityGaugedSub',
                                         intensity_key='intensitySub', timedata_key='tofGauged')
         self.commit()
+        gaugeSpec.mdata.add_tag('gauge reference')
+        gaugeSpec.commit()
         del gaugeSpec
         
     def subtract_bg(self, bgFile, isUpDown=True):
