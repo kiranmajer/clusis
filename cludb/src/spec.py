@@ -27,10 +27,10 @@ class Spec(object):
         self.cfg = cfg
         self.view = view.View(self)
         
-    def __del__(self):
-        print('Commiting ...')
-        self.commit()
-        print('before deleting spec object.')
+#     def __del__(self):
+#         print('Commiting ...')
+#         self.commit()
+#         print('before deleting spec object.')
         
     
     def _update_mdata_reference(self, specTypeClass):
@@ -175,9 +175,9 @@ class SpecPe(Spec):
         #print 'Assigning view.ViewPes'
         self.view = view.ViewPes(self)
         
-    def __del__(self):
-        Spec.__del__(self)
-        print('Deleting SpecPe-object')
+#     def __del__(self):
+#         Spec.__del__(self)
+#         print('Deleting SpecPe-object')
     
     # basic methods    
     def _idx2time(self, idx, time_per_point, trigger_offset, lscale, Eoff, toff):
@@ -527,9 +527,9 @@ class SpecPeWater(SpecPe):
         self._update_mdata_reference('specPeWater')
         self.view = view.ViewWater(self)
         
-    def __del__(self):
-        SpecPe.__del__(self)
-        print('Deleting SpecPeWater-object')
+#     def __del__(self):
+#         SpecPe.__del__(self)
+#         print('Deleting SpecPeWater-object')
 
 
     def __gl(self, x, xmax, A, sg, sl):
