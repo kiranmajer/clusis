@@ -191,11 +191,11 @@ class ViewPtFitList(ViewPesList):
 
 
     def _show_tof_fit(self, spec, ax, layout_y, fit_par='fitPar', time_unit=1e-6, xlim=['auto', 'auto'],
-                      xlim_scale=None, show_mdata=None):
+                      xlim_scale=None, show_mdata=None, single_peaks=False):
         xdata_key = 'tof'
         ydata_key = spec.mdata.data('fitYdataKey')
         self._show_tof(spec, ax, layout_y, xdata_key, ydata_key, time_unit, xlim, xlim_scale, show_mdata)
-        spec.view.plot_tof_fit(ax, fit_par=fit_par, time_unit=time_unit)
+        spec.view.plot_tof_fit(ax, fit_par=fit_par, time_unit=time_unit, single_peaks=single_peaks)
         spec.view._addtext_gauge_par(ax, fit_par=fit_par, text_pos='right', fontsize=6)
         
     def _show_energy_fit(self, spec, ax, layout_y, xdata_key, fit_par, xlim, xlim_scale, show_mdata):
@@ -226,10 +226,10 @@ class ViewPtFitList(ViewPesList):
                 
         
     def show_tof_fit(self, layout=[7,3], fit_par='fitPar', time_unit=1e-6,
-                     xlim=[0, 'auto'], xlim_scale=None, pdf=False, show_mdata=None, show_yticks=False):
+                     xlim=[0, 'auto'], xlim_scale=None, pdf=False, show_mdata=None, show_yticks=False, single_peaks=False):
         self._show(self._show_tof_fit, xlabel_str=self._format_time_label('Flight Time', time_unit),
                    layout=layout, pdf=pdf, fit_par=fit_par, time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale,
-                   show_mdata=show_mdata, show_yticks=show_yticks)
+                   show_mdata=show_mdata, show_yticks=show_yticks, single_peaks=single_peaks)
             
     def show_ekin_fit(self, layout=[7,3], fit_par='fitPar', xlim=['auto', 'auto'],
                       xlim_scale=None, pdf=False, show_mdata=None):
