@@ -213,16 +213,21 @@ class Db(object):
             wavesQuery = ''
             'TODO: adapt for variable machine type.'
             refWaves = self.__cfg.wavelengths
-            print(refWaves)
+            #print(refWaves)
             if type(waveLength) is list:
                 waves.extend(waveLength)
             else:
                 waves.append(waveLength)
-            for i in waves:
-                if type(i) is float and i in refWaves:
-                    wavesQuery+='waveLength IS "%s" AND '%i
-                else:
+            for w in waves:
+                if w not in refWaves:
                     raise ValueError( 'waveLength must be one of: %s.'%', '.join([str(i) for i in refWaves]) )
+            if len(waves) > 1:
+                wavesQuery = '('
+                for i in waves[:-1]:
+                    wavesQuery+='waveLength IS "{}" OR '.format(i)
+                wavesQuery += 'waveLength IS "{}") AND '.format(waves[-1])
+            else:
+                wavesQuery = 'waveLength IS "{}" AND '.format(waves[0])
             return wavesQuery
         
         
