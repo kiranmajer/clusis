@@ -707,7 +707,7 @@ class SpecPeWater(SpecPe):
         #pw = np.sum(self.mdata.data('fitPar')[-2:])
         #         ________ 
         # fwhm = V 2*ln(2)*s_g + s_l 
-        fwhm = np.sqrt(2*np.log(2))*self.mdata.data('fitPar')[-2] + self.mdata.data('fitPar')[-1]
+        fwhm = np.sqrt(2*np.log(2))*np.abs(self.mdata.data('fitPar')[-2]) + np.abs(self.mdata.data('fitPar')[-1])
         return fwhm    
         
         

@@ -255,6 +255,22 @@ class SpecPeWaterList(SpecPeList):
                             waveLength=waveLength, trapTemp=trapTemp,
                             trapTempRange=trapTempRange)
         self.view = viewlist.ViewPesList(self)
+        
+    def gauge(self, gauge_ref=None, refit=None):
+        '''
+        Gauge all spectra in list with gauge_ref or
+        re-gauge them with their previous gauge_ref.
+        '''
+        for s in self.dbanswer:
+            cs = load_pickle(self.cfg, s['pickleFile'])
+            if gauge_ref is not None:
+                cs.gauge(gauge_ref, refit=refit)
+            elif 'gaugeRef' in cs.mdata.data().keys():
+                cs.gauge(cs.mdata.data('gaugeRef'), refit=refit)
+            else:
+                print('Spec has no gauge reference yet; skipping.')
+            
+            del cs
 
 
 class SpecPeWaterFitList(SpecPeList):
