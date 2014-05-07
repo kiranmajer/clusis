@@ -327,7 +327,7 @@ class SpecPeWaterFitList(SpecPeList):
                     if key == 'fitPar':
                         mdataList[rowCount].append([round(float(cs.ebin(p)),2) for p in cs.mdata.data(key)[:-2:2]])
                         #mdataList[rowCount].append(round(np.sum(cs.mdata.data(key)[-2:]), 3))
-                        mdataList[rowCount].append(round(cs._get_peak_width(), 3))
+                        mdataList[rowCount].append(round(cs._get_peak_width('fitPar'), 3))
                     elif key == 'fitInfo':
                         mdataList[rowCount].append(cs.mdata.data(key)[0])
                     else:
@@ -478,7 +478,7 @@ class SpecPeWaterFitList(SpecPeList):
             cs = load_pickle(self.cfg,s[str('pickleFile')])
             size = cs.mdata.data('clusterBaseUnitNumber')
             #width = np.sum(cs.mdata.data('fitPar')[-2:])
-            width = cs._get_peak_width()
+            width = cs._get_peak_width('fitPar')
             peak_n = (len(cs.mdata.data('fitPar')) -2)/2
             if 0.1 < width < 1.5:
                 widths[peak_n].append([size, width])

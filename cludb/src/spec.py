@@ -578,7 +578,10 @@ class SpecPeWater(SpecPe):
         return self.multi_gl(x, par)-y
     
     def __err_multi_gl_trans(self, par, x, y):
-        return self.multi_gl_trans(x, par)-y    
+        if np.all(par[1:-2:2] > 0):
+            return self.multi_gl_trans(x, par)-y
+        else:
+            return 1e6    
     
     
     def __fit_gl(self, xdata_key, ydata_key, fitPar0, cutoff):
@@ -703,11 +706,11 @@ class SpecPeWater(SpecPe):
         if commit_after:
             self.commit()
         
-    def _get_peak_width(self):
+    def _get_peak_width(self, fit_par):
         #pw = np.sum(self.mdata.data('fitPar')[-2:])
         #         ________ 
         # fwhm = V 2*ln(2)*s_g + s_l 
-        fwhm = np.sqrt(2*np.log(2))*np.abs(self.mdata.data('fitPar')[-2]) + np.abs(self.mdata.data('fitPar')[-1])
+        fwhm = np.sqrt(2*np.log(2))*np.abs(self.mdata.data(fit_par)[-2]) + np.abs(self.mdata.data('fitPar')[-1])
         return fwhm    
         
         
