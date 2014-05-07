@@ -215,7 +215,7 @@ class SpecPePtFitList(SpecPeList):
         ax.set_xlabel('tof ($\mu$s)')
         ax.set_ylabel('corrected tof ($\mu$s)')
         ax.grid()
-        fx=np.arange(0, max_tof, 1e-7)
+        fx=np.arange(1e-9, max_tof, 1e-7)
         def g_time(xdata, lscale, Eoff, toff, pFactor):
             return 1/np.sqrt(lscale*(1/(xdata)**2 - Eoff/pFactor)) - toff        
         
