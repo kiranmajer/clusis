@@ -271,6 +271,13 @@ class SpecPeWaterList(SpecPeList):
                 print('Spec has no gauge reference yet; skipping.')
             
             del cs
+        
+    def fit(self, fit_par, cutoff=None):
+        for s in self.dbanswer:
+            cs = load_pickle(self.cfg,s[str('pickleFile')])
+            cs.fit(fitPar0=fit_par, cutoff=cutoff)
+            cs.commit()
+            del cs
 
 
 class SpecPeWaterFitList(SpecPeList):
@@ -520,6 +527,7 @@ class SpecPeWaterFitList(SpecPeList):
         
         
     def refit(self, fit_par=None, cutoff=None):
+        '''TODO: inherit from fit'''
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
             cs._refit(fit_par=fit_par, cutoff=cutoff)
