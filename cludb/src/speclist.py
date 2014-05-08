@@ -530,8 +530,8 @@ class SpecPeWaterFitList(SpecPeList):
         '''TODO: inherit from fit'''
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
-            cs._refit(fit_par=fit_par, cutoff=cutoff)
-            cs.commit()
+            cs._refit(fit_par=fit_par, cutoff=cutoff, commit_after=True)
+            #cs.commit()
             del cs
             
     def gauge(self, gauge_ref=None, refit='y', commit_after=True):

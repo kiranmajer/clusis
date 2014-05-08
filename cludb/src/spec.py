@@ -700,6 +700,8 @@ class SpecPeWater(SpecPe):
             #fit_par[-2:] = [0.2, 0.2]
         if cutoff is None:
             cutoff = self.mdata.data('fitCutoff')
+        elif cutoff is 'reset':
+            cutoff = None
         self.fit(fitPar0=fit_par,
                  fit_type=fit_type,
                  cutoff=cutoff)
