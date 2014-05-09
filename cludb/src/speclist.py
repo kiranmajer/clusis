@@ -379,7 +379,7 @@ class SpecPeWaterFitList(SpecPeList):
         return comp_data
 
 
-    def compare_water_fits(self, plot_iso_borders=False, comp_data=None):
+    def compare_water_fits(self, plot_iso_borders=False, comp_data=None, cutoff=None):
         # methods to sort peak position to isomers
         linear_par = {'iso2': [[abs((2-1.62)/0.1), -2.2]], #, [abs((2-1.62)/0.1), -2.25]],
                       'iso1a': [[abs((3.26-2.69)/0.1), -3.26]], #, [abs((3.3-2.71)/0.1), 3.3]],  #[abs((4.275-3.3)/0.1), -4.275]],
@@ -412,7 +412,7 @@ class SpecPeWaterFitList(SpecPeList):
                     p_vib.append([size, p])
                     #print('p_vib:', p_vib)
                     
-        def plot_comp(plot_data, fit_par, comp_data=None):
+        def plot_comp(plot_data, fit_par, cutoff, comp_data=None):
             fig = plt.figure()
             # setup lower axis
             ax = host_subplot(111, axes_class=AA.Axes)
@@ -427,6 +427,11 @@ class SpecPeWaterFitList(SpecPeList):
             ax2.set_xlabel('number of water molecules')
             ax2.axis["right"].major_ticklabels.set_visible(False)
             ax2.grid(b=True)
+            # write fit values
+            ex_str = 'Extrapolations (from size {}):'.format(cutoff)
+            for par_set in fit_par:
+                ex_str += '\n{:.2f} eV'.format(par_set[1])
+            ax.text(0.01, -0.6, ex_str, verticalalignment='top')
             # plot data
             for peak_set in plot_data:
                 ax.plot(peak_set[2], peak_set[1], 's')
@@ -437,14 +442,21 @@ class SpecPeWaterFitList(SpecPeList):
                     ax.plot(peak_set[0], -1*peak_set[1], 'o', label=key)
                 ax.legend(loc=2)
             # plot fits
-            xdata_fit = np.arange(0, 1, 0.1)
+            c = 1
+            if cutoff is not None:
+                c = cutoff**(-1/3)            
             for par_set in fit_par:
                 lin_fit = np.poly1d(par_set)
-                ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')
+                ax.plot([0,c], lin_fit([0,c]), '-', color='grey')
+                ax.plot([c,1], lin_fit([c, 1]), '--', color='grey')
+#             else:
+#                 for par_set in fit_par:
+#                     lin_fit = np.poly1d(par_set)
+#                     ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')
             # plot borders for isomer classification
             if plot_iso_borders:
                 for par in linear_par.values():
-                    ax.plot(xdata_fit, par[0][0]*xdata_fit + par[0][1], '-', color='grey')
+                    ax.plot([0, 1], par[0][0]*np.array([0,1]) + par[0][1], ':', color='grey')
             fig.show()
                 
                 
@@ -467,7 +479,14 @@ class SpecPeWaterFitList(SpecPeList):
         for ps in plot_data:
             ps[1] = ps[1]*-1
         #print('plot_data:', plot_data)
-        fit_data = [ps for ps in plot_data if len(ps[0]) > 1 and np.abs(ps[0][0]-ps[0][-1]) > 20]
+        if cutoff is not None:
+            f_data = []
+            for peak_set in plot_data:
+                b = peak_set[0] >= cutoff
+                peak_set = np.array([peak_set[0][b],peak_set[1][b],peak_set[2][b]])
+                if len(peak_set) == 3:
+                    f_data.append(peak_set)
+        fit_data = [ps for ps in f_data if len(ps[0]) > 1 and np.abs(ps[0][0]-ps[0][-1]) > 20]
         #print('fit_data:', fit_data)
         
         # linear fit
@@ -476,7 +495,8 @@ class SpecPeWaterFitList(SpecPeList):
             fitpar = np.polyfit(peak_set[2], peak_set[1], 1)
             fit_par.append(fitpar)
             
-        plot_comp(plot_data, fit_par, comp_data=comp_data)
+        plot_comp(plot_data, fit_par, cutoff, comp_data=comp_data)
+        #return fit_par
 
 
     def compare_peak_widths(self):
