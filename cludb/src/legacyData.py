@@ -17,7 +17,8 @@ from filestorage import load_xml, load_pickle, load_json
 
 class LegacyData(object):
     
-    def __init__(self, fileToImport, cfg, spectype=None, commonMdata={}, machine='casi'):
+    def __init__(self, fileToImport, cfg, spectype=None, commonMdata={}, machine='casi',
+                 prefer_filename_mdata=False):
         self.spectype = spectype
         self.datfile_orig = os.path.abspath(fileToImport)
         self.metadata = {'datFileOrig': os.path.abspath(fileToImport),
@@ -44,7 +45,7 @@ class LegacyData(object):
         statedict = self.find_statefile()
         if statedict is None:
             print('No statefile, evaluating cfg file instead ...')
-            self.eval_cfgfile()
+            self.eval_cfgfile(prefer_filename_mdata)
         else:
             self.eval_statedict(statedict)
 #             if self.spectype not in ['generic']:
@@ -240,7 +241,7 @@ class LegacyData(object):
             raise ValueError('Found more than 1 cfg file.')
      
     
-    def parse_cfgfile(self, cfgfile):
+    def parse_cfgfile(self, cfgfile, prefer_filename_mdata):
         """Extracts all information of cfgfile and its filename.
         """
 #        cfg_data_map = ['ch1Tstart', 'ch1Tstop', 'ch2Tstart', 'ch2Tstop',
@@ -287,17 +288,21 @@ class LegacyData(object):
                     """Test if cluster size in file and file name differs"""
                     if self.metadata['clusterBaseUnitNumber'] != int(cfgfile_nameData['clusterBaseUnitNumber']):
                         self.metadata['clusterBaseUnitNumberFromFileName'] = int(cfgfile_nameData['clusterBaseUnitNumber'])
-                        self.metadata['userTags'].append('clusterBaseUnitNumber ambiguous')
+                        if self.metadata['clusterBaseUnitNumber'] == 0 or prefer_filename_mdata:
+                            self.metadata['userTags'].append('clusterBaseUnitNumber ambiguous ({})'.format(self.metadata['clusterBaseUnitNumber']))
+                            self.metadata['clusterBaseUnitNumber'] = self.metadata['clusterBaseUnitNumberFromFileName']
+                        else:
+                            self.metadata['userTags'].append('clusterBaseUnitNumber ambiguous ({})'.format(self.metadata['clusterBaseUnitNumberFromFileName']))
                 else:
                     raise ValueError('Unexpected file name: ' + cfgfile_name)
 
     
-    def eval_cfgfile(self):
+    def eval_cfgfile(self, prefer_filename_mdata):
         """Tries to find corresponding cfg files and adds unambiguous data to mdata
         """
         self.find_cfgfile()
         if 'cfgFileOrig' in self.metadata.keys():
-            self.parse_cfgfile(self.metadata['cfgFileOrig'])
+            self.parse_cfgfile(self.metadata['cfgFileOrig'], prefer_filename_mdata=prefer_filename_mdata)
 
 
     def eval_element_name(self, element, reference):

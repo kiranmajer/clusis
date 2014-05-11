@@ -86,7 +86,7 @@ def ls_recursive(rootdir, suffix='.dat'):
     return fileList
 
  
-def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}):
+def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filename_mdata=False):
     '''Build a list, so we can work with lists only'''
     datFileList = []
     if type(datFiles) is list:
@@ -111,7 +111,7 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}):
     for datFile in datFileList:
         print('Importing: '+datFile+' with ', commonMdata)
         try:
-            mi = LegacyData(datFile, cfg, spectype, commonMdata)
+            mi = LegacyData(datFile, cfg, spectype, commonMdata, prefer_filename_mdata=prefer_filename_mdata)
         except Exception as e:
             print('LegacyData creation failed:', e)
             failedImports.append([datFile, 'LegacyData creation failed: {}'.format(e)])
