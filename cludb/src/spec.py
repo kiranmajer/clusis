@@ -916,6 +916,13 @@ class SpecMs(Spec):
 #         self.calc_spec_data()        
 
     def gauge_new(self, dn_unit='cluster', view_unit='tof', p0=(5e9, 1.6e-7, 0), manual_offset=False):
+        '''
+        Usage:
+            * gauge_new()
+            * divide estimated offset by cluster mass (simplified): e.g. 1432/39
+            * round to full cluster number: e.g. round(1432/39)*39
+            * use as offset for gauge_new(manual_offset=True)
+        '''
         if dn_unit == 'cluster':
             dn_unit = self.mdata.data('clusterBaseUnitMass')
             #mass_key = 'ms'
@@ -961,7 +968,7 @@ class SpecMs(Spec):
             else:
                 m_baseunit = self.mdata.data('clusterBaseUnitMass')/round(self.mdata.data('clusterBaseUnitMass'))
                 self._calc_ms(mass_key=view_unit, time_key='tof', k=p0[0], m_baseunit=m_baseunit)
-            self.view.show_ms(massKey=view_unit)                
+            self.view.show_ms(mass_key=view_unit)                
             p1, dn1, p2, dn2, p3 = get_pos_and_dn()
             t1 = time_from_m(p1, p0[0], p0[1], m_baseunit)
             t2 = time_from_m(p2, p0[0], p0[1], m_baseunit)
@@ -1022,7 +1029,7 @@ class SpecMs(Spec):
             print('Fit parameter: ', p)            
                            
         m_array = np.array([offset, offset+dm1, offset+dm1+dm2])
-        print('Fitting with: ', t_array, m_array)
+        print('Fitting with: ', t_array, m_array, m_array/self.mdata.data('clusterBaseUnitMass'))
         p, covar, info, mess, ierr = leastsq(err2_mass, (p0[0], p0[1]), args=(t_array, m_array), full_output=True)
         print('Step 2 fit resulted in gauge parameter: ', p)
 
