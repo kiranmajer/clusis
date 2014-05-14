@@ -9,10 +9,21 @@ class View(object):
         #print '__init__: Initializing View object.'
         'TODO: allow multiple specs'
         self.spec = spec
+        self.xdata_key = None
+        self.ydata_key = None
+        self.timeunit = None
         
 
     def _single_fig_output(self):
-        if hasattr(self, 'fig'):        
+# this does not work (?)
+#         if hasattr(self, 'fig'):
+#             try:
+#                 print('Testing if plot window still exists ...')
+#                 self.fig.show()
+#             except Exception:
+#                 del self.fig
+                
+        if hasattr(self, 'fig'):      
             self.ax.lines = []
             self.ax.texts = []
         else:
@@ -219,6 +230,8 @@ class View(object):
 #            ydata_key = self._pref_ydata_key(xdata_key)
 #        elif ydata_key not in ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']:
 #            raise ValueError("ydata_key must be one of: 'intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'")
+        self.xdata_key = xdata_key
+        self.ydata_key = ydata_key
         # plot 
         ax.plot(self.spec.xdata[xdata_key], self.spec.ydata[ydata_key], color=color)
         # set axes limits
@@ -247,7 +260,10 @@ class View(object):
 #            ydata_key = self._pref_ydata_key(xdata_key)
 #        elif ydata_key not in ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']:
 #            raise ValueError("""ydata_key must be one of: 'intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'
-#            Got'{}' instead.""".format(ydata_key))  
+#            Got'{}' instead.""".format(ydata_key))
+        self.xdata_key = xdata_key
+        self.ydata_key = ydata_key
+        self.timeunit = time_unit
         # plot      
         ax.plot(self.spec.xdata[xdata_key]/time_unit, self.spec.ydata[ydata_key], color=color)
         #set axes limits
@@ -294,6 +310,13 @@ class View(object):
         self.fig.show()
         
         
+    def add_plot(self, xdata, ydata, color='blue'):
+        if not hasattr(self, 'fig'):
+            raise ValueError('No active plot. Create one first via show_XXX.')
+        self.ax.plot(xdata, ydata, color=color)
+        self.fig.show()
+        
+        
         
 class ViewPes(View):
     def __init__(self, spec):
@@ -312,6 +335,8 @@ class ViewPes(View):
 #            raise ValueError("ydata_key must be one of: 'jIntensity', 'jIntensitySub'")
 #        elif xdata_key in ['ekinGauged'] and ydata_key not in ['jIntensityGauged', 'jIntensityGaugedSub']:
 #            raise ValueError("ydata_key must be one of: 'jIntensityGauged', 'jIntensityGaugedSub'")
+        self.xdata_key = xdata_key
+        self.ydata_key = ydata_key
         # plot 
         ax.plot(self.spec.xdata[xdata_key], self.spec.ydata[ydata_key], color=color)
         #set axes limits  
@@ -336,6 +361,8 @@ class ViewPes(View):
 #            raise ValueError("ydata_key must be one of: 'jIntensity', 'jIntensitySub'")
 #        elif xdata_key in ['ebinGauged'] and ydata_key not in ['jIntensityGauged', 'jIntensityGaugedSub']:
 #            raise ValueError("{} invalid key. ydata_key must be one of: 'jIntensityGauged', 'jIntensityGaugedSub'".format(ydata_key))        
+        self.xdata_key = xdata_key
+        self.ydata_key = ydata_key
         # plot
         ax.plot(self.spec.xdata[xdata_key], self.spec.ydata[ydata_key], color=color)
         #set axes limits  
@@ -402,6 +429,15 @@ class ViewPes(View):
         gaugeSpec = load.load_pickle(self.spec.cfg, gaugeRef)
         gaugeSpec.view.show_ebin_fit()
         
+        
+    def add_spec(self, pfilename, xscale=1, yscale=1, xoffset=0, yoffset=0, color='blue'):
+        addspec = load.load_pickle(self.spec.cfg, pfilename)
+        time_unit = 1
+        if 'tof' in self.xdata_key:
+            time_unit = self.timeunit
+        xdata = addspec.xdata[self.xdata_key]/time_unit*xscale + xoffset
+        ydata = addspec.ydata[self.ydata_key]*yscale + yoffset
+        self.add_plot(xdata, ydata, color=color)
 
 
 class ViewPt(ViewPes):
