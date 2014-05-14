@@ -94,14 +94,16 @@ class View(object):
         return cluster_id_str
                 
     
-    def _addtext_cluster_id(self, ax, cluster_id, text_pos='left', fontsize=28):
+    def _addtext_cluster_id(self, ax, cluster_id, text_pos='left', fontsize=28, color='black', valign='bottom',
+                            voffset=0):
         if text_pos == 'left':
-            pos_x, pos_y = 0.05, 0.8
+            pos_x, pos_y = 0.05, 0.8 + voffset
         elif text_pos == 'right':
-            pos_x, pos_y = 0.95, 0.8
+            pos_x, pos_y = 0.95, 0.8 + voffset
         else:
             raise ValueError('text_pos must be one of: left, right. Got "%s" instead.'%(str(text_pos)))
-        ax.text(pos_x, pos_y, cluster_id, transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
+        self.txt_clusterid = ax.text(pos_x, pos_y, cluster_id, transform = ax.transAxes, fontsize=fontsize,
+                horizontalalignment=text_pos, verticalalignment=valign, color=color)
         
         
     def _addtext_info(self, ax, info_text, text_pos='left', text_vpos='center', fontsize=12):
@@ -437,6 +439,14 @@ class ViewPes(View):
             time_unit = self.timeunit
         xdata = addspec.xdata[self.xdata_key]/time_unit*xscale + xoffset
         ydata = addspec.ydata[self.ydata_key]*yscale + yoffset
+        if self.txt_clusterid.get_position()[0] == 0.05:
+            text_pos = 'left'
+        else:
+            text_pos = 'right'
+        self._addtext_cluster_id(self.ax, addspec.view._pretty_format_clusterid(), text_pos=text_pos, 
+                                 color=color, valign='top', voffset=-0.02)
+        #cluster_ids = '{}\n{}'.format(self._pretty_format_clusterid(), addspec.view._pretty_format_clusterid())
+        #self.txt_clusterid.set_text(cluster_ids)
         self.add_plot(xdata, ydata, color=color)
 
 
