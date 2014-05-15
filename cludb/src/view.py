@@ -12,6 +12,8 @@ class View(object):
         self.xdata_key = None
         self.ydata_key = None
         self.timeunit = None
+        self.xlim_scale = None
+        self.ymax = None
         
 
     def _single_fig_output(self):
@@ -34,8 +36,8 @@ class View(object):
 
     def _addtext_file_id(self, ax, fontsize=6, layout_y=3):
         ypos = 1 + layout_y*0.01/3
-        ax.text(1.0, ypos, '%s'%(os.path.basename(self.spec.mdata.data('datFile'))),
-                transform = ax.transAxes, fontsize=fontsize, horizontalalignment='right')  
+        self.txt_fileid = ax.text(1.0, ypos, '%s'%(os.path.basename(self.spec.mdata.data('datFile'))),
+                                  transform = ax.transAxes, fontsize=fontsize, horizontalalignment='right')  
 
         
     def _addtext_statusmarker(self, ax, xdata_key, ydata_key, text_pos='center', fontsize=6, layout_y=3):
@@ -216,11 +218,15 @@ class View(object):
         ax.relim()  
         ax.autoscale(axis='y')
         
-    def _auto_ylim(self, ax, xdata, ydata, xlim_scale, lower_padding=0.02, upper_padding=0.2):
+    def _ymax_in_xrange(self, xdata, ydata, xlim_scale):
         xlb = argmin(abs(xdata-xlim_scale[0]))
         xub = argmin(abs(xdata-xlim_scale[1]))
-        y_max = ydata[xlb:xub].max()
-        ax.set_ylim([-1*lower_padding*y_max, (upper_padding + 1)*y_max])
+        return ydata[xlb:xub].max()        
+    
+    def _auto_ylim(self, ax, xdata, ydata, xlim_scale, lower_padding=0.02, upper_padding=0.2):
+        self.xlim_scale = xlim_scale
+        self.ymax = self._ymax_in_xrange(xdata, ydata, xlim_scale)
+        ax.set_ylim([-1*lower_padding*self.ymax, (upper_padding + 1)*self.ymax])
 
      
         
@@ -234,6 +240,7 @@ class View(object):
 #            raise ValueError("ydata_key must be one of: 'intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'")
         self.xdata_key = xdata_key
         self.ydata_key = ydata_key
+        #self.xlim_scale = xlim_scale
         # plot 
         ax.plot(self.spec.xdata[xdata_key], self.spec.ydata[ydata_key], color=color)
         # set axes limits
@@ -266,6 +273,7 @@ class View(object):
         self.xdata_key = xdata_key
         self.ydata_key = ydata_key
         self.timeunit = time_unit
+        #self.xlim_scale = xlim_scale
         # plot      
         ax.plot(self.spec.xdata[xdata_key]/time_unit, self.spec.ydata[ydata_key], color=color)
         #set axes limits
@@ -312,11 +320,32 @@ class View(object):
         self.fig.show()
         
         
-    def add_plot(self, xdata, ydata, color='blue'):
+    def add_plot(self, xdata, ydata, color='blue', file_id=None):
         if not hasattr(self, 'fig'):
             raise ValueError('No active plot. Create one first via show_XXX.')
+        if file_id is not None:
+            self.txt_fileid.set_text('{}, {}'.format(os.path.basename(self.spec.mdata.data('datFile')), file_id))
+#         if self.xlim_scale is None:
+#             xlim_scale = self.ax.get_xlim()
+#         else:
+#             xlim_scale = self.xlim_scale
+        if self._ymax_in_xrange(xdata, ydata, self.xlim_scale) > self.ymax:
+            self._auto_ylim(self.ax, xdata, ydata, self.xlim_scale)
         self.ax.plot(xdata, ydata, color=color)
         self.fig.show()
+        
+        
+    def _scalefactor_equal_area(self, xdata, ydata, xdata_comp, ydata_comp):
+        A, i = 0, 0
+        for y in ydata[:-1]:
+            A += y*(xdata[i+1] - xdata[i])
+            i+=1
+        A_comp, i = 0, 0
+        for y in ydata_comp[:-1]:
+            A_comp += y*(xdata_comp[i+1] - xdata_comp[i])
+            i+=1 
+        
+        return A/A_comp
         
         
         
@@ -339,6 +368,7 @@ class ViewPes(View):
 #            raise ValueError("ydata_key must be one of: 'jIntensityGauged', 'jIntensityGaugedSub'")
         self.xdata_key = xdata_key
         self.ydata_key = ydata_key
+        #self.xlim_scale = xlim_scale
         # plot 
         ax.plot(self.spec.xdata[xdata_key], self.spec.ydata[ydata_key], color=color)
         #set axes limits  
@@ -365,6 +395,7 @@ class ViewPes(View):
 #            raise ValueError("{} invalid key. ydata_key must be one of: 'jIntensityGauged', 'jIntensityGaugedSub'".format(ydata_key))        
         self.xdata_key = xdata_key
         self.ydata_key = ydata_key
+        #self.xlim_scale = xlim_scale
         # plot
         ax.plot(self.spec.xdata[xdata_key], self.spec.ydata[ydata_key], color=color)
         #set axes limits  
@@ -433,11 +464,36 @@ class ViewPes(View):
         
         
     def add_spec(self, pfilename, xscale=1, yscale=1, xoffset=0, yoffset=0, color='blue'):
+        '''
+        Adds another spectrum to the plot using the same data keys as the original plot.
+        The spectrum can be modified by:
+        xscale: scalar to scale the xdata
+        yscale: scalar to scale the ydata OR
+                list specifying a xdata interval, yscale is then chosen that both spectra have the same area
+                on that interval
+        x/yoffset: scalar shift the spectrum in x-/y-direction
+        
+        TODO: fallback for missing data keys (e.g. one may want to compare 'ebinGauged' to 'ebin') 
+        '''
         addspec = load.load_pickle(self.spec.cfg, pfilename)
         time_unit = 1
         if 'tof' in self.xdata_key:
             time_unit = self.timeunit
         xdata = addspec.xdata[self.xdata_key]/time_unit*xscale + xoffset
+        # autoscale intensity if necessary
+        if type(yscale) is list:
+            lb, ub = yscale[0], yscale[1]
+            ilb = abs(xdata - lb).argmin()
+            iub = abs(xdata - ub).argmin()
+            ilb_ref = abs(self.spec.xdata[self.xdata_key]/time_unit - lb).argmin()
+            iub_ref = abs(self.spec.xdata[self.xdata_key]/time_unit - ub).argmin()
+            print('boundaries:', ilb, iub, ilb_ref, iub_ref)
+            yscale = self._scalefactor_equal_area(self.spec.xdata[self.xdata_key][ilb_ref:iub_ref]/time_unit,
+                                                  self.spec.ydata[self.ydata_key][ilb_ref:iub_ref],
+                                                  xdata[ilb:iub], 
+                                                  addspec.ydata[self.ydata_key][ilb:iub] + yoffset)
+            print('New scale factor:', yscale)    
+        
         ydata = addspec.ydata[self.ydata_key]*yscale + yoffset
         if self.txt_clusterid.get_position()[0] == 0.05:
             text_pos = 'left'
@@ -447,7 +503,7 @@ class ViewPes(View):
                                  color=color, valign='top', voffset=-0.02)
         #cluster_ids = '{}\n{}'.format(self._pretty_format_clusterid(), addspec.view._pretty_format_clusterid())
         #self.txt_clusterid.set_text(cluster_ids)
-        self.add_plot(xdata, ydata, color=color)
+        self.add_plot(xdata, ydata, color=color, file_id=os.path.basename(addspec.mdata.data('datFile')))
 
 
 class ViewPt(ViewPes):
