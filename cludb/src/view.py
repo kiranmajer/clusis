@@ -218,15 +218,18 @@ class View(object):
         ax.relim()  
         ax.autoscale(axis='y')
         
-    def _ymax_in_xrange(self, xdata, ydata, xlim_scale):
+    def _yminmax_in_xrange(self, xdata, ydata, xlim_scale):
         xlb = argmin(abs(xdata-xlim_scale[0]))
         xub = argmin(abs(xdata-xlim_scale[1]))
-        return ydata[xlb:xub].max()        
+        return ydata[xlb:xub].min(), ydata[xlb:xub].max()
+               
     
-    def _auto_ylim(self, ax, xdata, ydata, xlim_scale, lower_padding=0.02, upper_padding=0.2):
+    def _auto_ylim(self, ax, xdata, ydata, xlim_scale, lower_padding=0.04, upper_padding=0.2):
+        'TODO: Is scaling of ymin always wanted?'
         self.xlim_scale = xlim_scale
-        self.ymax = self._ymax_in_xrange(xdata, ydata, xlim_scale)
-        ax.set_ylim([-1*lower_padding*self.ymax, (upper_padding + 1)*self.ymax])
+        ymin, self.ymax = self._yminmax_in_xrange(xdata, ydata, xlim_scale)
+        dy = abs(self.ymax - ymin)
+        ax.set_ylim([ymin - lower_padding*dy, self.ymax + upper_padding*dy])
 
      
         
@@ -329,7 +332,7 @@ class View(object):
 #             xlim_scale = self.ax.get_xlim()
 #         else:
 #             xlim_scale = self.xlim_scale
-        if self._ymax_in_xrange(xdata, ydata, self.xlim_scale) > self.ymax:
+        if self._yminmax_in_xrange(xdata, ydata, self.xlim_scale)[1] > self.ymax:
             self._auto_ylim(self.ax, xdata, ydata, self.xlim_scale)
         self.ax.plot(xdata, ydata, color=color)
         self.fig.show()
