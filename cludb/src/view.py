@@ -335,17 +335,21 @@ class View(object):
         self.fig.show()
         
         
-    def _scalefactor_equal_area(self, xdata, ydata, xdata_comp, ydata_comp):
-        A, i = 0, 0
-        for y in ydata[:-1]:
-            A += y*(xdata[i+1] - xdata[i])
+    def _scalefactor_equal_area(self, xdata_ref, ydata_ref, xdata, ydata):
+        A_ref, i = 0, 0
+        for y in ydata_ref[:-1]:
+            A_ref += y*(xdata_ref[i+1] - xdata_ref[i])
             i+=1
         A_comp, i = 0, 0
-        for y in ydata_comp[:-1]:
-            A_comp += y*(xdata_comp[i+1] - xdata_comp[i])
-            i+=1 
-        
-        return A/A_comp
+        for y in ydata[:-1]:
+            A_comp += y*(xdata[i+1] - xdata[i])
+            i+=1
+        return A_ref/A_comp
+    
+    def _scalefactor_equal_max(self, ydata_ref, ydata):
+        max_ref = ydata_ref.max()
+        max_comp = ydata.max()
+        return  max_ref/max_comp
         
         
         
@@ -463,14 +467,15 @@ class ViewPes(View):
         gaugeSpec.view.show_ebin_fit()
         
         
-    def add_spec(self, pfilename, xscale=1, yscale=1, xoffset=0, yoffset=0, color='blue'):
+    def add_spec(self, pfilename, xscale=1, yscale=1, yscale_type=None, xoffset=0, yoffset=0, color='blue'):
         '''
         Adds another spectrum to the plot using the same data keys as the original plot.
         The spectrum can be modified by:
         xscale: scalar to scale the xdata
         yscale: scalar to scale the ydata OR
                 list specifying a xdata interval, yscale is then chosen that both spectra have the same area
-                on that interval
+                on that interval or the same max intensity
+        yscale_type: 'area' or 'max', specifies how yscale is calculated on an interval
         x/yoffset: scalar shift the spectrum in x-/y-direction
         
         TODO: fallback for missing data keys (e.g. one may want to compare 'ebinGauged' to 'ebin') 
@@ -488,10 +493,16 @@ class ViewPes(View):
             ilb_ref = abs(self.spec.xdata[self.xdata_key]/time_unit - lb).argmin()
             iub_ref = abs(self.spec.xdata[self.xdata_key]/time_unit - ub).argmin()
             print('boundaries:', ilb, iub, ilb_ref, iub_ref)
-            yscale = self._scalefactor_equal_area(self.spec.xdata[self.xdata_key][ilb_ref:iub_ref]/time_unit,
-                                                  self.spec.ydata[self.ydata_key][ilb_ref:iub_ref],
-                                                  xdata[ilb:iub], 
-                                                  addspec.ydata[self.ydata_key][ilb:iub] + yoffset)
+            if yscale_type is None or yscale_type == 'area':
+                yscale = self._scalefactor_equal_area(self.spec.xdata[self.xdata_key][ilb_ref:iub_ref]/time_unit,
+                                                      self.spec.ydata[self.ydata_key][ilb_ref:iub_ref],
+                                                      xdata[ilb:iub], 
+                                                      addspec.ydata[self.ydata_key][ilb:iub] + yoffset)
+            elif yscale_type == 'max':
+                yscale = self._scalefactor_equal_max(self.spec.ydata[self.ydata_key][ilb_ref:iub_ref],
+                                                     addspec.ydata[self.ydata_key][ilb:iub] + yoffset)
+            else:
+                raise ValueError('yscale_type must be "area" or "max"')
             print('New scale factor:', yscale)    
         
         ydata = addspec.ydata[self.ydata_key]*yscale + yoffset
