@@ -122,6 +122,7 @@ class Cfg():
                                      'clusterDopant': [str, True],
                                      'clusterDopantNumber': [int, True],
                                      'delayState': [dict, False],
+                                     'electronAffinity': [float, False],
                                      'energyOffset': [float, True],
                                      'energyOffsetImport': [float, True],
                                      'flightLength': [[1.6], True],

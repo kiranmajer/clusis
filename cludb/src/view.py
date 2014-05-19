@@ -338,10 +338,13 @@ class View(object):
         self.fig.show()
         
         
-    def _scalefactor_equal_area(self, xdata_ref, ydata_ref, xdata, ydata):
+    def _scalefactor_equal_area(self, xdata_ref, ydata_ref, xdata, ydata, yoffset):
         A_ref, i = 0, 0
         for y in ydata_ref[:-1]:
-            A_ref += y*(xdata_ref[i+1] - xdata_ref[i])
+            if y - yoffset > 0:
+                A_ref += (y - yoffset)*(xdata_ref[i+1] - xdata_ref[i])
+            else:
+                A_ref += 0
             i+=1
         A_comp, i = 0, 0
         for y in ydata[:-1]:
@@ -493,17 +496,26 @@ class ViewPes(View):
             lb, ub = yscale[0], yscale[1]
             ilb = abs(xdata - lb).argmin()
             iub = abs(xdata - ub).argmin()
+            if ilb > iub: # needed for 'reversed' spectra, e.g. E_kin
+                ilb_tmp = ilb
+                ilb = iub
+                iub = ilb_tmp
             ilb_ref = abs(self.spec.xdata[self.xdata_key]/time_unit - lb).argmin()
             iub_ref = abs(self.spec.xdata[self.xdata_key]/time_unit - ub).argmin()
+            if ilb_ref > iub_ref: # needed for 'reversed' spectra, e.g. E_kin
+                ilb_ref_tmp = ilb_ref
+                ilb_ref = iub_ref
+                iub_ref = ilb_ref_tmp            
             print('boundaries:', ilb, iub, ilb_ref, iub_ref)
             if yscale_type is None or yscale_type == 'area':
                 yscale = self._scalefactor_equal_area(self.spec.xdata[self.xdata_key][ilb_ref:iub_ref]/time_unit,
                                                       self.spec.ydata[self.ydata_key][ilb_ref:iub_ref],
                                                       xdata[ilb:iub], 
-                                                      addspec.ydata[self.ydata_key][ilb:iub] + yoffset)
+                                                      addspec.ydata[self.ydata_key][ilb:iub],
+                                                      yoffset)
             elif yscale_type == 'max':
-                yscale = self._scalefactor_equal_max(self.spec.ydata[self.ydata_key][ilb_ref:iub_ref],
-                                                     addspec.ydata[self.ydata_key][ilb:iub] + yoffset)
+                yscale = self._scalefactor_equal_max(self.spec.ydata[self.ydata_key][ilb_ref:iub_ref] - yoffset,
+                                                     addspec.ydata[self.ydata_key][ilb:iub])
             else:
                 raise ValueError('yscale_type must be "area" or "max"')
             print('New scale factor:', yscale)    
@@ -518,6 +530,29 @@ class ViewPes(View):
         #cluster_ids = '{}\n{}'.format(self._pretty_format_clusterid(), addspec.view._pretty_format_clusterid())
         #self.txt_clusterid.set_text(cluster_ids)
         self.add_plot(xdata, ydata, color=color, file_id=os.path.basename(addspec.mdata.data('datFile')))
+        
+        
+    def add_scaled_spec(self, pfilename, xscale=1.6/2.5, yscale=1, yscale_type='area'):
+        '''
+        Right now a alkali specific shortcut for add_spec, which automatically sets some values.
+        Might be moved to a special class (?).
+        '''
+        addspec = load.load_pickle(self.spec.cfg, pfilename)
+        try:
+            ea = addspec.mdata.data('electronAffinity')
+            ea_ref = self.spec.mdata.data('electronAffinity')
+        except:
+            raise ValueError('Missing electron affinity value.')
+        if 'ebin' in self.xdata_key:
+            xoffset = ea_ref - ea*xscale
+        elif 'ekin' in self.xdata_key:
+            xoffset = (self.spec._hv - ea_ref) - (self.spec._hv - ea)*xscale
+        elif 'tof' in self.xdata_key:
+            xoffset = sqrt(self.spec._pFactor/(self.spec._hv - ea_ref))/self.timeunit - sqrt(self.spec._pFactor/(self.spec._hv - ea))/self.timeunit*xscale
+        print('xoffset calculated from eas:', xoffset)
+        self.add_spec(pfilename=pfilename, xscale=xscale, yscale=yscale, yscale_type=yscale_type, xoffset=xoffset)
+
+
 
 
 class ViewPt(ViewPes):

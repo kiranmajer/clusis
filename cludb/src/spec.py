@@ -271,6 +271,7 @@ class SpecPe(Spec):
         gaugeSpec.mdata.add_tag('gauge reference')
         gaugeSpec.commit()
         del gaugeSpec
+        self._ea_changed_warning()
         
     def subtract_bg(self, bgFile, isUpDown=True):
         Spec.subtract_bg(self, bgFile, isUpDown=isUpDown)
@@ -280,6 +281,18 @@ class SpecPe(Spec):
                                         intensity_key='intensitySub', timedata_key='tofGauged')    
         self._commit_pickle()
         
+    def _ea_changed_warning(self, reason='Gauging'):
+        if 'electronAffinity' in self.mdata().keys():
+            change_ea = None
+            while change_ea not in ['y', 'n']:
+                q = '{} may have changed the value of the electron affinity ({} eV). Adapt it?'.format(reason, self.mdata.data('electronAffinity'))
+                change_ea = input(q)
+            if change_ea == 'y':
+                ea = None
+                while type(ea) is not float: 
+                    q = 'Insert new value (eV):'
+                    ea = input(q)      
+                self.mdata.update({'electronAffinity': ea})  
         
         
 class SpecPePt(SpecPe):
