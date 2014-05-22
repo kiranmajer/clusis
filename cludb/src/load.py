@@ -1,6 +1,8 @@
 from spec import *
 from legacyData import LegacyData
 from shutil import copy2
+from traceback import print_tb
+from sys import exc_info
 #import config
 #import mdata
 #import pickle
@@ -115,7 +117,8 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
         except Exception as e:
             print('LegacyData creation failed:', e)
             failedImports.append([datFile, 'LegacyData creation failed: {}'.format(e)])
-            #raise
+            print('Traceback:')
+            print_tb(exc_info()[2])
             continue
         if not db.table_has_sha1(mi.mdata.data('specType'), mi.mdata.data('sha1')) and mi.mdata.data('sha1') not in sha1ToImport:
             '''TODO: handle special files with identical sha1 (e.g. "flat line"-spectra).
