@@ -112,8 +112,11 @@ class Mdata(object):
             raise ValueError('Tag does not exist: {}'.format(tag))
         
     def __update_tags(self):
-        'Merges userTags and systemTags'
+        'For db usage: Merges userTags and systemTags and add keys of "compSpecs".'
         self.__mdata['tags'] = list(set(self.__mdata['systemTags'])|set(self.__mdata['userTags']))
+        if 'compSpecs' in self.__mdata.keys() and self.__mdata['compSpecs'].keys():
+            for k in self.__mdata['compSpecs'].keys():
+                self.__mdata['tags'].append('CompSpec: {}'.format(k))
             
     
     def add(self, newMdata, update=False):

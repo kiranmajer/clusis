@@ -14,6 +14,7 @@ class View(object):
         self.timeunit = None
         self.xlim_scale = None
         self.ymax = None
+        self.comp_spec_data = {}
         
 
     def _single_fig_output(self):
@@ -31,7 +32,8 @@ class View(object):
         else:
             self.fig = plt.figure()
             #print 'Figure created.'
-            self.ax = self.fig.add_subplot(1,1,1)    
+            self.ax = self.fig.add_subplot(1,1,1)
+        self.comp_spec_data = {}
 
 
     def _addtext_file_id(self, ax, fontsize=6, layout_y=3):
@@ -323,9 +325,9 @@ class View(object):
         self.fig.show()
         
         
-    def add_plot(self, xdata, ydata, color='blue', file_id=None):
-        if not hasattr(self, 'fig'):
-            raise ValueError('No active plot. Create one first via show_XXX.')
+    def add_plot(self, ax, xdata, ydata, color='blue', file_id=None):
+#         if not hasattr(self, 'fig'):
+#             raise ValueError('No active plot. Create one first via show_XXX.')
         if file_id is not None:
             self.txt_fileid.set_text('{}, {}'.format(os.path.basename(self.spec.mdata.data('datFile')), file_id))
 #         if self.xlim_scale is None:
@@ -333,9 +335,9 @@ class View(object):
 #         else:
 #             xlim_scale = self.xlim_scale
         if self._yminmax_in_xrange(xdata, ydata, self.xlim_scale)[1] > self.ymax:
-            self._auto_ylim(self.ax, xdata, ydata, self.xlim_scale)
-        self.ax.plot(xdata, ydata, color=color)
-        self.fig.show()
+            self._auto_ylim(ax, xdata, ydata, self.xlim_scale)
+        ax.plot(xdata, ydata, color=color)[0]
+        #self.fig.canvas.draw()
         
         
     def _scalefactor_equal_area(self, xdata_ref, ydata_ref, xdata, ydata, yoffset):
@@ -473,7 +475,7 @@ class ViewPes(View):
         gaugeSpec.view.show_ebin_fit()
         
         
-    def add_spec(self, pfilename, xscale=1, yscale=1, yscale_type=None, xoffset=0, yoffset=0, color='blue'):
+    def _add_spec(self, specfile, xscale=1, yscale=1, yscale_type=None, xoffset=0, yoffset=0, color='blue', clusterid_fontsize=28, ax=None):
         '''
         Adds another spectrum to the plot using the same data keys as the original plot.
         The spectrum can be modified by:
@@ -486,7 +488,17 @@ class ViewPes(View):
         
         TODO: fallback for missing data keys (e.g. one may want to compare 'ebinGauged' to 'ebin') 
         '''
-        addspec = load.load_pickle(self.spec.cfg, pfilename)
+        if ax is None:
+            ax = self.ax
+        self.comp_spec_data.update({'specfile': specfile,
+                                    'xscale': xscale,
+                                    'yscale': yscale,
+                                    'yscale_type': yscale_type,
+                                    'xoffset': xoffset,
+                                    'yoffset': yoffset,
+                                    'color': color,
+                                    'xdata_key': self.xdata_key})
+        addspec = load.load_pickle(self.spec.cfg, specfile)
         time_unit = 1
         if 'tof' in self.xdata_key:
             time_unit = self.timeunit
@@ -525,24 +537,36 @@ class ViewPes(View):
             text_pos = 'left'
         else:
             text_pos = 'right'
-        self._addtext_cluster_id(self.ax, addspec.view._pretty_format_clusterid(), text_pos=text_pos, 
-                                 color=color, valign='top', voffset=-0.02)
+        self._addtext_cluster_id(ax, addspec.view._pretty_format_clusterid(), text_pos=text_pos, 
+                                 fontsize=clusterid_fontsize, color=color, valign='top', voffset=-0.02)
         #cluster_ids = '{}\n{}'.format(self._pretty_format_clusterid(), addspec.view._pretty_format_clusterid())
         #self.txt_clusterid.set_text(cluster_ids)
-        self.add_plot(xdata, ydata, color=color, file_id=os.path.basename(addspec.mdata.data('datFile')))
+        self.add_plot(ax, xdata, ydata, color=color, file_id=os.path.basename(addspec.mdata.data('datFile')))
         
         
-    def add_scaled_spec(self, pfilename, xscale=1.6/2.5, yscale=1, yscale_type='area'):
+    def add_spec(self, specfile, xscale=1, yscale=1, yscale_type=None, xoffset=0, yoffset=0, color='blue', clusterid_fontsize=28, ax=None):
+        self._add_spec(specfile, xscale, yscale, yscale_type, xoffset, yoffset, color, clusterid_fontsize, ax)
+        self.fig.canvas.draw()
+        
+        
+    def _add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1, yscale_type='area', color='blue', clusterid_fontsize=28, ax=None):
         '''
-        Right now a alkali specific shortcut for add_spec, which automatically sets some values.
+        Right now a alkali specific shortcut for _add_spec, which automatically sets some values.
         Might be moved to a special class (?).
         '''
-        addspec = load.load_pickle(self.spec.cfg, pfilename)
+        if ax is None:
+            ax = self.ax
+        addspec = load.load_pickle(self.spec.cfg, specfile)
         try:
             ea = addspec.mdata.data('electronAffinity')
             ea_ref = self.spec.mdata.data('electronAffinity')
         except:
             raise ValueError('Missing electron affinity value.')
+        if xscale == 'fermi_energy':
+            self.comp_spec_data['xscale_type'] = xscale
+            xscale = self.spec.cfg.bulk_fermi_energy[self.spec.mdata.data('clusterBaseUnit')]/self.spec.cfg.bulk_fermi_energy[addspec.mdata.data('clusterBaseUnit')]
+        elif type(xscale) not in [int, float]:
+            raise ValueError('xscale must be numeric or "fermy_energy"')
         if 'ebin' in self.xdata_key:
             xoffset = ea_ref - ea*xscale
         elif 'ekin' in self.xdata_key:
@@ -550,9 +574,51 @@ class ViewPes(View):
         elif 'tof' in self.xdata_key:
             xoffset = sqrt(self.spec._pFactor/(self.spec._hv - ea_ref))/self.timeunit - sqrt(self.spec._pFactor/(self.spec._hv - ea))/self.timeunit*xscale
         print('xoffset calculated from eas:', xoffset)
-        self.add_spec(pfilename=pfilename, xscale=xscale, yscale=yscale, yscale_type=yscale_type, xoffset=xoffset)
+        self._add_spec(specfile=specfile, xscale=xscale, yscale=yscale, yscale_type=yscale_type, xoffset=xoffset,
+                      color=color, clusterid_fontsize=clusterid_fontsize, ax=ax)
+        
+        
+    def add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1, yscale_type='area', color='blue', clusterid_fontsize=28, ax=None):
+        self._add_fermiscaled_spec(specfile, xscale, yscale, yscale_type, color, clusterid_fontsize, ax)
+        self.fig.canvas.draw()
 
 
+    def show_comp_spec(self, comp_spec_id, **keywords):
+        base_plot_map = {'tof': self.show_tof,
+                         'ekin': self.show_ekin,
+                         'ebin': self.show_ebin}
+        if type(comp_spec_id) is not list:
+            comp_spec_id = [comp_spec_id]
+        base_plot_mode = None
+        for csid in comp_spec_id:
+            if csid not in self.spec.mdata.data('compSpecs').keys():
+                raise ValueError('No comparison spec with id "{}" is attached to this spec.')
+            # set mode for base plot and plot
+            if base_plot_mode is None:
+                for k in base_plot_map.keys():
+                    if k in self.spec.mdata.data('compSpecs')[csid]['xdata_key']:
+                        base_plot_map[k](**keywords)
+                        base_plot_mode = k
+                        break
+            elif base_plot_mode not in self.spec.mdata.data('compSpecs')[csid]['xdata_key']:
+                raise ValueError('Comparison spectrum type ({}) does not fit to chosen view ({}).'.format(self.spec.mdata.data('compSpecs')[csid]['xdata_key'],
+                                                                                                          base_plot_mode))
+            if 'xscale_type' in self.spec.mdata.data('compSpecs')[csid].keys() and self.spec.mdata.data('compSpecs')[csid]['xscale_type'] is 'fermi_energy':
+                self._add_fermiscaled_spec(self.spec.mdata.data('compSpecs')[csid]['specfile'],
+                                          self.spec.mdata.data('compSpecs')[csid]['xscale_type'],
+                                          self.spec.mdata.data('compSpecs')[csid]['yscale'],
+                                          self.spec.mdata.data('compSpecs')[csid]['yscale_type'],
+                                          self.spec.mdata.data('compSpecs')[csid]['color'])
+            else:
+                self._add_spec(self.spec.mdata.data('compSpecs')[csid]['specfile'],
+                              self.spec.mdata.data('compSpecs')[csid]['xscale'],
+                              self.spec.mdata.data('compSpecs')[csid]['yscale'],
+                              self.spec.mdata.data('compSpecs')[csid]['yscale_type'],
+                              self.spec.mdata.data('compSpecs')[csid]['xoffset'],
+                              self.spec.mdata.data('compSpecs')[csid]['yoffset'],
+                              self.spec.mdata.data('compSpecs')[csid]['color'])
+            
+        
 
 
 class ViewPt(ViewPes):

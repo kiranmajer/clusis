@@ -121,6 +121,7 @@ class Cfg():
                                      'clusterBaseUnitNumber': [int, True],
                                      'clusterDopant': [str, True],
                                      'clusterDopantNumber': [int, True],
+                                     'compSpecs': [dict, False],
                                      'delayState': [dict, False],
                                      'electronAffinity': [float, False],
                                      'energyOffset': [float, True],
@@ -339,6 +340,10 @@ class Cfg():
                               7.31087, 7.41719, 7.48260, 7.57657, 7.63695, 7.63840,
                               7.67385, 7.75668, 7.85240, 7.88327, 7.88507, 7.90845]
 
+        
+        self.bulk_fermi_energy = {'Na': 2.5,
+                                  'K': 1.6}
+        
 
     def convert_mdata_v0p1_to_v0p2(self, mdata):
         if mdata['mdataVersion'] is 0.1:

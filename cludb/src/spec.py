@@ -293,6 +293,12 @@ class SpecPe(Spec):
                     q = 'Insert new value (eV):'
                     ea = input(q)      
                 self.mdata.update({'electronAffinity': ea})  
+                
+    def attach_comp_spec(self, comp_spec_id):
+        if self.view.comp_spec_data:
+            self.mdata.update({'compSpecs': {comp_spec_id: self.view.comp_spec_data}})
+        else:
+            raise ValueError('No spectrum added yet. Use one of the add_* methods to add one.')
         
         
 class SpecPePt(SpecPe):
