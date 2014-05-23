@@ -241,7 +241,7 @@ class ViewPtFitList(ViewPesList):
         spec.view.plot_tof_fit(ax, fit_par=fit_par, time_unit=time_unit, single_peaks=single_peaks)
         spec.view._addtext_gauge_par(ax, fit_par=fit_par, text_pos='right', fontsize=6)
         
-    def _show_energy_fit(self, spec, ax, layout_y, xdata_key, fit_par, xlim, xlim_scale, show_mdata):
+    def _show_energy_fit(self, spec, ax, layout_y, xdata_key, fit_par, xlim, xlim_scale, show_mdata, single_peaks=False):
         'TODO: use method from View instead (after minimal modification).'
         plot_method = {'ekin': spec.view.plot_ekin, 'ebin': spec.view.plot_ebin}
         if xdata_key not in ['ekin', 'ebin']:
@@ -251,19 +251,21 @@ class ViewPtFitList(ViewPesList):
         else:
             ydata_key = 'jIntensity'        
         plot_method[xdata_key](ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
-        spec.view.plot_energy_fit(ax, fit_par=fit_par, xdata_key=xdata_key)      
+        spec.view.plot_energy_fit(ax, fit_par=fit_par, xdata_key=xdata_key, single_peaks=single_peaks)      
         spec.view._addtext_file_id(ax, layout_y=layout_y)
         spec.view._addtext_statusmarker(ax, xdata_key=xdata_key, ydata_key=ydata_key, text_pos='left', layout_y=layout_y)
         if show_mdata is not None:
             spec.view._addtext_info(ax, spec.view._pretty_print_info(show_mdata), fontsize=6)
         
-    def _show_ekin_fit(self, spec, ax, layout_y, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, show_mdata=None):
-        self._show_energy_fit(spec, ax, layout_y, xdata_key='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata)
+    def _show_ekin_fit(self, spec, ax, layout_y, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, show_mdata=None, single_peaks=False):
+        self._show_energy_fit(spec, ax, layout_y, xdata_key='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale,
+                              show_mdata=show_mdata, single_peaks=single_peaks)
         spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), text_pos='right', fontsize=10) 
         spec.view._addtext_gauge_par(ax, fit_par=fit_par, text_pos='right', fontsize=6)
         
-    def _show_ebin_fit(self, spec, ax, layout_y, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, show_mdata=None):
-        self._show_energy_fit(spec, ax, layout_y, xdata_key='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata)
+    def _show_ebin_fit(self, spec, ax, layout_y, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, show_mdata=None, single_peaks=False):
+        self._show_energy_fit(spec, ax, layout_y, xdata_key='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale,
+                              show_mdata=show_mdata, single_peaks=single_peaks)
         spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), fontsize=10) 
         spec.view._addtext_gauge_par(ax, fit_par=fit_par, fontsize=6)
                 
@@ -275,14 +277,14 @@ class ViewPtFitList(ViewPesList):
                    show_mdata=show_mdata, show_yticks=show_yticks, single_peaks=single_peaks)
             
     def show_ekin_fit(self, layout=[7,3], fit_par='fitPar', xlim=['auto', 'auto'],
-                      xlim_scale=None, pdf=False, show_mdata=None):
+                      xlim_scale=None, pdf=False, show_mdata=None, single_peaks=False):
         self._show(self._show_ekin_fit, xlabel_str='E$_{kin}$ (eV)', layout=layout, pdf=pdf,
-                   fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata)
+                   fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata, single_peaks=single_peaks)
         
     def show_ebin_fit(self, layout=[7,3], fit_par='fitPar', xlim=['auto', 'auto'],
-                      xlim_scale=None, pdf=False, show_mdata=None):
+                      xlim_scale=None, pdf=False, show_mdata=None, single_peaks=False):
         self._show(self._show_ebin_fit, xlabel_str='E$_{bin}$ (eV)', layout=layout, pdf=pdf, fit_par=fit_par,
-                   xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata)    
+                   xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata, single_peaks=single_peaks)    
 
 
 

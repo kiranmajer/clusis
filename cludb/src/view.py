@@ -683,7 +683,7 @@ class ViewPt(ViewPes):
                         color=color_peaks)
     
                
-    def plot_energy_fit(self, ax, fit_par, xdata_key, color='blue'):
+    def plot_energy_fit(self, ax, fit_par, xdata_key, color='blue', color_peaks='DimGray', single_peaks=False):
         if self.spec.mdata.data('fitCutoff') is None:
             ax.plot(self.spec.xdata[xdata_key],
                     self.spec.jtrans(self.spec._multi_gauss_trans(self.spec.xdata['tof'],
@@ -691,6 +691,7 @@ class ViewPt(ViewPes):
                                                                   self.spec.mdata.data(fit_par)),
                                      self.spec.xdata['tof']),
                     color=color)
+            cutoff_idx = len(self.spec.xdata[xdata_key])
         else:
             cutoff_idx = (abs(self.spec.xdata['tof'] - self.spec.mdata.data('fitCutoff'))).argmin()
             ax.plot(self.spec.xdata[xdata_key][:cutoff_idx],
@@ -705,8 +706,31 @@ class ViewPt(ViewPes):
                                                                   self.spec.mdata.data(fit_par)),
                                      self.spec.xdata['tof'][cutoff_idx:]),
                     color=color, ls='--')            
-            
-            
+         
+        # plot single peaks, if there are more than one
+        if single_peaks and len(self.spec.mdata.data(fit_par)) > 4:        
+            plist = list(self.spec.mdata.data(fit_par))
+            xlist = list(self.spec.mdata.data('fitPeakPos'))
+            lscale = plist.pop()
+            toff = plist.pop()
+            Eoff = plist.pop()
+            while len(plist) >= 2:
+                sigma = plist.pop()
+                A = plist.pop()
+                m = xlist.pop()
+                
+#                 ax.plot(self.spec.xdata['tof'][:cutoff_idx]/time_unit,
+#                         self.spec._multi_gauss_trans(self.spec.xdata['tof'][:cutoff_idx],
+#                                                      [m],
+#                                                      [A, sigma, Eoff, toff, lscale]),
+#                         color=color_peaks)            
+                
+                ax.plot(self.spec.xdata[xdata_key][:cutoff_idx],
+                    self.spec.jtrans(self.spec._multi_gauss_trans(self.spec.xdata['tof'][:cutoff_idx],
+                                                                  [m],
+                                                                  [A, sigma, Eoff, toff, lscale]),
+                                     self.spec.xdata['tof'][:cutoff_idx]),
+                    color=color_peaks)
                
 
     
@@ -726,7 +750,7 @@ class ViewPt(ViewPes):
         self.fig.show()
         
         
-    def _show_energy_fit(self, xdata_key, fit_par, xlim, xlim_scale):
+    def _show_energy_fit(self, xdata_key, fit_par, xlim, xlim_scale, single_peaks):
         plot_method = {'ekin': self.plot_ekin, 'ebin': self.plot_ebin}
         if xdata_key not in ['ekin', 'ebin']:
             raise ValueError("xdata_key must be one of: 'ekin', 'ebin'")
@@ -736,22 +760,22 @@ class ViewPt(ViewPes):
             ydata_key = 'jIntensity'
         self._single_fig_output()
         plot_method[xdata_key](self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
-        self.plot_energy_fit(self.ax, fit_par=fit_par, xdata_key=xdata_key)
+        self.plot_energy_fit(self.ax, fit_par=fit_par, xdata_key=xdata_key, single_peaks=single_peaks)
         self.ax.set_ylabel('Intensity (a.u.)')        
         self._addtext_file_id(self.ax)
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
         
         
-    def show_ekin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None):
-        self._show_energy_fit(xdata_key='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
+    def show_ekin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, single_peaks=False):
+        self._show_energy_fit(xdata_key='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, single_peaks=single_peaks)
         self.ax.set_xlabel(r'E$_{kin}$ (eV)')
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right') 
         self._addtext_gauge_par(self.ax, fit_par=fit_par, text_pos='right')            
         self.fig.show()    
         
         
-    def show_ebin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None):
-        self._show_energy_fit(xdata_key='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
+    def show_ebin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, single_peaks=False):
+        self._show_energy_fit(xdata_key='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, single_peaks=single_peaks)
         self.ax.set_xlabel(r'E$_{bin}$ (eV)')
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid()) 
         self._addtext_gauge_par(self.ax, fit_par=fit_par)            
