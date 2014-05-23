@@ -47,7 +47,7 @@ class ViewList(object):
         return r'{0} (${1}s$)'.format(label, prefix)
          
         
-    def _show(self, show_fct, xlabel_str, layout=[7,3], pdf=False, show_yticks=False, **keywords):
+    def _show(self, show_fct, xlabel_str, layout=[7,3], pdf=True, show_yticks=False, **keywords):
         if pdf:
             fname = os.path.join(os.path.expanduser('~'), 'export.pdf')
             pdf_file = Pdf.PdfPages(fname)        
@@ -112,12 +112,12 @@ class ViewList(object):
     
     
     def show_idx(self, layout=[7,3], ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None,
-                 pdf=False, show_mdata=None, show_yticks=False):
+                 pdf=True, show_mdata=None, show_yticks=False):
         self._show(self._show_idx, xlabel_str='Index', layout=layout, pdf=pdf, ydata_key=ydata_key, xlim=xlim,
                    xlim_scale=xlim_scale, show_mdata=show_mdata, show_yticks=show_yticks)
 
     def show_tof(self, layout=[7,3], xdata_key='auto', ydata_key='auto', time_unit=1e-6,
-                 xlim=['auto', 'auto'], xlim_scale=None, pdf=False, show_mdata=None, show_yticks=False):
+                 xlim=['auto', 'auto'], xlim_scale=None, pdf=True, show_mdata=None, show_yticks=False):
         self._show(self._show_tof, xlabel_str=self._format_time_label('Time', time_unit), layout=layout, pdf=pdf,
                    xdata_key=xdata_key, ydata_key=ydata_key, time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale,
                    show_mdata=show_mdata, show_yticks=show_yticks)
@@ -166,18 +166,18 @@ class ViewPesList(ViewList):
 
 
     def show_tof(self, layout=[7,3], xdata_key='auto', ydata_key='auto', time_unit=1e-6,
-                 xlim=['auto', 'auto'], xlim_scale=None, pdf=False, show_mdata=None, show_yticks=False):
+                 xlim=['auto', 'auto'], xlim_scale=None, pdf=True, show_mdata=None, show_yticks=False):
         self._show(self._show_tof, xlabel_str=self._format_time_label('Flight Time', time_unit), layout=layout, pdf=pdf,
                    xdata_key=xdata_key, ydata_key=ydata_key, time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale,
                    show_mdata=show_mdata, show_yticks=show_yticks)              
         
     def show_ekin(self, layout=[7,3], xdata_key='auto', ydata_key='auto',
-                  xlim=['auto', 'auto'], xlim_scale=None, pdf=False, show_mdata=None):
+                  xlim=['auto', 'auto'], xlim_scale=None, pdf=True, show_mdata=None):
         self._show(self._show_ekin, xlabel_str='E$_{kin}$ (eV)', layout=layout, pdf=pdf, xdata_key=xdata_key,
                    ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata)
         
     def show_ebin(self, layout=[7,3], xdata_key='auto', ydata_key='auto',
-                  xlim=['auto', 'auto'], xlim_scale=None, pdf=False, show_mdata=None):
+                  xlim=['auto', 'auto'], xlim_scale=None, pdf=True, show_mdata=None):
         self._show(self._show_ebin, xlabel_str='E$_{bin}$ (eV)', layout=layout, pdf=pdf, xdata_key=xdata_key,
                    ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata)        
 
@@ -222,7 +222,7 @@ class ViewPesList(ViewList):
                               ax=ax)
     
         
-    def show_comp_spec(self, comp_spec_id, layout=[7,3], xlim=['auto', 'auto'], xlim_scale=None, pdf=False, show_mdata=None):
+    def show_comp_spec(self, comp_spec_id, layout=[7,3], xlim=['auto', 'auto'], xlim_scale=None, pdf=True, show_mdata=None):
         self._show(self._show_comp_spec, xlabel_str='TODO', comp_spec_id=comp_spec_id, layout=layout, pdf=pdf, xlim=xlim,
                    xlim_scale=xlim_scale, show_mdata=show_mdata)
 
@@ -271,18 +271,18 @@ class ViewPtFitList(ViewPesList):
                 
         
     def show_tof_fit(self, layout=[7,3], fit_par='fitPar', time_unit=1e-6,
-                     xlim=[0, 'auto'], xlim_scale=None, pdf=False, show_mdata=None, show_yticks=False, single_peaks=False):
+                     xlim=[0, 'auto'], xlim_scale=None, pdf=True, show_mdata=None, show_yticks=False, single_peaks=False):
         self._show(self._show_tof_fit, xlabel_str=self._format_time_label('Flight Time', time_unit),
                    layout=layout, pdf=pdf, fit_par=fit_par, time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale,
                    show_mdata=show_mdata, show_yticks=show_yticks, single_peaks=single_peaks)
             
     def show_ekin_fit(self, layout=[7,3], fit_par='fitPar', xlim=['auto', 'auto'],
-                      xlim_scale=None, pdf=False, show_mdata=None, single_peaks=False):
+                      xlim_scale=None, pdf=True, show_mdata=None, single_peaks=False):
         self._show(self._show_ekin_fit, xlabel_str='E$_{kin}$ (eV)', layout=layout, pdf=pdf,
                    fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata, single_peaks=single_peaks)
         
     def show_ebin_fit(self, layout=[7,3], fit_par='fitPar', xlim=['auto', 'auto'],
-                      xlim_scale=None, pdf=False, show_mdata=None, single_peaks=False):
+                      xlim_scale=None, pdf=True, show_mdata=None, single_peaks=False):
         self._show(self._show_ebin_fit, xlabel_str='E$_{bin}$ (eV)', layout=layout, pdf=pdf, fit_par=fit_par,
                    xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata, single_peaks=single_peaks)    
 
@@ -346,16 +346,16 @@ class ViewWaterFitList(ViewPesList):
 
 
     def show_tof_fit(self, layout=[7,3], fit_par='fitPar', time_unit=1e-6,
-                     xlim=[0, 'auto'], xlim_scale=None, pdf=False, show_mdata=None, show_yticks=False):
+                     xlim=[0, 'auto'], xlim_scale=None, pdf=True, show_mdata=None, show_yticks=False):
         self._show(self._show_tof_fit, xlabel_str=self._format_time_label('Flight Time', time_unit), layout=layout,
                    pdf=pdf, fit_par=fit_par, time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale,
                    show_mdata=show_mdata, show_yticks=show_yticks)
 
-    def show_ekin_fit(self, layout=[7,3], fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, pdf=False, show_mdata=None):
+    def show_ekin_fit(self, layout=[7,3], fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, pdf=True, show_mdata=None):
         self._show(self._show_ekin_fit, xlabel_str='E$_{kin}$ (eV)', layout=layout, pdf=pdf, fit_par=fit_par, xlim=xlim,
                    xlim_scale=xlim_scale, show_mdata=show_mdata)
         
-    def show_ebin_fit(self, layout=[7,3], fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, pdf=False, show_mdata=None):
+    def show_ebin_fit(self, layout=[7,3], fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, pdf=True, show_mdata=None):
         self._show(self._show_ebin_fit, xlabel_str='E$_{bin}$ (eV)', layout=layout, pdf=pdf, fit_par=fit_par, xlim=xlim,
                    xlim_scale=xlim_scale, show_mdata=show_mdata) 
 
@@ -396,14 +396,14 @@ class ViewMsList(ViewList):
             
                     
     def show_tof(self, layout=[5,1], xdata_key='auto', ydata_key='auto', time_unit=1e-6,
-                 xlim=['auto', 'auto'], xlim_scale=None, pdf=False, show_mdata=None, show_yticks=False):
+                 xlim=['auto', 'auto'], xlim_scale=None, pdf=True, show_mdata=None, show_yticks=False):
         self._show(self._show_tof, xlabel_str=self._format_time_label('Flight Time', time_unit), layout=layout, pdf=pdf,
                    xdata_key=xdata_key, ydata_key=ydata_key, time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale,
                    show_mdata=show_mdata, show_yticks=show_yticks)  
 
         
     def show_ms(self, layout=[5,1], mass_key='cluster', xlim=['auto', 'auto'], xlim_scale=None,
-                pdf=False, show_mdata=None):
+                pdf=True, show_mdata=None):
         self._show(self._show_ms, xlabel_str=self._xlabel_str(mass_key), mass_key=mass_key,
                    layout=layout, pdf=pdf, xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata)        
         
