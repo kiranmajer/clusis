@@ -170,7 +170,7 @@ class SpecPePtFitList(SpecPeList):
         def format_datFile(datfile):
             return os.path.basename(datfile)
         
-        items = ['recTime', 'datFile', 'fitPar']
+        items = ['recTime', 'datFile', 'fitPar', 'flightLength']
         mdataList = []
         rowCount = 0
         for s in self.dbanswer:
@@ -201,8 +201,7 @@ class SpecPePtFitList(SpecPeList):
             print(format_recTime(row[0]).ljust(10+3), end=' ')
             print(format_datFile(row[1]).ljust(13+3), end=' ')
             print(str(round(row[2][-1],3)).ljust(7+3), end=' ')
-            'TODO: adapt for mdata flightLength.'
-            print(str(round(1600*(1/np.sqrt(row[2][-1])-1),3)).ljust(12+3), end=' ')
+            print(str(round(row[3]*1e3*(1/np.sqrt(row[2][-1])-1),3)).ljust(12+3), end=' ')
             print(str(round(row[2][-2]*1e9,2)).ljust(10+3), end=' ')
             print(str(round(row[2][-3]*1e3,2)).ljust(6))
             lastDate = format_recTime(row[0])

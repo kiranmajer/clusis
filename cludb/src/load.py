@@ -184,12 +184,13 @@ def load_pickle(cfg, pickleFile):
     if not os.path.isabs(pickleFile):
         pickleFile = os.path.join(cfg.path['base'], pickleFile)
     typeclass_map = {'spec': Spec,
-                 'specMs': SpecMs,
-                 'specPe': SpecPe,
-                 'specPePt': SpecPePt,
-                 'specPeIr': SpecPeIr,
-                 'specPeWater': SpecPeWater,
-                 'specPf': SpecPf}
+                     'specMs': SpecMs,
+                     'specPe': SpecPe,
+                     'specPePt': SpecPePt,
+                     'specPeIr': SpecPeIr,
+                     'specPeWater': SpecPeWater,
+                     'specPf': SpecPf
+                     }
     with open(pickleFile, 'rb') as f:
             mdata, xdata, ydata = pickle.load(f)
 #    if mdata['clusterBaseUnit'] == 'Pt' and mdata['specType'] == 'pes':
