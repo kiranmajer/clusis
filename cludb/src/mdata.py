@@ -26,18 +26,18 @@ class Mdata(object):
 #         print('type: ', type(value))
         ref = self.__reference
         if ref[key][0] is np.ndarray and type(value) is np.ndarray:
-            return value
+            v = value
         elif ref[key][0] is str or float and value is None:
-            return value
+            v = value
         elif type(ref[key][0]) is type:
-            return ref[key][0](value)
+            v = ref[key][0](value)
         elif type(ref[key][0]) is list and value in ref[key][0]:
-            return value
+            v = value
         elif type(ref[key][0]) is list and float(value) in ref[key][0]:
-            return float(value)
+            v = float(value)
         else:
             raise ValueError('Key: %s has wrong value or type: %s'  % (key, value))
-    
+        return v
     
     
     def __ask_for_key_value(self, key):
@@ -139,7 +139,9 @@ class Mdata(object):
                                 self.add_tag(t)
                         else:
                             self.add_tag(v)
-                    elif update: #key exists, is not tags
+                    elif k == 'compSpecs':
+                        mdata[k].update(self.__validate_value(k, v))
+                    elif update: #key exists, is not tags not compSpecs
                         mdata[k]=self.__validate_value(k, v)
                     else:
                         v = self.__validate_value(k, v)
