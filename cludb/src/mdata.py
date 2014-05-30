@@ -141,8 +141,10 @@ class Mdata(object):
                             self.add_tag(v)
                     elif k == 'compSpecs':
                         mdata[k].update(self.__validate_value(k, v))
+                    elif k == 'info' and not mdata[k]: # info contains already a string
+                        mdata[k] = mdata[k] + self.__validate_value(k, v)
                     elif update: #key exists, is not tags not compSpecs
-                        mdata[k]=self.__validate_value(k, v)
+                        mdata[k] = self.__validate_value(k, v)
                     else:
                         v = self.__validate_value(k, v)
                         overwrite=''

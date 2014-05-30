@@ -159,6 +159,11 @@ class Spec(object):
         self.mdata.add_tag('subtracted', tagkey='systemTags')
         self.commit()
         bgSpec.commit()
+        
+    def trash(self, reason):
+        reason = str(reason)
+        self.mdata.add_tag('trash', 'systemTags')
+        self.mdata.update({'info': reason})
 
 
         
@@ -282,7 +287,7 @@ class SpecPe(Spec):
         self._commit_pickle()
         
     def _ea_changed_warning(self, reason='Gauging'):
-        if 'electronAffinity' in self.mdata().keys():
+        if 'electronAffinity' in self.mdata.data().keys():
             change_ea = None
             while change_ea not in ['y', 'n']:
                 q = '{} may have changed the value of the electron affinity ({} eV). Adapt it?'.format(reason, self.mdata.data('electronAffinity'))

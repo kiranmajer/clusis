@@ -129,7 +129,9 @@ class View(object):
                 if self.spec.mdata.data(mdata_key) is not None:
                     info_str = 'T$_{trap}$: ' + '{:.0f} K'.format(self.spec.mdata.data(mdata_key))
                 else:
-                    info_str = 'T$_{trap}$: not set' 
+                    info_str = 'T$_{trap}$: not set'
+            elif 'tags' in mdata_key:
+                info_str = '\n'.join(self.spec.mdata.data('userTags'))
             else:
                 info_str = str(self.spec.mdata.data(mdata_key))
         else:
