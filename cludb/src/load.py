@@ -111,6 +111,7 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
     #with Db('casi', cfg) as db:
     db = Db('casi', cfg)
     for datFile in datFileList:
+        print('\n######################')
         print('Importing: '+datFile+' with ', commonMdata)
         try:
             mi = LegacyData(datFile, cfg, spectype, commonMdata, prefer_filename_mdata=prefer_filename_mdata)

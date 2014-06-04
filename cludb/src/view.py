@@ -551,7 +551,7 @@ class ViewPes(View):
         self.fig.canvas.draw()
         
         
-    def _add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1, yscale_type='area', color='blue', clusterid_fontsize=28, ax=None):
+    def _add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1, yscale_type='area', xoffset='ea', color='blue', clusterid_fontsize=28, ax=None):
         '''
         Right now a alkali specific shortcut for _add_spec, which automatically sets some values.
         Might be moved to a special class (?).
@@ -568,20 +568,25 @@ class ViewPes(View):
             self.comp_spec_data['xscale_type'] = xscale
             xscale = self.spec.cfg.bulk_fermi_energy[self.spec.mdata.data('clusterBaseUnit')]/self.spec.cfg.bulk_fermi_energy[addspec.mdata.data('clusterBaseUnit')]
         elif type(xscale) not in [int, float]:
-            raise ValueError('xscale must be numeric or "fermy_energy"')
-        if 'ebin' in self.xdata_key:
-            xoffset = ea_ref - ea*xscale
-        elif 'ekin' in self.xdata_key:
-            xoffset = (self.spec._hv - ea_ref) - (self.spec._hv - ea)*xscale
-        elif 'tof' in self.xdata_key:
-            xoffset = sqrt(self.spec._pFactor/(self.spec._hv - ea_ref))/self.timeunit - sqrt(self.spec._pFactor/(self.spec._hv - ea))/self.timeunit*xscale
-        print('xoffset calculated from eas:', xoffset)
+            raise ValueError('xscale must be numeric or "fermy_energy"')    
+        if xoffset == 'ea':
+            if 'ebin' in self.xdata_key:
+                xoffset = ea_ref - ea*xscale
+            elif 'ekin' in self.xdata_key:
+                xoffset = (self.spec._hv - ea_ref) - (self.spec._hv - ea)*xscale
+            elif 'tof' in self.xdata_key:
+                xoffset = sqrt(self.spec._pFactor/(self.spec._hv - ea_ref))/self.timeunit - sqrt(self.spec._pFactor/(self.spec._hv - ea))/self.timeunit*xscale
+            print('xoffset calculated from eas:', xoffset)
+            if 'manual offset' in self.spec.mdata.data('tags'):
+                self.spec.mdata.remove_tag('manual offset')
+        else:
+            self.spec.mdata.add_tag('manual offset')
         self._add_spec(specfile=specfile, xscale=xscale, yscale=yscale, yscale_type=yscale_type, xoffset=xoffset,
                       color=color, clusterid_fontsize=clusterid_fontsize, ax=ax)
         
         
-    def add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1, yscale_type='area', color='blue', clusterid_fontsize=28, ax=None):
-        self._add_fermiscaled_spec(specfile, xscale, yscale, yscale_type, color, clusterid_fontsize, ax)
+    def add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1, yscale_type='area', xoffset='ea', color='blue', clusterid_fontsize=28, ax=None):
+        self._add_fermiscaled_spec(specfile, xscale, yscale, yscale_type, xoffset, color, clusterid_fontsize, ax)
         self.fig.canvas.draw()
 
 

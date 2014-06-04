@@ -44,7 +44,8 @@ class SpecList(object):
             cs = load_pickle(self.cfg, entry['pickleFile'])
             try:
                 cs.mdata.update(mdataDict)
-                if hasattr(cs, '_hv'):
+                if hasattr(cs, '_hv') and 'waveLength' in mdataDict.keys():
+                    'TODO: better put this in mdata?'
                     cs._hv = cs._photon_energy(cs.mdata.data('waveLength'))
                     'TODO: this can seriously mix up data!'
                     cs.calc_spec_data()

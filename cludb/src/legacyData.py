@@ -165,8 +165,11 @@ class LegacyData(object):
                 else:
                     year = 1900 + int(year)
             elif self.datafile_type == 'ms':
-                pattern_groups = re.compile(r'(^\d{4})(\d{2})(\d{2})_')
-                year, month, day = pattern_groups.search(datFileName).groups()
+                try:
+                    pattern_groups = re.compile(r'(^\d{4})(\d{2})(\d{2})_')
+                    year, month, day = pattern_groups.search(datFileName).groups()
+                except:
+                    year, month, day = 1970, 1, 1 # dummy date
                 
             if self.datafile_type in ['pes', 'ms']:
                 startDate = '%s %s %s' % (day, month, year)
