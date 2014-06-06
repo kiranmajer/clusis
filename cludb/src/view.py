@@ -327,7 +327,7 @@ class View(object):
         self.fig.show()
         
         
-    def add_plot(self, ax, xdata, ydata, color='blue', file_id=None):
+    def add_plot(self, ax, xdata, ydata, color='blue', linestyle='-' , linewidth=.5, file_id=None):
 #         if not hasattr(self, 'fig'):
 #             raise ValueError('No active plot. Create one first via show_XXX.')
         if file_id is not None:
@@ -338,7 +338,9 @@ class View(object):
 #             xlim_scale = self.xlim_scale
         if self._yminmax_in_xrange(xdata, ydata, self.xlim_scale)[1] > self.ymax:
             self._auto_ylim(ax, xdata, ydata, self.xlim_scale)
-        ax.plot(xdata, ydata, color=color)[0]
+        added_line = ax.plot(xdata, ydata, color=color, linestyle=linestyle, linewidth=linewidth)[0]
+        if linestyle in ['--', ':']:
+            added_line.set_dashes((1,1))
         #self.fig.canvas.draw()
         
         
@@ -477,7 +479,8 @@ class ViewPes(View):
         gaugeSpec.view.show_ebin_fit()
         
         
-    def _add_spec(self, specfile, xscale=1, yscale=1, yscale_type=None, xoffset=0, yoffset=0, color='blue', clusterid_fontsize=28, ax=None):
+    def _add_spec(self, specfile, xscale=1, yscale=1, yscale_type=None, xoffset=0, yoffset=0,
+                  color='blue', linestyle='-' , linewidth=.5, clusterid_fontsize=28, ax=None):
         '''
         Adds another spectrum to the plot using the same data keys as the original plot.
         The spectrum can be modified by:
@@ -543,7 +546,8 @@ class ViewPes(View):
                                  fontsize=clusterid_fontsize, color=color, valign='top', voffset=-0.02)
         #cluster_ids = '{}\n{}'.format(self._pretty_format_clusterid(), addspec.view._pretty_format_clusterid())
         #self.txt_clusterid.set_text(cluster_ids)
-        self.add_plot(ax, xdata, ydata, color=color, file_id=os.path.basename(addspec.mdata.data('datFile')))
+        self.add_plot(ax, xdata, ydata, color=color, linestyle=linestyle, linewidth=linewidth,
+                      file_id=os.path.basename(addspec.mdata.data('datFile')))
         
         
     def add_spec(self, specfile, xscale=1, yscale=1, yscale_type=None, xoffset=0, yoffset=0, color='blue', clusterid_fontsize=28, ax=None):
