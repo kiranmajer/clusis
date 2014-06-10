@@ -327,7 +327,7 @@ class View(object):
         self.fig.show()
         
         
-    def add_plot(self, ax, xdata, ydata, color='blue', linestyle='-' , linewidth=.5, file_id=None):
+    def add_plot(self, ax, xdata, ydata, color='blue', linestyle='-', linewidth=.5, file_id=None):
 #         if not hasattr(self, 'fig'):
 #             raise ValueError('No active plot. Create one first via show_XXX.')
         if file_id is not None:
@@ -550,12 +550,16 @@ class ViewPes(View):
                       file_id=os.path.basename(addspec.mdata.data('datFile')))
         
         
-    def add_spec(self, specfile, xscale=1, yscale=1, yscale_type=None, xoffset=0, yoffset=0, color='blue', clusterid_fontsize=28, ax=None):
-        self._add_spec(specfile, xscale, yscale, yscale_type, xoffset, yoffset, color, clusterid_fontsize, ax)
+    def add_spec(self, specfile, xscale=1, yscale=1, yscale_type=None, xoffset=0, yoffset=0, color='blue',
+                 linestyle='-' , linewidth=.5, clusterid_fontsize=28, ax=None):
+        self._add_spec(specfile, xscale=xscale, yscale=yscale, yscale_type=yscale_type, xoffset=xoffset,
+                       yoffset=yoffset, color=color, linestyle=linestyle, linewidth=linewidth,
+                       clusterid_fontsize=clusterid_fontsize, ax=ax)
         self.fig.canvas.draw()
         
         
-    def _add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1, yscale_type='area', xoffset='ea', color='blue', clusterid_fontsize=28, ax=None):
+    def _add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1, yscale_type='area', xoffset='ea',
+                              color='blue', linestyle='-' , linewidth=.5, clusterid_fontsize=28, ax=None):
         '''
         Right now a alkali specific shortcut for _add_spec, which automatically sets some values.
         Might be moved to a special class (?).
@@ -574,6 +578,7 @@ class ViewPes(View):
         elif type(xscale) not in [int, float]:
             raise ValueError('xscale must be numeric or "fermy_energy"')    
         if xoffset == 'ea':
+            #ea_xoffset = True
             if 'ebin' in self.xdata_key:
                 xoffset = ea_ref - ea*xscale
             elif 'ekin' in self.xdata_key:
@@ -586,11 +591,15 @@ class ViewPes(View):
         else:
             self.spec.mdata.add_tag('manual offset')
         self._add_spec(specfile=specfile, xscale=xscale, yscale=yscale, yscale_type=yscale_type, xoffset=xoffset,
-                      color=color, clusterid_fontsize=clusterid_fontsize, ax=ax)
+                       color=color, linestyle=linestyle, linewidth=linewidth, clusterid_fontsize=clusterid_fontsize, ax=ax)
+#         if ea_xoffset:
+#             self.comp_spec_data['xoffset'] = 'ea'
         
         
-    def add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1, yscale_type='area', xoffset='ea', color='blue', clusterid_fontsize=28, ax=None):
-        self._add_fermiscaled_spec(specfile, xscale, yscale, yscale_type, xoffset, color, clusterid_fontsize, ax)
+    def add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1, yscale_type='area', xoffset='ea',
+                             color='blue', linestyle='-' , linewidth=.5, clusterid_fontsize=28, ax=None):
+        self._add_fermiscaled_spec(specfile, xscale=xscale, yscale=yscale, yscale_type=yscale_type, xoffset=xoffset,
+                                   color=color, clusterid_fontsize=clusterid_fontsize, ax=ax)
         self.fig.canvas.draw()
 
 
@@ -614,20 +623,21 @@ class ViewPes(View):
             elif base_plot_mode not in self.spec.mdata.data('compSpecs')[csid]['xdata_key']:
                 raise ValueError('Comparison spectrum type ({}) does not fit to chosen view ({}).'.format(self.spec.mdata.data('compSpecs')[csid]['xdata_key'],
                                                                                                           base_plot_mode))
-            if 'xscale_type' in self.spec.mdata.data('compSpecs')[csid].keys() and self.spec.mdata.data('compSpecs')[csid]['xscale_type'] is 'fermi_energy':
-                self._add_fermiscaled_spec(self.spec.mdata.data('compSpecs')[csid]['specfile'],
-                                          self.spec.mdata.data('compSpecs')[csid]['xscale_type'],
-                                          self.spec.mdata.data('compSpecs')[csid]['yscale'],
-                                          self.spec.mdata.data('compSpecs')[csid]['yscale_type'],
-                                          self.spec.mdata.data('compSpecs')[csid]['color'])
+            if 'xscale_type' in self.spec.mdata.data('compSpecs')[csid].keys() and self.spec.mdata.data('compSpecs')[csid]['xscale_type'] == 'fermi_energy':
+                print('Adding spec in fermi scaled mode.')
+                self._add_fermiscaled_spec(specfile=self.spec.mdata.data('compSpecs')[csid]['specfile'],
+                                           xscale=self.spec.mdata.data('compSpecs')[csid]['xscale_type'],
+                                           yscale=self.spec.mdata.data('compSpecs')[csid]['yscale'],
+                                           yscale_type=self.spec.mdata.data('compSpecs')[csid]['yscale_type'],
+                                           color=self.spec.mdata.data('compSpecs')[csid]['color'])
             else:
                 self._add_spec(self.spec.mdata.data('compSpecs')[csid]['specfile'],
-                              self.spec.mdata.data('compSpecs')[csid]['xscale'],
-                              self.spec.mdata.data('compSpecs')[csid]['yscale'],
-                              self.spec.mdata.data('compSpecs')[csid]['yscale_type'],
-                              self.spec.mdata.data('compSpecs')[csid]['xoffset'],
-                              self.spec.mdata.data('compSpecs')[csid]['yoffset'],
-                              self.spec.mdata.data('compSpecs')[csid]['color'])
+                               self.spec.mdata.data('compSpecs')[csid]['xscale'],
+                               self.spec.mdata.data('compSpecs')[csid]['yscale'],
+                               self.spec.mdata.data('compSpecs')[csid]['yscale_type'],
+                               self.spec.mdata.data('compSpecs')[csid]['xoffset'],
+                               self.spec.mdata.data('compSpecs')[csid]['yoffset'],
+                               self.spec.mdata.data('compSpecs')[csid]['color'])
             
         
 

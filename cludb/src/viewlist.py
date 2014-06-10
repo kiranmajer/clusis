@@ -182,7 +182,7 @@ class ViewPesList(ViewList):
                    ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata)        
 
 
-    def _show_comp_spec(self, spec, ax, layout_y, comp_spec_id, **keywords):
+    def _show_comp_spec(self, spec, ax, layout_y, comp_spec_id, linestyle='-', linewidth=0.5, **keywords):
         base_plot_map = {'tof': self._show_tof,
                          'ekin': self._show_ekin,
                          'ebin': self._show_ebin}
@@ -202,14 +202,16 @@ class ViewPesList(ViewList):
             elif base_plot_mode not in spec.mdata.data('compSpecs')[csid]['xdata_key']:
                 raise ValueError('Comparison spectrum type ({}) does not fit to chosen view ({}).'.format(spec.mdata.data('compSpecs')[csid]['xdata_key'],
                                                                                                           base_plot_mode))
-            if 'xscale_type' in spec.mdata.data('compSpecs')[csid].keys() and spec.mdata.data('compSpecs')[csid]['xscale_type'] is 'fermi_energy':
-                spec.view._add_fermiscaled_spec(spec.mdata.data('compSpecs')[csid]['specfile'],
-                                          spec.mdata.data('compSpecs')[csid]['xscale_type'],
-                                          spec.mdata.data('compSpecs')[csid]['yscale'],
-                                          spec.mdata.data('compSpecs')[csid]['yscale_type'],
-                                          spec.mdata.data('compSpecs')[csid]['color'],
-                                          clusterid_fontsize=10,
-                                          ax=ax)
+            if 'xscale_type' in spec.mdata.data('compSpecs')[csid].keys() and spec.mdata.data('compSpecs')[csid]['xscale_type'] == 'fermi_energy':
+                spec.view._add_fermiscaled_spec(specfile=spec.mdata.data('compSpecs')[csid]['specfile'],
+                                                xscale=spec.mdata.data('compSpecs')[csid]['xscale_type'],
+                                                yscale=spec.mdata.data('compSpecs')[csid]['yscale'],
+                                                yscale_type=spec.mdata.data('compSpecs')[csid]['yscale_type'],
+                                                color=spec.mdata.data('compSpecs')[csid]['color'],
+                                                linestyle=linestyle,
+                                                linewidth=linewidth,
+                                                clusterid_fontsize=10,
+                                                ax=ax)
             else:
                 spec.view._add_spec(spec.mdata.data('compSpecs')[csid]['specfile'],
                               spec.mdata.data('compSpecs')[csid]['xscale'],
@@ -218,13 +220,16 @@ class ViewPesList(ViewList):
                               spec.mdata.data('compSpecs')[csid]['xoffset'],
                               spec.mdata.data('compSpecs')[csid]['yoffset'],
                               spec.mdata.data('compSpecs')[csid]['color'],
+                              linestyle=linestyle,
+                              linewidth=linewidth,
                               clusterid_fontsize=10,
                               ax=ax)
     
         
-    def show_comp_spec(self, comp_spec_id, layout=[7,3], xlim=['auto', 'auto'], xlim_scale=None, pdf=True, show_mdata=None):
-        self._show(self._show_comp_spec, xlabel_str='TODO', comp_spec_id=comp_spec_id, layout=layout, pdf=pdf, xlim=xlim,
-                   xlim_scale=xlim_scale, show_mdata=show_mdata)
+    def show_comp_spec(self, comp_spec_id, layout=[7,3], xlim=['auto', 'auto'], xlim_scale=None,
+                       pdf=True, show_mdata=None, linestyle='-', linewidth=0.5,):
+        self._show(self._show_comp_spec, xlabel_str='TODO', comp_spec_id=comp_spec_id, linestyle=linestyle,
+                   linewidth=linewidth, layout=layout, pdf=pdf, xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata)
 
 
 
