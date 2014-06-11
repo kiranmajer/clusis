@@ -122,6 +122,31 @@ class SpecPeList(SpecList):
             del cs
 
 
+    def plot_ea(self, return_data=False):
+        fig = plt.figure()
+        #print 'Figure created.'
+        ax = fig.add_subplot(1,1,1)
+        ax.set_xlabel('cluster size (#)')
+        ax.set_ylabel('electron affinity (eV)')
+        ax.grid()
+        csize = []
+        ea = []
+        for s in self.dbanswer:
+            cs = load_pickle(self.cfg,s[str('pickleFile')])
+            if 'electronAffinity' in cs.mdata.data().keys():
+                csize.append(cs.mdata.data('clusterBaseUnitNumber'))
+                ea.append(cs.mdata.data('electronAffinity'))
+            else:
+                print('Spec has no value for electron affinity. Skipping.')
+                
+        ax.plot(csize, ea)
+                
+        #ax.legend(loc=2)
+        fig.show()
+        if return_data:
+            return csize, ea
+
+
 
 class SpecPePtList(SpecPeList):
     def __init__(self, cfg, clusterBaseUnitNumber=None, recTime=None, recTimeRange=None,

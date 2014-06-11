@@ -6,8 +6,6 @@ import load
 
 class View(object):
     def __init__(self, spec):
-        #print '__init__: Initializing View object.'
-        'TODO: allow multiple specs'
         self.spec = spec
         self.xdata_key = None
         self.ydata_key = None
@@ -111,17 +109,12 @@ class View(object):
         
         
     def _addtext_info(self, ax, info_text, text_pos='left', text_vpos='center', fontsize=12):
-#         if text_pos == 'left':
-#             pos_x = 0.05
-#         elif text_pos == 'right':
-#             pos_x= 0.95
-#         else:
-#             raise ValueError('text_pos must be one of: left, right. Got "%s" instead.'%(str(text_pos)))
         txt_pos = {'left': 0.05, 'right': 0.95,
                    'top': 0.9, 'center': 0.5, 'bottom': 0.1}
              
         ax.text(txt_pos[text_pos], txt_pos[text_vpos], info_text, transform = ax.transAxes, fontsize=fontsize,
                 horizontalalignment=text_pos, verticalalignment=text_vpos)        
+
 
     def _pretty_print_info(self, mdata_key):
         if mdata_key in self.spec.mdata.data().keys():
@@ -137,8 +130,8 @@ class View(object):
         else:
             info_str = ''
         
-        
         return info_str
+    
     
     def _set_xlabel_time(self, ax, label, time_unit):
         if time_unit not in [1, 1e-3, 1e-6, 1e-9]:
@@ -147,33 +140,6 @@ class View(object):
         prefix = prefix_map[int(abs(log10(time_unit)/3))]
         ax.set_xlabel(r'{0} (${1}s$)'.format(label, prefix))
         
-        
-#    def _pref_xdata_key(self, x_repr):
-#        pref_map = {'idx': ['idx', 'idx'],
-#                    'tof': ['tof', 'tofGauged'],
-#                    'ekin': ['ekin', 'ekinGauged'],
-#                    'ebin': ['ebin', 'ebinGauged']}
-#        if 'gauged' in self.spec.mdata.data('systemTags'):
-#            pxk = pref_map[x_repr][1]
-#        else:
-#            pxk = pref_map[x_repr][0]
-#        return pxk
-#        
-#        
-#    def _pref_ydata_key(self, xdata_key):
-#        pref_map = {'idx': ['intensity', 'intensitySub'],
-#                    'tof': ['intensity', 'intensitySub'],
-#                    'tofGauged': ['intensity', 'intensitySub'],
-#                    'ekin': ['jIntensity', 'jIntensitySub'],
-#                    'ekinGauged': ['jIntensityGauged', 'jIntensityGaugedSub'],
-#                    'ebin': ['jIntensity', 'jIntensitySub'],
-#                    'ebinGauged': ['jIntensityGauged', 'jIntensityGaugedSub'],}
-#        if 'subtracted' in self.spec.mdata.data('systemTags'):
-#            pyk = pref_map[xdata_key][1]
-#        else:
-#            pyk = pref_map[xdata_key][0]
-#        return pyk
-
 
     def _auto_key_selection(self, xdata_key, ydata_key, key_deps):
         'TODO: Use self.spec._auto_key_selection instead.'
@@ -239,15 +205,8 @@ class View(object):
         
 
     def plot_idx(self, ax, xdata_key, ydata_key, xlim, xlim_scale=None, color='black'):
-
-#        xdata_key = 'idx'
-#        if ydata_key in ['auto']:
-#            ydata_key = self._pref_ydata_key(xdata_key)
-#        elif ydata_key not in ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']:
-#            raise ValueError("ydata_key must be one of: 'intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'")
         self.xdata_key = xdata_key
         self.ydata_key = ydata_key
-        #self.xlim_scale = xlim_scale
         # plot 
         ax.plot(self.spec.xdata[xdata_key], self.spec.ydata[ydata_key], color=color)
         # set axes limits
@@ -262,21 +221,6 @@ class View(object):
               
         
     def plot_tof(self, ax, xdata_key, ydata_key, time_unit, xlim, xlim_scale=None, color='black'):
-        #print('plot_tof called with xlim =', xlim)
-        
-#        self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key,
-#                                 xkeys=['tof', 'tofGauged'],
-#                                 ykeys=['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'])
-#        # set data keys
-#        if xdata_key in ['auto']:
-#            xdata_key = self._pref_xdata_key('tof')
-#        elif xdata_key not in ['tof', 'tofGauged']:
-#            raise ValueError("xdata_key must be one of: 'tof', 'tofGauged'.")
-#        if ydata_key in ['auto']:
-#            ydata_key = self._pref_ydata_key(xdata_key)
-#        elif ydata_key not in ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']:
-#            raise ValueError("""ydata_key must be one of: 'intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'
-#            Got'{}' instead.""".format(ydata_key))
         self.xdata_key = xdata_key
         self.ydata_key = ydata_key
         self.timeunit = time_unit
@@ -294,7 +238,7 @@ class View(object):
                             xlim_scale)
             
             
-    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False):
+    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False, show_ytics=True):
         self._single_fig_output()
         # set data keys
         key_deps = {'idx': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']}
@@ -306,11 +250,16 @@ class View(object):
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
         if show_info:
             self._addtext_info(self.ax, self.spec.mdata.data('info'), text_pos='right')
+        if show_ytics:
+            self.ax.yaxis.set_major_locator(plt.AutoLocator())
+        else:
+            self.ax.yaxis.set_major_locator(plt.NullLocator())
+        self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
         self.fig.show()
 
 
     def show_tof(self, xdata_key='auto', ydata_key='auto', time_label='Time',
-                 time_unit=1e-6, xlim=['auto', 'auto'], xlim_scale=None, show_info=False):     
+                 time_unit=1e-6, xlim=['auto', 'auto'], xlim_scale=None, show_info=False, show_ytics=True):     
         self._single_fig_output()
         # set data keys
         key_deps = {'tof': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'],
@@ -324,6 +273,11 @@ class View(object):
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
         if show_info:
             self._addtext_info(self.ax, self.spec.mdata.data('info'), text_pos='right')
+        if show_ytics:
+            self.ax.yaxis.set_major_locator(plt.AutoLocator())
+        else:
+            self.ax.yaxis.set_major_locator(plt.NullLocator())
+        self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
         self.fig.show()
         
         
@@ -362,7 +316,17 @@ class View(object):
         max_ref = ydata_ref.max()
         max_comp = ydata.max()
         return  max_ref/max_comp
-        
+
+
+    def export(self, fname='export.pdf', export_dir=os.path.expanduser('~'), size=[20,14]):
+        f = os.path.join(export_dir, fname)
+        w = size[0]/2.54
+        h = size[1]/2.54
+        #orig_size = self.fig.get_size_inches()
+        self.fig.set_size_inches(w,h)
+        'TODO: Set up margins so we dont have to use bbox_inches'
+        self.fig.savefig(f, bbox_inches='tight')
+        #self.fig.set_size_inches(orig_size)
         
         
 class ViewPes(View):
@@ -371,20 +335,8 @@ class ViewPes(View):
         
 
     def plot_ekin(self, ax, xdata_key, ydata_key, xlim, xlim_scale=None, color='black'):
-#        # set data keys
-#        if xdata_key in ['auto']:
-#            xdata_key = self._pref_xdata_key('ekin')
-#        elif xdata_key not in ['ekin', 'ekinGauged']:
-#            raise ValueError("xdata_key must be one of: 'ekin', 'ekinGauged'")
-#        if ydata_key in ['auto']:
-#            ydata_key = self._pref_ydata_key(xdata_key)
-#        elif xdata_key in ['ekin'] and ydata_key not in ['jIntensity', 'jIntensitySub']:
-#            raise ValueError("ydata_key must be one of: 'jIntensity', 'jIntensitySub'")
-#        elif xdata_key in ['ekinGauged'] and ydata_key not in ['jIntensityGauged', 'jIntensityGaugedSub']:
-#            raise ValueError("ydata_key must be one of: 'jIntensityGauged', 'jIntensityGaugedSub'")
         self.xdata_key = xdata_key
         self.ydata_key = ydata_key
-        #self.xlim_scale = xlim_scale
         # plot 
         ax.plot(self.spec.xdata[xdata_key], self.spec.ydata[ydata_key], color=color)
         #set axes limits  
@@ -398,20 +350,9 @@ class ViewPes(View):
                             [xlim_scale[1], xlim_scale[0]])
 
 
-    def plot_ebin(self, ax, xdata_key, ydata_key, xlim, xlim_scale=None, color='black'):
-#        if xdata_key in ['auto']:
-#            xdata_key = self._pref_xdata_key('ebin')
-#        elif xdata_key not in ['ebin', 'ebinGauged']:
-#            raise ValueError("xdata_key must be one of: 'ebin', 'ebinGauged'.")
-#        if ydata_key in ['auto']:
-#            ydata_key = self._pref_ydata_key(xdata_key)
-#        elif xdata_key in ['ebin'] and ydata_key not in ['jIntensity', 'jIntensitySub']:
-#            raise ValueError("ydata_key must be one of: 'jIntensity', 'jIntensitySub'")
-#        elif xdata_key in ['ebinGauged'] and ydata_key not in ['jIntensityGauged', 'jIntensityGaugedSub']:
-#            raise ValueError("{} invalid key. ydata_key must be one of: 'jIntensityGauged', 'jIntensityGaugedSub'".format(ydata_key))        
+    def plot_ebin(self, ax, xdata_key, ydata_key, xlim, xlim_scale=None, color='black'):       
         self.xdata_key = xdata_key
         self.ydata_key = ydata_key
-        #self.xlim_scale = xlim_scale
         # plot
         ax.plot(self.spec.xdata[xdata_key], self.spec.ydata[ydata_key], color=color)
         #set axes limits  
@@ -425,21 +366,21 @@ class ViewPes(View):
                             xlim_scale)
 
 
-    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False):
-        View.show_idx(self, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info)
+    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False, show_ytics=True):
+        View.show_idx(self, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info, show_ytics=show_ytics)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right')
         self.fig.show()
 
         
     def show_tof(self, xdata_key='auto', ydata_key='auto', time_label='Flight Time',
-                 time_unit=1e-6, xlim=[0, 'auto'], xlim_scale=None, show_info=False):
+                 time_unit=1e-6, xlim=[0, 'auto'], xlim_scale=None, show_info=False, show_ytics=True):
         View.show_tof(self, xdata_key=xdata_key, ydata_key=ydata_key, time_label=time_label, 
-                      time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info)
+                      time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info, show_ytics=show_ytics)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right')        
         self.fig.show()
         
 
-    def show_ekin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False):
+    def show_ekin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False, show_ytics=False):
         self._single_fig_output()
         # set data keys
         key_deps = {'ekin': ['jIntensity', 'jIntensitySub'],
@@ -452,11 +393,16 @@ class ViewPes(View):
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right')
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
         if show_info:
-            self._addtext_info(self.ax, self.spec.mdata.data('info'), text_pos='right')        
+            self._addtext_info(self.ax, self.spec.mdata.data('info'), text_pos='right')
+        if show_ytics:
+            self.ax.yaxis.set_major_locator(plt.AutoLocator())
+        else:
+            self.ax.yaxis.set_major_locator(plt.NullLocator())  
+        self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')    
         self.fig.show()
 
 
-    def show_ebin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False):
+    def show_ebin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False, show_ytics=False):
         self._single_fig_output()
         # set data keys
         key_deps = {'ebin': ['jIntensity', 'jIntensitySub'],
@@ -469,7 +415,12 @@ class ViewPes(View):
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid())
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
         if show_info:
-            self._addtext_info(self.ax, self.spec.mdata.data('info'))             
+            self._addtext_info(self.ax, self.spec.mdata.data('info'))
+        if show_ytics:
+            self.ax.yaxis.set_major_locator(plt.AutoLocator())
+        else:
+            self.ax.yaxis.set_major_locator(plt.NullLocator()) 
+        self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')           
         self.fig.show()
         
         
@@ -755,7 +706,8 @@ class ViewPt(ViewPes):
                
 
     
-    def show_tof_fit(self, fit_par='fitPar', time_unit=1e-6, time_label='Flight Time', xlim=[0, 'auto'], xlim_scale=None, single_peaks=True):
+    def show_tof_fit(self, fit_par='fitPar', time_unit=1e-6, time_label='Flight Time', xlim=[0, 'auto'],
+                     xlim_scale=None, single_peaks=True, show_ytics=True):
         xdata_key = 'tof'
         ydata_key = self.spec.mdata.data('fitYdataKey')
         self._single_fig_output()
@@ -767,11 +719,16 @@ class ViewPt(ViewPes):
         self._addtext_file_id(self.ax)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right') 
         self._addtext_gauge_par(self.ax, fit_par=fit_par, text_pos='right')
-        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)        
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
+        if show_ytics:
+            self.ax.yaxis.set_major_locator(plt.AutoLocator())
+        else:
+            self.ax.yaxis.set_major_locator(plt.NullLocator()) 
+        self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')     
         self.fig.show()
         
         
-    def _show_energy_fit(self, xdata_key, fit_par, xlim, xlim_scale, single_peaks):
+    def _show_energy_fit(self, xdata_key, fit_par, xlim, xlim_scale, single_peaks, show_ytics):
         plot_method = {'ekin': self.plot_ekin, 'ebin': self.plot_ebin}
         if xdata_key not in ['ekin', 'ebin']:
             raise ValueError("xdata_key must be one of: 'ekin', 'ebin'")
@@ -785,18 +742,23 @@ class ViewPt(ViewPes):
         self.ax.set_ylabel('Intensity (a.u.)')        
         self._addtext_file_id(self.ax)
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
+        if show_ytics:
+            self.ax.yaxis.set_major_locator(plt.AutoLocator())
+        else:
+            self.ax.yaxis.set_major_locator(plt.NullLocator())
+        self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
         
         
-    def show_ekin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, single_peaks=False):
-        self._show_energy_fit(xdata_key='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, single_peaks=single_peaks)
+    def show_ekin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, single_peaks=False, show_ytics=False):
+        self._show_energy_fit(xdata_key='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, single_peaks=single_peaks, show_ytics=show_ytics)
         self.ax.set_xlabel(r'E$_{kin}$ (eV)')
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right') 
         self._addtext_gauge_par(self.ax, fit_par=fit_par, text_pos='right')            
         self.fig.show()    
         
         
-    def show_ebin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, single_peaks=False):
-        self._show_energy_fit(xdata_key='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, single_peaks=single_peaks)
+    def show_ebin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, single_peaks=False, show_ytics=False):
+        self._show_energy_fit(xdata_key='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, single_peaks=single_peaks, show_ytics=show_ytics)
         self.ax.set_xlabel(r'E$_{bin}$ (eV)')
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid()) 
         self._addtext_gauge_par(self.ax, fit_par=fit_par)            
@@ -846,7 +808,7 @@ class ViewWater(ViewPes):
 #         ax.text(pos_x, pos_y-0.025, 'fwhm: %.3f eV'%(peak_width),
 #                 transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
         fit_values_str = '\n'.join(['{:.2f} {}'.format(p/time_unit, peakPos_unit) for p in peak_values])
-        fit_values_str += '\n\nfwhm: {:.3f} eV'.format(self.spec._get_peak_width())
+        fit_values_str += '\n\nfwhm: {:.3f} eV'.format(self.spec._get_peak_width(fit_par))
         ax.text(pos_x, pos_y, fit_values_str,transform = ax.transAxes, fontsize=fontsize, 
                 horizontalalignment=text_pos, verticalalignment='center')
    
@@ -979,7 +941,7 @@ class ViewWater(ViewPes):
 
 
     def show_tof_fit(self, fit_par='fitPar', time_unit=1e-6, time_label='Flight Time',
-                     xlim=[0, 'auto'], xlim_scale=None):
+                     xlim=[0, 'auto'], xlim_scale=None, show_ytics=True):
         if 'fitted' not in self.spec.mdata.data('systemTags'):
             raise ValueError('Spectrum not yet fitted. Fit first.')            
         self._single_fig_output()
@@ -998,10 +960,15 @@ class ViewWater(ViewPes):
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right')
         self._addtext_fitvalues(self.ax, plot_type='tof', fit_par=fit_par, time_unit=time_unit, text_pos='right')
+        if show_ytics:
+            self.ax.yaxis.set_major_locator(plt.AutoLocator())
+        else:
+            self.ax.yaxis.set_major_locator(plt.NullLocator())
+        self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
         self.fig.show()      
 
 
-    def _show_energy_fit(self, plot_type, fit_par, xlim, xlim_scale):
+    def _show_energy_fit(self, plot_type, fit_par, xlim, xlim_scale, show_ytics):
         plot_key_map = {'ekin': {'tof_intensity': [self.plot_ekin, 'ekin', 'jIntensity'],
                                  'tof_intensitySub': [self.plot_ekin, 'ekin', 'jIntensitySub'],
                                  'tofGauged_intensity': [self.plot_ekin, 'ekinGauged', 'jIntensityGauged'],
@@ -1022,46 +989,27 @@ class ViewWater(ViewPes):
         self.ax.set_ylabel('Intensity (a.u.)')        
         self._addtext_file_id(self.ax)
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
+        if show_ytics:
+            self.ax.yaxis.set_major_locator(plt.AutoLocator())
+        else:
+            self.ax.yaxis.set_major_locator(plt.NullLocator())
+        self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
 
 
-    def show_ekin_fit(self, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None):
-        self._show_energy_fit(plot_type='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
+    def show_ekin_fit(self, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, show_ytics=False):
+        self._show_energy_fit(plot_type='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, show_ytics=show_ytics)
         self.ax.set_xlabel(r'E$_{kin}$ (eV)')
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right') 
         self._addtext_fitvalues(self.ax, plot_type='ekin', fit_par=fit_par, text_pos='right')            
         self.fig.show()  
 
 
-    def show_ebin_fit(self, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None):
-        self._show_energy_fit(plot_type='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
+    def show_ebin_fit(self, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, show_ytics=False):
+        self._show_energy_fit(plot_type='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, show_ytics=show_ytics)
         self.ax.set_xlabel(r'E$_{bin}$ (eV)')
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid()) 
         self._addtext_fitvalues(self.ax, plot_type='ebin', fit_par=fit_par)            
         self.fig.show()  
-
-            
-    
-#    def show_ebin_fit(self, fitPar='fitPar', xlim=[0, 'auto']):
-#        if 'fitted' not in self.spec.mdata.data('systemTags'):
-#            raise ValueError('Spectrum not yet fitted. Fit first.') 
-#        self._single_fig_output()
-#        
-#        if fitPar in ['fitPar', 'fitPar0']:
-#            gauged = self.plot_ebin(self.ax, show_gauged=self.spec.mdata.data('fitGauged'),
-#                                   subtractBg=self.spec.mdata.data('fitSubtractBg'))
-#        else:
-#            gauged = self.plot_ebin(self.ax, show_gauged=self.spec.mdata.data('fitGaugedTof'),
-#                                   subtractBg=self.spec.mdata.data('fitSubtractBgTof'))
-#        self.plot_ebin_fit(self.ax, fitPar)
-#        self._addtext_file_id(self.ax)
-#        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid())
-#        self._addtext_fitvalues(self.ax, peakpos_unit='eV')
-#        if gauged:        
-#            self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
-#        self.fig.show()
-           
-
-
 
 
 
@@ -1099,13 +1047,18 @@ class ViewMs(View):
 #         ax.autoscale()
         
         
-    def show_ms(self, mass_key='cluster', xlim=['auto', 'auto'], xlim_scale=None, color='black'):
+    def show_ms(self, mass_key='cluster', xlim=['auto', 'auto'], xlim_scale=None, color='black', show_ytics=True):
         self._single_fig_output()
         self.plot_ms(ax=self.ax, mass_key=mass_key, xlim=xlim, xlim_scale=xlim_scale, color=color)
         self.ax.set_xlabel(self._xlabel_str(mass_key))
         self.ax.set_ylabel('Intensity (a.u.)')
         self._addtext_file_id(self.ax)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(ms=True))
+        if show_ytics:
+            self.ax.yaxis.set_major_locator(plt.AutoLocator())
+        else:
+            self.ax.yaxis.set_major_locator(plt.NullLocator())
+        self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
         self.fig.show()
         
         
