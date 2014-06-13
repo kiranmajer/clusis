@@ -340,9 +340,16 @@ class Cfg():
                               7.31087, 7.41719, 7.48260, 7.57657, 7.63695, 7.63840,
                               7.67385, 7.75668, 7.85240, 7.88327, 7.88507, 7.90845]
 
-        
-        self.bulk_fermi_energy = {'Na': 2.5,
-                                  'K': 1.6}
+# Previously was:         
+#         self.bulk_fermi_energy = {'Na': 2.5,
+#                                   'K': 1.6}
+#
+# Free electron fermi energy (Ashcroft) E_f/(m*/m_e)
+# Kostko uses E_f(Na) = 3.2 at 100K
+# m* from papers about experimental band structures
+        self.bulk_fermi_energy = {'Na': 3.2/1.28,
+                                  'K': 2.12/1.33}
+
         
 
     def convert_mdata_v0p1_to_v0p2(self, mdata):

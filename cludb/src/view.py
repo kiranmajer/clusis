@@ -318,14 +318,16 @@ class View(object):
         return  max_ref/max_comp
 
 
-    def export(self, fname='export.pdf', export_dir=os.path.expanduser('~'), size=[20,14]):
+    def export(self, fname='export.pdf', export_dir=os.path.expanduser('~'), size=[20,14], figure=None):
         f = os.path.join(export_dir, fname)
         w = size[0]/2.54
         h = size[1]/2.54
         #orig_size = self.fig.get_size_inches()
-        self.fig.set_size_inches(w,h)
+        if figure is None:
+            figure = self.fig
+        figure.set_size_inches(w,h)
         'TODO: Set up margins so we dont have to use bbox_inches'
-        self.fig.savefig(f, bbox_inches='tight')
+        figure.savefig(f, bbox_inches='tight')
         #self.fig.set_size_inches(orig_size)
         
         

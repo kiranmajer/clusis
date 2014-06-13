@@ -82,7 +82,17 @@ class SpecList(object):
             print('{}:'.format(os.path.basename(cs.mdata.data('datFile'))), values)
             del cs
             
-
+    def _export(self, fname='export.pdf', export_dir=os.path.expanduser('~'), size=[20,14], figure=None):
+        f = os.path.join(export_dir, fname)
+        w = size[0]/2.54
+        h = size[1]/2.54
+        #orig_size = self.fig.get_size_inches()
+        if figure is None:
+            figure = self.fig
+        figure.set_size_inches(w,h)
+        'TODO: Set up margins so we dont have to use bbox_inches'
+        figure.savefig(f, bbox_inches='tight')
+        #self.fig.set_size_inches(orig_size)
 
 
 
@@ -404,7 +414,8 @@ class SpecPeWaterFitList(SpecPeList):
         return comp_data
 
 
-    def compare_water_fits(self, plot_iso_borders=False, comp_data=None, cutoff=None):
+    def compare_water_fits(self, plot_iso_borders=False, comp_data=None, cutoff=None,
+                           fname=None, export_dir=os.path.expanduser('~'), size=[20,14]):
         # methods to sort peak position to isomers
         linear_par = {'iso2': [[abs((2-1.62)/0.1), -2.2]], #, [abs((2-1.62)/0.1), -2.25]],
                       'iso1a': [[abs((3.26-2.69)/0.1), -3.26]], #, [abs((3.3-2.71)/0.1), 3.3]],  #[abs((4.275-3.3)/0.1), -4.275]],
@@ -453,7 +464,10 @@ class SpecPeWaterFitList(SpecPeList):
             ax2.axis["right"].major_ticklabels.set_visible(False)
             ax2.grid(b=True)
             # write fit values
-            ex_str = 'Extrapolations (from size {}):'.format(cutoff)
+            if cutoff is None:
+                ex_str = 'Extrapolations:'
+            else:
+                ex_str = 'Extrapolations (from size {}):'.format(cutoff)
             for par_set in fit_par:
                 ex_str += '\n{:.2f} eV'.format(par_set[1])
             ax.text(0.01, -0.6, ex_str, verticalalignment='top')
@@ -482,7 +496,10 @@ class SpecPeWaterFitList(SpecPeList):
             if plot_iso_borders:
                 for par in linear_par.values():
                     ax.plot([0, 1], par[0][0]*np.array([0,1]) + par[0][1], ':', color='grey')
-            fig.show()
+            if fname is None:
+                fig.show()
+            else:
+                self._export(fname, export_dir, size, figure=fig)
                 
                 
                 
@@ -511,6 +528,8 @@ class SpecPeWaterFitList(SpecPeList):
                 peak_set = np.array([peak_set[0][b],peak_set[1][b],peak_set[2][b]])
                 if len(peak_set) == 3:
                     f_data.append(peak_set)
+        else:
+            f_data = plot_data
         fit_data = [ps for ps in f_data if len(ps[0]) > 1 and np.abs(ps[0][0]-ps[0][-1]) > 20]
         #print('fit_data:', fit_data)
         
@@ -524,7 +543,7 @@ class SpecPeWaterFitList(SpecPeList):
         #return fit_par
 
 
-    def compare_peak_widths(self):
+    def compare_peak_widths(self, fname=None, export_dir=os.path.expanduser('~'), size=[20,14]):
         widths = {1: [], 2: [], 3: [], 4: []}
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
@@ -568,7 +587,10 @@ class SpecPeWaterFitList(SpecPeList):
                 lin_fit = np.poly1d(fitpar)
                 ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')
         ax.legend(title='Number of fit peaks:')
-        fig.show()
+        if fname is None:
+            fig.show()
+        else:
+            self._export(fname, export_dir, size, figure=fig)
         
         
     def refit(self, fit_par=None, cutoff=None):
