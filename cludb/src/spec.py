@@ -939,7 +939,7 @@ class SpecMs(Spec):
 #         self.mdata.update({'timeOffset': min_to, 'referenceTime': min_tr})
 #         self.calc_spec_data()        
 
-    def gauge_new(self, dn_unit='cluster', view_unit='tof', p0=(5e9, 1.6e-7, 0), manual_offset=False):
+    def gauge_new(self, dn_unit='cluster', view_unit='tof', p0=(5e9, 1.6e-7), manual_offset=False):
         '''
         Usage:
             * gauge_new()
@@ -1024,11 +1024,11 @@ class SpecMs(Spec):
 #             else: 
             return mass(t, k, toff) - m
             
-        
+        p0=(p0[0], p0[1], 0)
         isu = round(self.mdata.data('clusterBaseUnitMass'))/self.mdata.data('clusterBaseUnitMass')
         dm1, dm2 = dn1*isu*dn_unit, dn2*isu*dn_unit
         t_array = np.array([t1, t2, t3])
-        m_array = np.array([0, dm1, dm1+dm2]) +1
+        m_array = np.array([0, dm1, dm1+dm2]) + 1
         print('Fitting with: ', t_array, m_array)
         
         if manual_offset:
