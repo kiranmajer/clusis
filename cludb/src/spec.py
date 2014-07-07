@@ -1055,7 +1055,9 @@ class SpecMs(Spec):
         m_array = np.array([offset, offset+dm1, offset+dm1+dm2])
         print('Fitting with: ', t_array, m_array, m_array/self.mdata.data('clusterBaseUnitMass'))
         p, covar, info, mess, ierr = leastsq(err2_mass, (p0[0], p0[1]), args=(t_array, m_array), full_output=True)
-        print('Step 2 fit resulted in gauge parameter: ', p)
+        # calculate chi squared
+        chisq = sum(info['fvec']*info['fvec'])
+        print('Step 2 fit resulted in gauge parameter:', p, 'with chisq:', chisq)
 
         self.mdata.update({'timeOffset': p[1], 'referenceTime': p[0]})
         self.calc_spec_data()
