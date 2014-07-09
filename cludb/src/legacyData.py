@@ -400,7 +400,7 @@ class LegacyData(object):
         if len(fname_parts) == 4:
             self.metadata['clusterBaseUnitNumberStart'] = fname_parts[2].split('-')[0]
             self.metadata['clusterBaseUnitNumberEnd'] = fname_parts[2].split('-')[-1]
-            self.metadata['trapTemp'] = int(fname_parts[3].split('K')[0])
+            self.metadata['trapTemp'] = int(fname_parts[3].upper().split('K')[0])
         else:
             print('Warning: Could not parse file name (%s).'%(os.path.basename(self.metadata['datFileOrig'])))
             self.metadata['userTags'].append('Import warning: Could not parse file name.')

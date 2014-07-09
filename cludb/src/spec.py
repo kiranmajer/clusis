@@ -1121,7 +1121,7 @@ class SpecMs(Spec):
             print('Step 1: Fit parameter: ', p_idx)            
              
         if not detail_run:
-            for offset in range(offset-2,offset+2):
+            for offset in range(offset-20,offset+21):
                 print('\n########################\nStarting test for offset:', offset)              
                 m_array = np.array([offset, offset+dm1, offset+dm1+dm2])
                 print('\nStep 2: Fitting with: ', idx_array, m_array, m_array/self.mdata.data('clusterBaseUnitMass'))
