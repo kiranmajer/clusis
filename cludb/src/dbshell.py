@@ -90,7 +90,16 @@ class Db(object):
         self.__db.commit()
         
         return valueList
-        
+    
+    
+    def remove(self, sha1, tablename):
+        sql = 'DELETE FROM {} WHERE sha1 IS "{}"'.format(tablename, sha1)
+        db_cursor = self.__db.cursor()
+        db_cursor.execute(sql)
+        db_cursor.close()
+        self.__db.commit()
+        del db_cursor
+                
 
     def table_has_sha1(self, tableName, sha1):
         sql = "SELECT EXISTS (SELECT 1 FROM %s WHERE sha1 IS ?)" % tableName

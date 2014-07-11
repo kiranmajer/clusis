@@ -164,6 +164,27 @@ class Spec(object):
         reason = str(reason)
         self.mdata.add_tag('trash', 'systemTags')
         self.mdata.update({'info': reason})
+        
+    def remove(self):
+        # collect associated files
+        fk = [k for k in self.mdata.data().keys() if 'File' in k]
+        files = []
+        for f in fk:
+            files.append(os.path.join(self.cfg.path['base'], self.mdata.data(f)))
+        'TODO: handle more securely.'
+        for f in files:
+            try:
+                os.remove(f)
+            except FileNotFoundError:
+                print('\nWarning: {} does not exist.\n')
+            except:
+                print('\n##################\nRemoving of {} failed. Please remove manually.'.format(f))
+                raise
+        # remove db entry
+        sha1 = self.mdata.data('sha1')
+        tablename = self.mdata.data('specType')
+        with Db(self.mdata.data('machine'), self.cfg) as db:
+            db.remove(sha1, tablename)
 
 
         

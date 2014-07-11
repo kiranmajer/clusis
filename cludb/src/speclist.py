@@ -93,6 +93,13 @@ class SpecList(object):
         'TODO: Set up margins so we dont have to use bbox_inches'
         figure.savefig(f, bbox_inches='tight')
         #self.fig.set_size_inches(orig_size)
+        
+    def remove_spec(self):
+        'TODO: query for confirmation, since you can cause great damage.'
+        for entry in self.dbanswer:
+            cs = load_pickle(self.cfg, entry['pickleFile'])
+            cs.remove()
+            del cs        
 
 
 
