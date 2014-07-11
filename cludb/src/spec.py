@@ -939,8 +939,11 @@ class SpecMs(Spec):
 #         self.mdata.update({'timeOffset': min_to, 'referenceTime': min_tr})
 #         self.calc_spec_data()        
 
-    def gauge_new(self, dn_unit='cluster', view_unit='tof', p0=(5e9, 1.6e-7), manual_offset=False, use_idx=False, detail_run=False):
+    def gauge_new(self, dn_unit='cluster', view_unit='tof', p0=(5e9, 1.6e-7),
+                  manual_offset=False, dn_unit_mass=None, use_idx=False, detail_run=False):
         '''
+        TODO: Elements with isotopes needs special treatment, since 'center of mass'-mass doesn't work
+              so well.
         Usage:
             * gauge_new()
             * divide estimated offset by cluster mass (simplified): e.g. 1432/39
@@ -950,9 +953,11 @@ class SpecMs(Spec):
         if dn_unit == 'cluster':
             dn_unit = self.mdata.data('clusterBaseUnitMass')
             #mass_key = 'ms'
-        elif dn_unit == 's_u':
+        elif dn_unit == 's_u' and dn_unit_mass is None:
             dn_unit = self.mdata.data('clusterBaseUnitMass')/round(self.mdata.data('clusterBaseUnitMass'))
             #mass_key = 'amu'
+        elif dn_unit == 's_u':
+            dn_unit = dn_unit_mass/round(dn_unit_mass)
         else:
             raise ValueError('dn_unit must be one of [cluster/s_u].')        
         
@@ -1121,7 +1126,7 @@ class SpecMs(Spec):
             print('Step 1: Fit parameter: ', p_idx)            
              
         if not detail_run:
-            for offset in range(offset-20,offset+21):
+            for offset in range(offset-3,offset+4):
                 print('\n########################\nStarting test for offset:', offset)              
                 m_array = np.array([offset, offset+dm1, offset+dm1+dm2])
                 print('\nStep 2: Fitting with: ', idx_array, m_array, m_array/self.mdata.data('clusterBaseUnitMass'))
