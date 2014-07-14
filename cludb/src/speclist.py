@@ -424,8 +424,8 @@ class SpecPeWaterFitList(SpecPeList):
     def compare_water_fits(self, plot_iso_borders=False, comp_data=None, cutoff=None,
                            fname=None, export_dir=os.path.expanduser('~'), size=[20,14]):
         # methods to sort peak position to isomers
-        linear_par = {'iso2': [[abs((2-1.62)/0.1), -2.2]], #, [abs((2-1.62)/0.1), -2.25]],
-                      'iso1a': [[abs((3.26-2.69)/0.1), -3.26]], #, [abs((3.3-2.71)/0.1), 3.3]],  #[abs((4.275-3.3)/0.1), -4.275]],
+        linear_par = {'iso2': [[abs((1.12-.91)/0.1), -1.72]],#, [abs((2-1.62)/0.1), -2.25]],
+                      'iso1a': [[abs((3.26-2.99)/0.1), -2.3], [abs((3.26-2.7)/0.1), -3.26]],  #[abs((4.275-3.3)/0.1), -4.275]],
                       'iso1b': [[abs((3.8-3.2)/0.1), -3.77]] #, [abs((3.93-2.82)/0.1), -3.93]]   #[abs((4.5-3.6)/0.1), -4.5]]
                       }
         def border_iso(size):
@@ -434,7 +434,7 @@ class SpecPeWaterFitList(SpecPeList):
             def b_part2(iso, size):
                 return linear_par[iso][1][0]*size**(-1/3) + linear_par[iso][1][1]
             iso2 = b_part1('iso2', size) #if size < 50 else b_part2('iso2', size)
-            iso1a = b_part1('iso1a', size) #if size < 50 else b_part2('iso1a', size)
+            iso1a = b_part1('iso1a', size) if size < 25 else b_part2('iso1a', size)
             iso1b = b_part1('iso1b', size) #if size < 50 else b_part2('iso1b', size)
             #print('Border parameter for size {} are:'.format(str(size)), iso2, iso1a, iso1b)
             return iso2, iso1a, iso1b
@@ -460,7 +460,7 @@ class SpecPeWaterFitList(SpecPeList):
             # setup lower axis
             ax = host_subplot(111, axes_class=AA.Axes)
             ax.set_xlabel('n$^{-1/3}$')
-            ax.set_xlim(0,0.4)
+            ax.set_xlim(0,0.42)
             ax.set_ylabel('-VDE (eV)')
             ax.set_ylim(-4,0)
             # setup upper axis
@@ -471,13 +471,14 @@ class SpecPeWaterFitList(SpecPeList):
             ax2.axis["right"].major_ticklabels.set_visible(False)
             ax2.grid(b=True)
             # write fit values
-            if cutoff is None:
-                ex_str = 'Extrapolations:'
-            else:
-                ex_str = 'Extrapolations (from size {}):'.format(cutoff)
-            for par_set in fit_par:
-                ex_str += '\n{:.2f} eV'.format(par_set[1])
-            ax.text(0.01, -0.6, ex_str, verticalalignment='top')
+            if len(fit_par) > 0:
+                if cutoff is None:
+                    ex_str = 'Extrapolations:'
+                else:
+                    ex_str = 'Extrapolations (from size {}):'.format(cutoff)
+                for par_set in fit_par:
+                    ex_str += '\n{:.2f} eV'.format(par_set[1])
+                ax.text(0.01, -0.6, ex_str, verticalalignment='top')
             # plot data
             for peak_set in plot_data:
                 ax.plot(peak_set[2], peak_set[1], 's')
@@ -486,7 +487,7 @@ class SpecPeWaterFitList(SpecPeList):
                 print('Got comparison data. Plotting...')
                 for key, peak_set in comp_data.items():
                     ax.plot(peak_set[0], -1*peak_set[1], 'o', label=key)
-                ax.legend(loc=2)
+                ax.legend(loc=4)
             # plot fits
             c = 1
             if cutoff is not None:
