@@ -1003,13 +1003,16 @@ class SpecMs(Spec):
         def time_from_m(m, k, toff, m_unit):
             return toff + np.sqrt(m_unit*m/k)
         
+        # reuse fit parameter from previous fit
+        if p0 == 'current':
+            p0 = (self.mdata.data('referenceTime'), self.mdata.data('timeOffset'))
         
         # view mode
         if view_unit == 'tof':
             self._calc_time_data(time_offset=0)
             self.view.show_tof()
             p1, dn1, p2, dn2, p3 = get_pos_and_dn()
-            t1, t2, t3 = p1, p2, p3
+            t1, t2, t3 = p1*1e-6, p2*1e-6, p3*1e-6
         elif view_unit in ['s_u', 'cluster']:
             self._calc_time_data(time_offset=p0[1])
             if view_unit == 'cluster':
