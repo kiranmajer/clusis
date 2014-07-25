@@ -136,9 +136,14 @@ class Db(object):
             if type(numbers) is list:
                 number_list.extend(numbers)
             else:
-                number_list.append(numbers)
-            for i in number_list:
-                numbersQuery+='{} IS {} AND '.format(key, i)
+                number_list.append(numbers)    
+            if len(number_list) > 1:
+                numbersQuery = '('
+                for n in number_list[:-1]:
+                    numbersQuery += '{} IS {} OR '.format(key, n)
+                numbersQuery += '{} IS {}) AND '.format(key, number_list[-1])
+            else:
+                numbersQuery = '{} IS {} AND '.format(key, number_list[0])  
             return numbersQuery
         
         def sqlformat_number_range(number_range, key):
