@@ -161,6 +161,8 @@ class Db(object):
                 times.append(recTime)
             n_times = len(times)
             processed_times = 0
+            if n_times > 1:
+                timesQuery += '('
             for t in times:
                 dayStart = time.mktime(time.strptime(t, '%d.%m.%Y'))
                 dayEnd = dayStart + 86400
@@ -168,8 +170,10 @@ class Db(object):
                 processed_times += 1
                 if processed_times < n_times:
                     timesQuery += 'OR '
-                
-            timesQuery += 'AND '
+            if n_times > 1:
+                timesQuery += ') AND '
+            else:
+                timesQuery += 'AND '
             
             return timesQuery
         
