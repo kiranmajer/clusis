@@ -304,7 +304,7 @@ class Db(object):
         
         def print_answer(fetch):
             def format_RecTime(unixtime):
-                return time.strftime('%d.%m.%Y', time.localtime(unixtime))
+                return time.strftime('%d.%m.%Y  %H:%M', time.localtime(unixtime))
             
             def format_DatFile(datfile):
                 return os.path.basename(datfile)
@@ -315,7 +315,7 @@ class Db(object):
                       'size'.ljust(4+3),
                       'waveLength'.ljust(10+3),
                       'temp'.ljust(4+3),
-                      'recTime'.ljust(12),
+                      'recTime'.ljust(19),
                       'datFile'.ljust(16),
                       'tags')
                 
@@ -325,7 +325,7 @@ class Db(object):
                       str(row['clusterBaseUnitNumber']).ljust(4+3),
                       str(round(row['waveLength']*1e9, 1)).ljust(10+3),
                       str(row['trapTemp']).ljust(4+3),
-                      format_RecTime(row['recTime']).ljust(12),
+                      format_RecTime(row['recTime']).ljust(19),
                       format_DatFile(row['datFile']).ljust(16),
                       end=" "
                       )                
@@ -333,27 +333,27 @@ class Db(object):
             def print_head_ms():
                 print('Idx'.rjust(6),
                       'element'.ljust(7+3),
-                      'recTime'.ljust(12),
+                      'recTime'.ljust(19),
                       'datFile'.ljust(28+3),
                       'tags')
                 
             def print_data_ms(row):
                 print(('%s  '%idx).rjust(6),
                       row['clusterBaseUnit'].ljust(7+3),    
-                      format_RecTime(row['recTime']).ljust(12),
+                      format_RecTime(row['recTime']).ljust(19),
                       format_DatFile(row['datFile']).ljust(28+3),
                       end=" "
                       )            
                 
             def print_head_generic():
                 print('Idx'.rjust(6),
-                      'recTime'.ljust(12),
+                      'recTime'.ljust(19),
                       'datFile'.ljust(16),
                       'tags')               
              
             def print_data_generic(row):
                 print(('%s  '%idx).rjust(6),   
-                      format_RecTime(row['recTime']).ljust(12),
+                      format_RecTime(row['recTime']).ljust(19),
                       format_DatFile(row['datFile']).ljust(16),
                       end=" "
                       )                
