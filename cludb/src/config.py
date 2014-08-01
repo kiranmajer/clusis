@@ -353,8 +353,10 @@ class Cfg():
         
 
     def convert_mdata_v0p1_to_v0p2(self, mdata):
-        if mdata['mdataVersion'] is 0.1:
+        if mdata['mdataVersion'] == 0.1:
+            print('Converting mdata from version 0.1 to 0.2 ...')
             mdata['delayState'] = mdata.pop('delayTimings')
+            mdata['mdataVersion'] = 0.2
         else:
             raise ValueError('mdata has wrong version: {}, expected 0.1.'.format(mdata['mdataVersion']))
         

@@ -194,12 +194,17 @@ def load_pickle(cfg, pickleFile):
                      }
     with open(pickleFile, 'rb') as f:
             mdata, xdata, ydata = pickle.load(f)
-#    if mdata['clusterBaseUnit'] == 'Pt' and mdata['specType'] == 'pes':
-#        spectrum = SpecPePt(mdata, xdata, ydata, cfg)
-#    elif mdata['clusterBaseUnit'] in ['H2O', 'D2O'] and mdata['specType'] == 'pes':
-#        spectrum = SpecPeWater(mdata, xdata, ydata, cfg)
-#    else:
+    
+    # testing for correct mdata version
+    mdata_converted = False
+    if mdata['mdataVersion'] == 0.1:
+        print('Old mdata version detected: 0.1.') 
+        mdata = cfg.convert_mdata_v0p1_to_v0p2(mdata)
+        mdata_converted = True
+        
     spectrum = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
+    if mdata_converted:
+        spectrum.commit()
     
     return spectrum
 
