@@ -64,7 +64,12 @@ class LegacyData(object):
             print('... completed.')
             if self.metadata['specType'] in ['ms']:
                 print('Parsing ms datfile name ...')
-                self.parse_datfile_name()
+                try:
+                    self.parse_datfile_name()
+                except:
+                    for k in ['clusterBaseUnitNumberStart', 'clusterBaseUnitNumberEnd', 'trapTemp']:
+                        if k in self.metadata.keys():
+                            del self.metadata[k]
                 
         print('Evaluating element name: ', self.metadata['clusterBaseUnit'])
         cbu = self.eval_element_name(self.metadata['clusterBaseUnit'], chemical_symbols)
@@ -175,7 +180,7 @@ class LegacyData(object):
                 startDate = '%s %s %s' % (day, month, year)
                 dayStarts = time.mktime(time.strptime(startDate, '%d %m %Y'))
                 dayEnds = dayStarts + 86400
-                if dayStarts <= timeStamp <= dayEnds:
+                if dayStarts <= timeStamp <= dayEnds or dayStarts == time.mktime(time.strptime('1 1 1970', '%d %m %Y')):
                     self.metadata['recTime'] = timeStamp
                 else:
                     self.metadata['recTime'] = dayStarts
