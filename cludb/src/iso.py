@@ -1,15 +1,16 @@
 import numpy as np
 import math
 from matplotlib.mlab import normpdf
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import os.path
 '''
 TODO:
 
 use more numpy stuff!
 '''
 
-gauss = lambda x,A0,A1,s0,s1,a,b: A0*np.exp(-(x-(a*m0+b))**2/(2*s0**2))+A1*np.exp(-(x-(a*m1+b))**2/(2*s1**2))
-
-atomPattern = [[38.9637069, 0.932581], [39.96399867, 0.000117], [40.96182597, 0.067302]]
+kPattern = [[38.9637069, 0.932581], [39.96399867, 0.000117], [40.96182597, 0.067302]]
 liPattern=[[6.0151222999999998, 0.075899999999999995], [7.0160039999999997, 0.92410000000000003]]
 h2oPattern=[[18.0105646863, 0.99756999999999996], [19.0147815642, 0.00038000000000000002], [20.0148104642, 0.0020500000000000002]]
 
@@ -108,7 +109,7 @@ def sigma(R, m):
     return s
 
 
-def sim_ms(isoPattern, startsize, endsize, sigma, *dopants):
+def sim_ms(isoPattern, startsize, endsize, sigma, dopants=None):
     '''
     Calculates mass spectrum from a given isotopic distribution 
     @param isoPattern:
@@ -123,9 +124,10 @@ def sim_ms(isoPattern, startsize, endsize, sigma, *dopants):
     for size in sizerange:
         peaklist = peaklist + calc_iso_dist(isoPattern, size, 0.001, 3)[0]
     peaklist = np.array(peaklist)
-    for dopant in dopants:
-        peaklist_dopant = (peaklist+(dopant[0], 0))*(1, dopant[1])
-        peaklist = np.concatenate((peaklist, peaklist_dopant))
+    if dopants:
+        for dopant in dopants:
+            peaklist_dopant = (peaklist+(dopant[0], 0))*(1, dopant[1])
+            peaklist = np.concatenate((peaklist, peaklist_dopant))
     
     X = np.linspace(peaklist[0][0]-1, peaklist[-1][0]+1, xrange)
     Y = np.array(eval(build_pattern_function(peaklist, sigma)))
@@ -174,3 +176,49 @@ def _normalize(data):
         data[x][1] /= maximum
     
     return data
+
+
+def plot_ms(iso_pattern, center_mass, dm, res, dopants=None, unit='# of atoms', pdf=None, size=[20,14]):
+    #clear plots
+    plt.close('all')
+    # calc center of mass
+    s = 0
+    for p in iso_pattern:
+        s += p[0]*p[1]
+        
+    # calc distribution for each resolution
+    res = list(res)
+    plt_data = []
+    for r in res:
+        x,y,pl=sim_ms(iso_pattern, center_mass-dm, center_mass+dm, sigma(r, center_mass*iso_pattern[0][0]), dopants)
+        plt_data.append([x, y])
+        
+    # plot
+    idx = 0
+    for l in plt_data:
+        if idx == 0:
+            plt.plot(l[0]/s, l[1], color='blue', lw=1.5)
+        else:
+            plt.plot(l[0]/s, l[1]/l[1].max()*plt_data[0][1].max()*1, color='DimGray', lw=0.5)
+            
+        idx += 1
+    
+    plt.axis([center_mass-dm+1.5, center_mass+dm-1.5, 0, plt_data[0][1].max()*1.1])
+    ax = plt.gca()
+    #ax.set_xlim(center_mass-dm+1.5, center_mass+dm-1.5)    
+    ax.set_xlabel('cluster mass ({})'.format(unit))
+    ax.yaxis.set_major_locator(mpl.ticker.NullLocator())
+    plt.grid()
+    
+    if pdf:
+        fname = os.path.join(os.path.expanduser('~'), pdf+'.pdf')
+        w = size[0]/2.54
+        h = size[1]/2.54
+        fig = plt.gcf()
+        fig.set_size_inches(w,h)
+        fig.savefig(fname, bbox_inches='tight')
+    else:
+        plt.show()
+    
+    
+    
