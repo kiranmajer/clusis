@@ -555,12 +555,12 @@ class SpecPeWaterFitList(SpecPeList):
         widths = {1: [], 2: [], 3: [], 4: []}
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
-            size = cs.mdata.data('clusterBaseUnitNumber')
+            csize = cs.mdata.data('clusterBaseUnitNumber')
             #width = np.sum(cs.mdata.data('fitPar')[-2:])
             width = cs._get_peak_width('fitPar')
             peak_n = (len(cs.mdata.data('fitPar')) -2)/2
             if 0.1 < width < 1.5:
-                widths[peak_n].append([size, width])
+                widths[peak_n].append([csize, width])
             del cs
         plot_data = {}
         for k,v in widths.items():
@@ -598,7 +598,7 @@ class SpecPeWaterFitList(SpecPeList):
         if fname is None:
             fig.show()
         else:
-            self._export(fname, export_dir, size, figure=fig)
+            self._export(fname=fname, export_dir=export_dir, size=size, figure=fig)
         
         
     def refit(self, fit_par=None, cutoff=None):
