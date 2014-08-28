@@ -194,7 +194,7 @@ class View(object):
         return ydata[xlb:xub].min(), ydata[xlb:xub].max()
                
     
-    def _auto_ylim(self, ax, xdata, ydata, xlim_scale, lower_padding=0.04, upper_padding=0.2):
+    def _auto_ylim(self, ax, xdata, ydata, xlim_scale, lower_padding=0.04, upper_padding=0.3):
         'TODO: Is scaling of ymin always wanted?'
         self.xlim_scale = xlim_scale
         ymin, self.ymax = self._yminmax_in_xrange(xdata, ydata, xlim_scale)
@@ -404,7 +404,8 @@ class ViewPes(View):
         self.fig.show()
 
 
-    def show_ebin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False, show_ytics=False):
+    def show_ebin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None,
+                  show_info=False, show_ytics=False, fontsize_clusterid=28):
         self._single_fig_output()
         # set data keys
         key_deps = {'ebin': ['jIntensity', 'jIntensitySub'],
@@ -414,7 +415,7 @@ class ViewPes(View):
         self.ax.set_xlabel(r'E$_{bin}$ (eV)')
         self.ax.set_ylabel('Intensity (a.u.)')      
         self._addtext_file_id(self.ax)
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid())
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), fontsize=fontsize_clusterid)
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
         if show_info:
             self._addtext_info(self.ax, self.spec.mdata.data('info'))
@@ -709,7 +710,7 @@ class ViewPt(ViewPes):
 
     
     def show_tof_fit(self, fit_par='fitPar', time_unit=1e-6, time_label='Flight Time', xlim=[0, 'auto'],
-                     xlim_scale=None, single_peaks=True, show_ytics=True):
+                     xlim_scale=None, single_peaks=True, show_ytics=True, fontsize_clusterid=28):
         xdata_key = 'tof'
         ydata_key = self.spec.mdata.data('fitYdataKey')
         self._single_fig_output()
@@ -719,7 +720,8 @@ class ViewPt(ViewPes):
         self._set_xlabel_time(self.ax, label=time_label, time_unit=time_unit)
         self.ax.set_ylabel('Intensity (a.u.)')
         self._addtext_file_id(self.ax)
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right') 
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
+                                 fontsize=fontsize_clusterid) 
         self._addtext_gauge_par(self.ax, fit_par=fit_par, text_pos='right')
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
         if show_ytics:
@@ -751,18 +753,23 @@ class ViewPt(ViewPes):
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
         
         
-    def show_ekin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, single_peaks=False, show_ytics=False):
-        self._show_energy_fit(xdata_key='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, single_peaks=single_peaks, show_ytics=show_ytics)
+    def show_ekin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, single_peaks=False,
+                      show_ytics=False, fontsize_clusterid=28):
+        self._show_energy_fit(xdata_key='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale,
+                              single_peaks=single_peaks, show_ytics=show_ytics)
         self.ax.set_xlabel(r'E$_{kin}$ (eV)')
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right') 
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
+                                 fontsize=fontsize_clusterid) 
         self._addtext_gauge_par(self.ax, fit_par=fit_par, text_pos='right')            
         self.fig.show()    
         
         
-    def show_ebin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, single_peaks=False, show_ytics=False):
-        self._show_energy_fit(xdata_key='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, single_peaks=single_peaks, show_ytics=show_ytics)
+    def show_ebin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, single_peaks=False,
+                      show_ytics=False, fontsize_clusterid=28):
+        self._show_energy_fit(xdata_key='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale,
+                              single_peaks=single_peaks, show_ytics=show_ytics)
         self.ax.set_xlabel(r'E$_{bin}$ (eV)')
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid()) 
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), fontsize=fontsize_clusterid) 
         self._addtext_gauge_par(self.ax, fit_par=fit_par)            
         self.fig.show()    
 
@@ -943,7 +950,7 @@ class ViewWater(ViewPes):
 
 
     def show_tof_fit(self, fit_par='fitPar', time_unit=1e-6, time_label='Flight Time',
-                     xlim=[0, 'auto'], xlim_scale=None, show_ytics=True):
+                     xlim=[0, 'auto'], xlim_scale=None, show_ytics=True, fontsize_clusterid=28):
         if 'fitted' not in self.spec.mdata.data('systemTags'):
             raise ValueError('Spectrum not yet fitted. Fit first.')            
         self._single_fig_output()
@@ -960,7 +967,7 @@ class ViewWater(ViewPes):
         self.ax.set_ylabel('Intensity (a.u.)')
         self._addtext_file_id(self.ax)
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right')
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right', fontsize=fontsize_clusterid)
         self._addtext_fitvalues(self.ax, plot_type='tof', fit_par=fit_par, time_unit=time_unit, text_pos='right')
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
@@ -998,18 +1005,20 @@ class ViewWater(ViewPes):
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
 
 
-    def show_ekin_fit(self, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, show_ytics=False):
+    def show_ekin_fit(self, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, show_ytics=False,
+                      fontsize_clusterid=28):
         self._show_energy_fit(plot_type='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, show_ytics=show_ytics)
         self.ax.set_xlabel(r'E$_{kin}$ (eV)')
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right') 
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right', fontsize=fontsize_clusterid) 
         self._addtext_fitvalues(self.ax, plot_type='ekin', fit_par=fit_par, text_pos='right')            
         self.fig.show()  
 
 
-    def show_ebin_fit(self, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, show_ytics=False):
+    def show_ebin_fit(self, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, show_ytics=False,
+                      fontsize_clusterid=28):
         self._show_energy_fit(plot_type='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, show_ytics=show_ytics)
         self.ax.set_xlabel(r'E$_{bin}$ (eV)')
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid()) 
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), fontsize=fontsize_clusterid) 
         self._addtext_fitvalues(self.ax, plot_type='ebin', fit_par=fit_par)            
         self.fig.show()  
 
