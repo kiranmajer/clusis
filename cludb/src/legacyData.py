@@ -316,15 +316,26 @@ class LegacyData(object):
     def eval_element_name(self, element, reference):
         '''Returns a well capitalized string of an element name, if in reference.
         '''
-        i=0
-        valid_name = None
-        for e in reference:
-            if element.lower() == e.lower():
-                valid_name = reference[i]
-                break
-            i+=1   
-        
-        if valid_name is None:
+    #         i=0
+    #         valid_name = None
+    #         for e in reference:
+    #             if element.lower() == e.lower():
+    #                 valid_name = reference[i]
+    #                 break
+    #             i+=1   
+        ref_lower = [e.lower() for e in reference]
+        valid_name = ''
+        pg=re.compile(r'(^\D+)(\d*)(\D*)(\d*)')
+        eg = pg.search(element).groups()
+        print('Using groups:', eg)
+        for g in eg:
+            if g.isdigit():
+                valid_name += g
+            elif g.lower() in ref_lower:
+                valid_name += reference[ref_lower.index(g.lower())]
+            elif g:
+                raise ValueError("Couldn't find valid name for part", g)    
+        if not valid_name:
             raise ValueError("Couldn't find valid name for ", element)
         else:
             return valid_name
