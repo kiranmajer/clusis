@@ -32,19 +32,34 @@ class View(object):
             #print 'Figure created.'
             self.ax = self.fig.add_subplot(1,1,1)
         self.comp_spec_data = {}
+        
+        
+    def __scale_text_vpos(self, ax, offset, scale_to_width=False):
+        bbox = ax.get_window_extent()
+        w, h = bbox.width, bbox.height
+        if scale_to_width:
+            yoffset = offset*w/h
+        else:
+            yoffset = offset/h
+            
+        return yoffset
 
 
-    def _addtext_file_id(self, ax, fontsize=6, layout_y=3):
-        ypos = 1 + layout_y*0.01/3
+    def _addtext_file_id(self, ax, fontsize=6):
+        ypos_offset = self.__scale_text_vpos(ax, offset=1.3)        
+        ypos = 1 + ypos_offset
+        print('Adding file_id at relative height: {}'.format(ypos))
         self.txt_fileid = ax.text(1.0, ypos, '%s'%(os.path.basename(self.spec.mdata.data('datFile'))),
-                                  transform = ax.transAxes, fontsize=fontsize, horizontalalignment='right')  
+                                  transform = ax.transAxes, fontsize=fontsize, horizontalalignment='right',
+                                  verticalalignment='bottom')  
 
         
-    def _addtext_statusmarker(self, ax, xdata_key, ydata_key, text_pos='center', fontsize=6, layout_y=3):
+    def _addtext_statusmarker(self, ax, xdata_key, ydata_key, text_pos='left', fontsize=6):
         xpos = {'left': 0.0,
                 'center': 0.5,
                 'right': 1.0}
-        ypos = 1 + layout_y*0.01/3
+        ypos_offset = self.__scale_text_vpos(ax, offset=1.3) 
+        ypos = 1 + ypos_offset
         stats = []
         if 'waveLength' in self.spec.mdata.data().keys():
             human_wl = '{} nm'.format(round(self.spec.mdata.data('waveLength')*1e9))
@@ -58,8 +73,9 @@ class View(object):
         if len(stats) > 0:
             stat_text = ', '.join(stats)
             #print(self.spec.mdata.data('datFile'), 'Adding status marker(s): ', stat_text)
-            ax.text(xpos[text_pos], ypos, stat_text, transform = ax.transAxes,
-                    fontsize=fontsize, horizontalalignment=text_pos)
+            self.txt_statusmarker = ax.text(xpos[text_pos], ypos, stat_text, transform = ax.transAxes,
+                                            fontsize=fontsize, horizontalalignment=text_pos,
+                                            verticalalignment='bottom')
     
     
     def _pretty_format_clusterid(self, ms=False):
@@ -96,16 +112,22 @@ class View(object):
         return cluster_id_str
                 
     
-    def _addtext_cluster_id(self, ax, cluster_id, text_pos='left', fontsize=28, color='black', valign='bottom',
-                            voffset=0):
+    def _addtext_cluster_id(self, ax, cluster_id, text_pos='left', fontsize=28, color='black', voffset=0):
+#         fig = ax.get_figure()
+#         w, h = fig.get_size_inches()
+#         bbox = ax.get_window_extent()
+#         w, h = bbox.width, bbox.height
+#         print('Got size: {}, {}'.format(w,h))
+        ypos_offset = self.__scale_text_vpos(ax, offset=0.05, scale_to_width=True)
         if text_pos == 'left':
-            pos_x, pos_y = 0.05, 0.8 + voffset
+            pos_x, pos_y = 0.05, 1 - ypos_offset + voffset
         elif text_pos == 'right':
-            pos_x, pos_y = 0.95, 0.8 + voffset
+            pos_x, pos_y = 0.95, 1 - ypos_offset + voffset
         else:
             raise ValueError('text_pos must be one of: left, right. Got "%s" instead.'%(str(text_pos)))
+        print('Placing at: {}, {}'.format(pos_x,pos_y))
         self.txt_clusterid = ax.text(pos_x, pos_y, cluster_id, transform = ax.transAxes, fontsize=fontsize,
-                horizontalalignment=text_pos, verticalalignment=valign, color=color)
+                                     horizontalalignment=text_pos, verticalalignment='top', color=color)
         
         
     def _addtext_info(self, ax, info_text, text_pos='left', text_vpos='center', fontsize=12):
@@ -318,16 +340,45 @@ class View(object):
         return  max_ref/max_comp
 
 
-    def export(self, fname='export.pdf', export_dir=os.path.expanduser('~'), size=[20,14], figure=None):
+    def export(self, fname='export.pdf', export_dir=os.path.expanduser('~'), size=[20,14]):
         f = os.path.join(export_dir, fname)
         w = size[0]/2.54
         h = size[1]/2.54
         #orig_size = self.fig.get_size_inches()
-        if figure is None:
-            figure = self.fig
-        figure.set_size_inches(w,h)
-        'TODO: Set up margins so we dont have to use bbox_inches'
-        figure.savefig(f, bbox_inches='tight')
+#         if figure is None:
+#             figure = self.fig
+        self.fig.set_size_inches(w,h)
+        'TODO: some of these margins are font size related, so they need to be adapted accordingly'
+        b = 0.9/size[1] # 0.9 fits for font size 8
+        l = 0.4/size[0] # 0.4 dito
+        self.fig.subplots_adjust(left=l, bottom=b, right=0.96, top=0.96)
+#         ax = figure.gca()
+        self.ax.yaxis.labelpad = 3
+        for l in self.ax.lines:
+            l.set_linewidth(.6)
+        'adapt voffset for text'
+        '''TODO: don't use hard coded positions and offsets. This is really hard to maintain.'''
+        if hasattr(self, 'txt_clusterid'):
+            (x,y) = self.txt_clusterid.get_position()
+            ypos_offset = self.__scale_text_vpos(self.ax, offset=0.05, scale_to_width=True)
+            y = 1 - ypos_offset
+            self.txt_clusterid.set_position((x,y))
+            
+        if hasattr(self, 'txt_fileid'):
+            (x,y) = self.txt_fileid.get_position()
+            ypos_offset = self.__scale_text_vpos(self.ax, offset=1.3)        
+            y = 1 + ypos_offset
+            self.txt_fileid.set_position((x,y))
+            
+        if hasattr(self, 'txt_statusmarker'):
+            (x,y) = self.txt_statusmarker.get_position()
+            ypos_offset = self.__scale_text_vpos(self.ax, offset=1.3)        
+            y = 1 + ypos_offset
+            self.txt_statusmarker.set_position((x,y))
+            
+        #self.txt_clusterid.set_y(1 - 0.05*size[0]/size[1])
+        #'TODO: Set up margins so we dont have to use bbox_inches'
+        self.fig.savefig(f) #, bbox_inches='tight', pad_inches=0.01)
         #self.fig.set_size_inches(orig_size)
         
         
@@ -368,7 +419,8 @@ class ViewPes(View):
                             xlim_scale)
 
 
-    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False, show_ytics=True):
+    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False,
+                 show_ytics=True):
         View.show_idx(self, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info, show_ytics=show_ytics)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right')
         self.fig.show()
@@ -382,7 +434,8 @@ class ViewPes(View):
         self.fig.show()
         
 
-    def show_ekin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False, show_ytics=False):
+    def show_ekin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None,
+                  show_info=False, show_ytics=False):
         self._single_fig_output()
         # set data keys
         key_deps = {'ekin': ['jIntensity', 'jIntensitySub'],
@@ -405,26 +458,29 @@ class ViewPes(View):
 
 
     def show_ebin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None,
-                  show_info=False, show_ytics=False, fontsize_clusterid=28):
+                  show_info=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
+                  fontsize_ref=6, export=False):
         self._single_fig_output()
         # set data keys
         key_deps = {'ebin': ['jIntensity', 'jIntensitySub'],
                     'ebinGauged': ['jIntensityGauged', 'jIntensityGaugedSub']} 
         xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key, key_deps=key_deps)         
         self.plot_ebin(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
-        self.ax.set_xlabel(r'E$_{bin}$ (eV)')
-        self.ax.set_ylabel('Intensity (a.u.)')      
-        self._addtext_file_id(self.ax)
+        self.ax.set_xlabel(r'E$_{bin}$ (eV)', fontsize=fontsize_label)
+        self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
+        self.ax.tick_params(labelsize=fontsize_label)    
+        self._addtext_file_id(self.ax, fontsize=fontsize_ref)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), fontsize=fontsize_clusterid)
-        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fontsize=fontsize_ref)
         if show_info:
             self._addtext_info(self.ax, self.spec.mdata.data('info'))
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
             self.ax.yaxis.set_major_locator(plt.NullLocator()) 
-        self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')           
-        self.fig.show()
+        self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
+        if not export:          
+            self.fig.show()
         
         
     def show_gaugeref(self):
@@ -497,7 +553,7 @@ class ViewPes(View):
         else:
             text_pos = 'right'
         self._addtext_cluster_id(ax, addspec.view._pretty_format_clusterid(), text_pos=text_pos, 
-                                 fontsize=clusterid_fontsize, color=color, valign='top', voffset=-0.02)
+                                 fontsize=clusterid_fontsize, color=color, voffset=-0.12)
         #cluster_ids = '{}\n{}'.format(self._pretty_format_clusterid(), addspec.view._pretty_format_clusterid())
         #self.txt_clusterid.set_text(cluster_ids)
         self.add_plot(ax, xdata, ydata, color=color, linestyle=linestyle, linewidth=linewidth,
@@ -623,7 +679,7 @@ class ViewPt(ViewPes):
                     self.spec._multi_gauss_trans(self.spec.xdata['tof'],
                                                  self.spec.mdata.data('fitPeakPos'),
                                                  self.spec.mdata.data(fit_par)),
-                    color=color)
+                    color=color, zorder=10)
             cutoff_idx = len(self.spec.xdata['tof'])
         else:
             cutoff_idx = (abs(self.spec.xdata['tof'] - self.spec.mdata.data('fitCutoff'))).argmin()
@@ -632,12 +688,12 @@ class ViewPt(ViewPes):
                     self.spec._multi_gauss_trans(self.spec.xdata['tof'][:cutoff_idx],
                                                  self.spec.mdata.data('fitPeakPos'),
                                                  self.spec.mdata.data(fit_par)),
-                    color=color)
+                    color=color, zorder=10)
             ax.plot(self.spec.xdata['tof'][cutoff_idx:]/time_unit,
                     self.spec._multi_gauss_trans(self.spec.xdata['tof'][cutoff_idx:],
                                                  self.spec.mdata.data('fitPeakPos'),
                                                  self.spec.mdata.data(fit_par)),
-                    color=color, ls='--')
+                    color=color, ls='--', zorder=10)
          
         # plot single peaks, if there are more than one
         if single_peaks and len(self.spec.mdata.data(fit_par)) > 4:        
@@ -665,7 +721,7 @@ class ViewPt(ViewPes):
                                                                   self.spec.mdata.data('fitPeakPos'),
                                                                   self.spec.mdata.data(fit_par)),
                                      self.spec.xdata['tof']),
-                    color=color)
+                    color=color, zorder=10)
             cutoff_idx = len(self.spec.xdata[xdata_key])
         else:
             cutoff_idx = (abs(self.spec.xdata['tof'] - self.spec.mdata.data('fitCutoff'))).argmin()
@@ -674,13 +730,13 @@ class ViewPt(ViewPes):
                                                                   self.spec.mdata.data('fitPeakPos'),
                                                                   self.spec.mdata.data(fit_par)),
                                      self.spec.xdata['tof'][:cutoff_idx]),
-                    color=color)
+                    color=color, zorder=10)
             ax.plot(self.spec.xdata[xdata_key][cutoff_idx:],
                     self.spec.jtrans(self.spec._multi_gauss_trans(self.spec.xdata['tof'][cutoff_idx:],
                                                                   self.spec.mdata.data('fitPeakPos'),
                                                                   self.spec.mdata.data(fit_par)),
                                      self.spec.xdata['tof'][cutoff_idx:]),
-                    color=color, ls='--')            
+                    color=color, ls='--', zorder=10)            
          
         # plot single peaks, if there are more than one
         if single_peaks and len(self.spec.mdata.data(fit_par)) > 4:        
@@ -701,11 +757,11 @@ class ViewPt(ViewPes):
 #                         color=color_peaks)            
                 
                 ax.plot(self.spec.xdata[xdata_key][:cutoff_idx],
-                    self.spec.jtrans(self.spec._multi_gauss_trans(self.spec.xdata['tof'][:cutoff_idx],
-                                                                  [m],
-                                                                  [A, sigma, Eoff, toff, lscale]),
-                                     self.spec.xdata['tof'][:cutoff_idx]),
-                    color=color_peaks)
+                        self.spec.jtrans(self.spec._multi_gauss_trans(self.spec.xdata['tof'][:cutoff_idx],
+                                                                      [m],
+                                                                      [A, sigma, Eoff, toff, lscale]),
+                                         self.spec.xdata['tof'][:cutoff_idx]),
+                        color=color_peaks)
                
 
     
@@ -732,7 +788,8 @@ class ViewPt(ViewPes):
         self.fig.show()
         
         
-    def _show_energy_fit(self, xdata_key, fit_par, xlim, xlim_scale, single_peaks, show_ytics):
+    def _show_energy_fit(self, xdata_key, fit_par, xlim, xlim_scale, single_peaks, show_ytics,
+                         fontsize_label, fontsize_ref):
         plot_method = {'ekin': self.plot_ekin, 'ebin': self.plot_ebin}
         if xdata_key not in ['ekin', 'ebin']:
             raise ValueError("xdata_key must be one of: 'ekin', 'ebin'")
@@ -743,9 +800,10 @@ class ViewPt(ViewPes):
         self._single_fig_output()
         plot_method[xdata_key](self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
         self.plot_energy_fit(self.ax, fit_par=fit_par, xdata_key=xdata_key, single_peaks=single_peaks)
-        self.ax.set_ylabel('Intensity (a.u.)')        
-        self._addtext_file_id(self.ax)
-        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
+        self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
+        self.ax.tick_params(labelsize=fontsize_label)  
+        self._addtext_file_id(self.ax, fontsize=fontsize_ref)
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fontsize=fontsize_ref)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
@@ -764,14 +822,17 @@ class ViewPt(ViewPes):
         self.fig.show()    
         
         
-    def show_ebin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, single_peaks=False,
-                      show_ytics=False, fontsize_clusterid=28):
+    def show_ebin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None,
+                      single_peaks=False, show_ytics=False, fontsize_clusterid=28,
+                      fontsize_label=12, fontsize_ref=6, export=False):
         self._show_energy_fit(xdata_key='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale,
-                              single_peaks=single_peaks, show_ytics=show_ytics)
-        self.ax.set_xlabel(r'E$_{bin}$ (eV)')
+                              single_peaks=single_peaks, show_ytics=show_ytics,
+                              fontsize_label=fontsize_label, fontsize_ref=fontsize_ref)
+        self.ax.set_xlabel(r'E$_{bin}$ (eV)', fontsize=fontsize_label)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), fontsize=fontsize_clusterid) 
-        self._addtext_gauge_par(self.ax, fit_par=fit_par)            
-        self.fig.show()    
+        self._addtext_gauge_par(self.ax, fit_par=fit_par, fontsize=fontsize_label)            
+        if not export:          
+            self.fig.show()    
 
         
         
@@ -1058,13 +1119,19 @@ class ViewMs(View):
 #         ax.autoscale()
         
         
-    def show_ms(self, mass_key='cluster', xlim=['auto', 'auto'], xlim_scale=None, color='black', show_ytics=True):
+    def show_ms(self, mass_key='cluster', xlim=['auto', 'auto'], xlim_scale=None, color='black',
+                show_ytics=True, fontsize_clusterid=28, show_mdata=None):
         self._single_fig_output()
         self.plot_ms(ax=self.ax, mass_key=mass_key, xlim=xlim, xlim_scale=xlim_scale, color=color)
         self.ax.set_xlabel(self._xlabel_str(mass_key))
         self.ax.set_ylabel('Intensity (a.u.)')
         self._addtext_file_id(self.ax)
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(ms=True))
+        if fontsize_clusterid:
+            self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(ms=True),
+                                     fontsize=fontsize_clusterid)
+        if show_mdata:
+            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), fontsize=9,
+                                    text_pos='right')
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
