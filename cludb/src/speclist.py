@@ -139,12 +139,13 @@ class SpecPeList(SpecList):
             del cs
 
 
-    def plot_ea(self, return_data=False):
+    def plot_ea(self, return_data=False, fontsize_label=12):
         fig = plt.figure()
         #print 'Figure created.'
         ax = fig.add_subplot(1,1,1)
-        ax.set_xlabel('cluster size (#)')
-        ax.set_ylabel('electron affinity (eV)')
+        ax.set_xlabel('cluster size (#)', fontsize=fontsize_label)
+        ax.set_ylabel('electron affinity (eV)', fontsize=fontsize_label)
+        ax.tick_params(labelsize=fontsize_label)
         ax.grid()
         csize = []
         ea = []
@@ -250,12 +251,13 @@ class SpecPePtFitList(SpecPeList):
             lastDate = format_recTime(row[0])
             
             
-    def plot_fit_par(self, max_tof=10e-6):
+    def plot_fit_par(self, max_tof=10e-6, fontsize_label=12):
         fig = plt.figure()
         #print 'Figure created.'
         ax = fig.add_subplot(1,1,1)
-        ax.set_xlabel('tof ($\mu$s)')
-        ax.set_ylabel('corrected tof ($\mu$s)')
+        ax.set_xlabel('tof ($\mu$s)', fontsize=fontsize_label)
+        ax.set_ylabel('corrected tof ($\mu$s)', fontsize=fontsize_label)
+        ax.tick_params(labelsize=fontsize_label)
         ax.grid()
         fx=np.arange(1e-9, max_tof, 1e-7)
         def g_time(xdata, lscale, Eoff, toff, pFactor):
@@ -455,19 +457,20 @@ class SpecPeWaterFitList(SpecPeList):
                     p_vib.append([size, p])
                     #print('p_vib:', p_vib)
                     
-        def plot_comp(plot_data, fit_par, cutoff, comp_data=None):
+        def plot_comp(plot_data, fit_par, cutoff, comp_data=None, fontsize_label=12):
             fig = plt.figure()
             # setup lower axis
             ax = host_subplot(111, axes_class=AA.Axes)
-            ax.set_xlabel('n$^{-1/3}$')
+            ax.set_xlabel('n$^{-1/3}$', fontsize=fontsize_label)
             ax.set_xlim(0,0.42)
-            ax.set_ylabel('-VDE (eV)')
+            ax.set_ylabel('-VDE (eV)', fontsize=fontsize_label)
+            ax.tick_params(labelsize=fontsize_label)
             ax.set_ylim(-4,0)
             # setup upper axis
             ax2 = ax.twin()
             ax2.set_xticks(np.array([10, 20,40,80,150,350,1000, 5000])**(-1/3))
             ax2.set_xticklabels(["10","20","40","80","150","350","1000","5000"])
-            ax2.set_xlabel('number of water molecules')
+            ax2.set_xlabel('number of water molecules', fontsize=fontsize_label)
             ax2.axis["right"].major_ticklabels.set_visible(False)
             ax2.grid(b=True)
             # write fit values
@@ -551,7 +554,8 @@ class SpecPeWaterFitList(SpecPeList):
         #return fit_par
 
 
-    def compare_peak_widths(self, fname=None, export_dir=os.path.expanduser('~'), size=[20,14]):
+    def compare_peak_widths(self, fname=None, export_dir=os.path.expanduser('~'),
+                            size=[20,14], fontsize_label=12):
         widths = {1: [], 2: [], 3: [], 4: []}
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
@@ -572,15 +576,16 @@ class SpecPeWaterFitList(SpecPeList):
         fig = plt.figure()
         # setup lower axis
         ax = host_subplot(111, axes_class=AA.Axes)
-        ax.set_xlabel('n$^{-1/3}$')
+        ax.set_xlabel('n$^{-1/3}$', fontsize=fontsize_label)
         ax.set_xlim(0,0.4)
-        ax.set_ylabel('fwhm (eV)')
+        ax.set_ylabel('fwhm (eV)', fontsize=fontsize_label)
+        ax.tick_params(labelsize=fontsize_label)
         ax.set_ylim(0,1.3)
         # setup upper axis
         ax2 = ax.twin()
         ax2.set_xticks(np.array([10, 20,40,80,150,350,1000, 5000])**(-1/3))
         ax2.set_xticklabels(["10","20","40","80","150","350","1000","5000"])
-        ax2.set_xlabel('number of water molecules')
+        ax2.set_xlabel('number of water molecules', fontsize=fontsize_label)
         ax2.axis["right"].major_ticklabels.set_visible(False)
         ax2.grid(b=True)
         # plot data

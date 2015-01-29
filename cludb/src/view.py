@@ -64,8 +64,8 @@ class View(object):
         if 'waveLength' in self.spec.mdata.data().keys():
             human_wl = '{} nm'.format(round(self.spec.mdata.data('waveLength')*1e9))
             stats.append(human_wl)
-        if 'Gauged' in xdata_key:
-            stats.append('gauged')
+        if not 'Gauged' in xdata_key:
+            stats.append('not gauged')
         if 'Sub' in ydata_key:
             stats.append('subtracted')
         if 'background' in self.spec.mdata.data('systemTags'):
@@ -132,7 +132,7 @@ class View(object):
         
     def _addtext_info(self, ax, info_text, text_pos='left', text_vpos='center', fontsize=12):
         txt_pos = {'left': 0.05, 'right': 0.95,
-                   'top': 0.9, 'center': 0.5, 'bottom': 0.1}
+                   'top': 0.9, 'center': 0.6, 'bottom': 0.1}
              
         ax.text(txt_pos[text_pos], txt_pos[text_vpos], info_text, transform = ax.transAxes, fontsize=fontsize,
                 horizontalalignment=text_pos, verticalalignment=text_vpos)        
@@ -155,12 +155,12 @@ class View(object):
         return info_str
     
     
-    def _set_xlabel_time(self, ax, label, time_unit):
+    def _set_xlabel_time(self, ax, label, time_unit, fontsize):
         if time_unit not in [1, 1e-3, 1e-6, 1e-9]:
             raise ValueError('time_unit must be one of: 1, 1e-3, 1e-6, 1e-9.')
         prefix_map = ['', 'm', '\mu ', 'n']
         prefix = prefix_map[int(abs(log10(time_unit)/3))]
-        ax.set_xlabel(r'{0} (${1}s$)'.format(label, prefix))
+        ax.set_xlabel(r'{0} (${1}s$)'.format(label, prefix), fontsize=fontsize)
         
 
     def _auto_key_selection(self, xdata_key, ydata_key, key_deps):
@@ -260,47 +260,56 @@ class View(object):
                             xlim_scale)
             
             
-    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False, show_ytics=True):
+    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False,
+                 show_ytics=False, fontsize_label=12, fontsize_ref=6, export=False):
         self._single_fig_output()
         # set data keys
         key_deps = {'idx': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']}
         xdata_key, ydata_key = self._auto_key_selection(xdata_key='idx', ydata_key=ydata_key, key_deps=key_deps)        
         self.plot_idx(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
-        self.ax.set_xlabel('Index')
-        self.ax.set_ylabel('Intensity (a.u.)')        
-        self._addtext_file_id(self.ax)
-        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
+        self.ax.set_xlabel('Index', fontsize=fontsize_label)
+        self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
+        self.ax.tick_params(labelsize=fontsize_label)      
+        self._addtext_file_id(self.ax, fontsize=fontsize_ref)
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fontsize=fontsize_ref)
         if show_info:
-            self._addtext_info(self.ax, self.spec.mdata.data('info'), text_pos='right')
+            self._addtext_info(self.ax, self.spec.mdata.data('info'), text_pos='right', fontsize=fontsize_label)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
             self.ax.yaxis.set_major_locator(plt.NullLocator())
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
-        self.fig.show()
+        if not export:          
+            self.fig.show()
 
 
     def show_tof(self, xdata_key='auto', ydata_key='auto', time_label='Time',
-                 time_unit=1e-6, xlim=['auto', 'auto'], xlim_scale=None, show_info=False, show_ytics=True):     
+                 time_unit=1e-6, xlim=['auto', 'auto'], xlim_scale=None, show_info=False,
+                 show_ytics=False, fontsize_label=12, fontsize_ref=6, export=False):     
         self._single_fig_output()
         # set data keys
         key_deps = {'tof': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'],
                     'tofGauged': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']} 
-        xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key, key_deps=key_deps)      
+        xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key,
+                                                        key_deps=key_deps)      
         self.plot_tof(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
                       time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale)
-        self._set_xlabel_time(self.ax, label=time_label, time_unit=time_unit)
-        self.ax.set_ylabel('Intensity (a.u.)')
-        self._addtext_file_id(self.ax)
-        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
+        self._set_xlabel_time(self.ax, label=time_label, time_unit=time_unit, fontsize=fontsize_label)
+        self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
+        self.ax.tick_params(labelsize=fontsize_label)
+        self._addtext_file_id(self.ax, fontsize=fontsize_ref)
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
+                                   fontsize=fontsize_ref)
         if show_info:
-            self._addtext_info(self.ax, self.spec.mdata.data('info'), text_pos='right')
+            self._addtext_info(self.ax, self.spec.mdata.data('info'), text_pos='right',
+                               fontsize=fontsize_label)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
             self.ax.yaxis.set_major_locator(plt.NullLocator())
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
-        self.fig.show()
+        if not export:          
+            self.fig.show()
         
         
     def add_plot(self, ax, xdata, ydata, color='blue', linestyle='-', linewidth=.5, file_id=None):
@@ -342,6 +351,12 @@ class View(object):
 
     def export(self, fname='export.pdf', export_dir=os.path.expanduser('~'), size=[20,14]):
         f = os.path.join(export_dir, fname)
+        'TODO: presets are mere personal. For a general approach probably not suitable.'
+        presets = {'p1': [14, 14*3/7],
+                   'p2': [7, 7*5/7],
+                   'p3': [4.8, 4.8*5/6]}
+        if isinstance(size, str) and size in presets.keys():
+            size = presets[size]
         w = size[0]/2.54
         h = size[1]/2.54
         #orig_size = self.fig.get_size_inches()
@@ -351,7 +366,9 @@ class View(object):
         'TODO: some of these margins are font size related, so they need to be adapted accordingly'
         b = 0.9/size[1] # 0.9 fits for font size 8
         l = 0.4/size[0] # 0.4 dito
-        self.fig.subplots_adjust(left=l, bottom=b, right=0.96, top=0.96)
+        t = 0.2/size[1]
+        r = 0.3/size[0]
+        self.fig.subplots_adjust(left=l, bottom=b, right=1-r, top=1-t)
 #         ax = figure.gca()
         self.ax.yaxis.labelpad = 3
         for l in self.ax.lines:
@@ -419,42 +436,60 @@ class ViewPes(View):
                             xlim_scale)
 
 
-    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False,
-                 show_ytics=True):
-        View.show_idx(self, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info, show_ytics=show_ytics)
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right')
-        self.fig.show()
+    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None,
+                 show_info=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
+                 fontsize_ref=6, export=False):
+        View.show_idx(self, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale,
+                      show_info=show_info, show_ytics=show_ytics, fontsize_label=fontsize_label,
+                      fontsize_ref=fontsize_ref, export=export)
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
+                                 fontsize=fontsize_clusterid)
+        if not export:          
+            self.fig.show()
 
         
     def show_tof(self, xdata_key='auto', ydata_key='auto', time_label='Flight Time',
-                 time_unit=1e-6, xlim=[0, 'auto'], xlim_scale=None, show_info=False, show_ytics=True):
+                 time_unit=1e-6, xlim=[0, 'auto'], xlim_scale=None, show_info=False, show_ytics=False,
+                 fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6, export=False):
         View.show_tof(self, xdata_key=xdata_key, ydata_key=ydata_key, time_label=time_label, 
-                      time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info, show_ytics=show_ytics)
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right')        
-        self.fig.show()
+                      time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info,
+                      show_ytics=show_ytics, fontsize_label=fontsize_label, fontsize_ref=fontsize_ref,
+                      export=export)
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
+                                 fontsize=fontsize_clusterid)        
+        if not export:          
+            self.fig.show()
         
 
     def show_ekin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None,
-                  show_info=False, show_ytics=False):
+                  show_info=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
+                  fontsize_ref=6, export=False):
         self._single_fig_output()
         # set data keys
         key_deps = {'ekin': ['jIntensity', 'jIntensitySub'],
                     'ekinGauged': ['jIntensityGauged', 'jIntensityGaugedSub']} 
-        xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key, key_deps=key_deps)        
-        self.plot_ekin(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
-        self.ax.set_xlabel(r'E$_{kin}$ (eV)')
-        self.ax.set_ylabel('Intensity (a.u.)')     
-        self._addtext_file_id(self.ax)
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right')
-        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
+        xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key,
+                                                        key_deps=key_deps)        
+        self.plot_ekin(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim,
+                       xlim_scale=xlim_scale)
+        self.ax.set_xlabel(r'E$_{kin}$ (eV)', fontsize=fontsize_label)
+        self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
+        self.ax.tick_params(labelsize=fontsize_label)  
+        self._addtext_file_id(self.ax, fontsize=fontsize_ref)
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
+                                 fontsize=fontsize_clusterid)
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
+                                   fontsize=fontsize_ref)
         if show_info:
-            self._addtext_info(self.ax, self.spec.mdata.data('info'), text_pos='right')
+            self._addtext_info(self.ax, self.spec.mdata.data('info'), text_pos='right',
+                               fontsize=fontsize_label)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
             self.ax.yaxis.set_major_locator(plt.NullLocator())  
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')    
-        self.fig.show()
+        if not export:          
+            self.fig.show()
 
 
     def show_ebin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None,
@@ -464,16 +499,19 @@ class ViewPes(View):
         # set data keys
         key_deps = {'ebin': ['jIntensity', 'jIntensitySub'],
                     'ebinGauged': ['jIntensityGauged', 'jIntensityGaugedSub']} 
-        xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key, key_deps=key_deps)         
-        self.plot_ebin(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
+        xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key,
+                                                        key_deps=key_deps)         
+        self.plot_ebin(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim,
+                       xlim_scale=xlim_scale)
         self.ax.set_xlabel(r'E$_{bin}$ (eV)', fontsize=fontsize_label)
         self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
         self.ax.tick_params(labelsize=fontsize_label)    
         self._addtext_file_id(self.ax, fontsize=fontsize_ref)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), fontsize=fontsize_clusterid)
-        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fontsize=fontsize_ref)
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
+                                   fontsize=fontsize_ref)
         if show_info:
-            self._addtext_info(self.ax, self.spec.mdata.data('info'))
+            self._addtext_info(self.ax, self.spec.mdata.data('info'), fontsize=fontsize_label)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
@@ -600,16 +638,19 @@ class ViewPes(View):
                 self.spec.mdata.remove_tag('manual offset')
         else:
             self.spec.mdata.add_tag('manual offset')
-        self._add_spec(specfile=specfile, xscale=xscale, yscale=yscale, yscale_type=yscale_type, xoffset=xoffset,
-                       color=color, linestyle=linestyle, linewidth=linewidth, clusterid_fontsize=clusterid_fontsize, ax=ax)
+        self._add_spec(specfile=specfile, xscale=xscale, yscale=yscale, yscale_type=yscale_type,
+                       xoffset=xoffset, color=color, linestyle=linestyle, linewidth=linewidth,
+                       clusterid_fontsize=clusterid_fontsize, ax=ax)
 #         if ea_xoffset:
 #             self.comp_spec_data['xoffset'] = 'ea'
         
         
-    def add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1, yscale_type='area', xoffset='ea',
-                             color='blue', linestyle='-' , linewidth=.5, clusterid_fontsize=28, ax=None):
-        self._add_fermiscaled_spec(specfile, xscale=xscale, yscale=yscale, yscale_type=yscale_type, xoffset=xoffset,
-                                   color=color, clusterid_fontsize=clusterid_fontsize, ax=ax)
+    def add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1, yscale_type='area',
+                             xoffset='ea', color='blue', linestyle='-' , linewidth=.5,
+                             clusterid_fontsize=28, ax=None):
+        self._add_fermiscaled_spec(specfile, xscale=xscale, yscale=yscale, yscale_type=yscale_type,
+                                   xoffset=xoffset, color=color, clusterid_fontsize=clusterid_fontsize,
+                                   ax=ax)
         self.fig.canvas.draw()
 
 
@@ -766,20 +807,22 @@ class ViewPt(ViewPes):
 
     
     def show_tof_fit(self, fit_par='fitPar', time_unit=1e-6, time_label='Flight Time', xlim=[0, 'auto'],
-                     xlim_scale=None, single_peaks=True, show_ytics=True, fontsize_clusterid=28):
+                     xlim_scale=None, single_peaks=True, show_ytics=False, fontsize_clusterid=28,
+                     fontsize_label=12, fontsize_ref=6, export=False):
         xdata_key = 'tof'
         ydata_key = self.spec.mdata.data('fitYdataKey')
         self._single_fig_output()
         self.plot_tof(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
                       time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale)
         self.plot_tof_fit(self.ax, fit_par=fit_par, time_unit=time_unit, single_peaks=single_peaks)   
-        self._set_xlabel_time(self.ax, label=time_label, time_unit=time_unit)
-        self.ax.set_ylabel('Intensity (a.u.)')
-        self._addtext_file_id(self.ax)
+        self._set_xlabel_time(self.ax, label=time_label, time_unit=time_unit, fontsize=fontsize_label)
+        self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
+        self.ax.tick_params(labelsize=fontsize_label)
+        self._addtext_file_id(self.ax, fontsize=fontsize_ref)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
                                  fontsize=fontsize_clusterid) 
-        self._addtext_gauge_par(self.ax, fit_par=fit_par, text_pos='right')
-        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
+        self._addtext_gauge_par(self.ax, fit_par=fit_par, fontsize=fontsize_label, text_pos='right')
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fontsize=fontsize_ref)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
@@ -811,15 +854,18 @@ class ViewPt(ViewPes):
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
         
         
-    def show_ekin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, single_peaks=False,
-                      show_ytics=False, fontsize_clusterid=28):
+    def show_ekin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None,
+                      single_peaks=False, show_ytics=False, fontsize_clusterid=28,
+                      fontsize_label=12, fontsize_ref=6, export=False):
         self._show_energy_fit(xdata_key='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale,
-                              single_peaks=single_peaks, show_ytics=show_ytics)
-        self.ax.set_xlabel(r'E$_{kin}$ (eV)')
+                              single_peaks=single_peaks, show_ytics=show_ytics,
+                              fontsize_label=fontsize_label, fontsize_ref=fontsize_ref)
+        self.ax.set_xlabel(r'E$_{kin}$ (eV)', fontsize=fontsize_label)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
                                  fontsize=fontsize_clusterid) 
-        self._addtext_gauge_par(self.ax, fit_par=fit_par, text_pos='right')            
-        self.fig.show()    
+        self._addtext_gauge_par(self.ax, fit_par=fit_par, fontsize=fontsize_label, text_pos='right')            
+        if not export:          
+            self.fig.show()    
         
         
     def show_ebin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None,
@@ -1011,7 +1057,8 @@ class ViewWater(ViewPes):
 
 
     def show_tof_fit(self, fit_par='fitPar', time_unit=1e-6, time_label='Flight Time',
-                     xlim=[0, 'auto'], xlim_scale=None, show_ytics=True, fontsize_clusterid=28):
+                     xlim=[0, 'auto'], xlim_scale=None, show_ytics=False, fontsize_clusterid=28,
+                     fontsize_label=12, fontsize_ref=6, export=False):
         if 'fitted' not in self.spec.mdata.data('systemTags'):
             raise ValueError('Spectrum not yet fitted. Fit first.')            
         self._single_fig_output()
@@ -1024,21 +1071,26 @@ class ViewWater(ViewPes):
         self.plot_tof_fit(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fit_par=fit_par,
                           time_unit=time_unit)
         # setup axes
-        self._set_xlabel_time(self.ax, label=time_label, time_unit=time_unit)
-        self.ax.set_ylabel('Intensity (a.u.)')
-        self._addtext_file_id(self.ax)
-        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right', fontsize=fontsize_clusterid)
-        self._addtext_fitvalues(self.ax, plot_type='tof', fit_par=fit_par, time_unit=time_unit, text_pos='right')
+        self._set_xlabel_time(self.ax, label=time_label, time_unit=time_unit, fontsize=fontsize_label)
+        self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
+        self.ax.tick_params(labelsize=fontsize_label)
+        self._addtext_file_id(self.ax, fontsize=fontsize_ref)
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fontsize=fontsize_ref)
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
+                                 fontsize=fontsize_clusterid)
+        self._addtext_fitvalues(self.ax, plot_type='tof', fit_par=fit_par, time_unit=time_unit,
+                                fontsize=fontsize_label, text_pos='right')
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
             self.ax.yaxis.set_major_locator(plt.NullLocator())
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
-        self.fig.show()      
+        if not export:          
+            self.fig.show()      
 
 
-    def _show_energy_fit(self, plot_type, fit_par, xlim, xlim_scale, show_ytics):
+    def _show_energy_fit(self, plot_type, fit_par, xlim, xlim_scale, show_ytics,
+                         fontsize_label, fontsize_ref):
         plot_key_map = {'ekin': {'tof_intensity': [self.plot_ekin, 'ekin', 'jIntensity'],
                                  'tof_intensitySub': [self.plot_ekin, 'ekin', 'jIntensitySub'],
                                  'tofGauged_intensity': [self.plot_ekin, 'ekinGauged', 'jIntensityGauged'],
@@ -1056,9 +1108,10 @@ class ViewWater(ViewPes):
         plot_method(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale)
         self.plot_energy_fit(self.ax, fit_par=fit_par, xdata_key=xdata_key,
                              fit_xdata_key=self.spec.mdata.data('fitXdataKey'))
-        self.ax.set_ylabel('Intensity (a.u.)')        
-        self._addtext_file_id(self.ax)
-        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key)
+        self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
+        self.ax.tick_params(labelsize=fontsize_label)        
+        self._addtext_file_id(self.ax, fontsize=fontsize_ref)
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fontsize=fontsize_ref)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
@@ -1067,21 +1120,29 @@ class ViewWater(ViewPes):
 
 
     def show_ekin_fit(self, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, show_ytics=False,
-                      fontsize_clusterid=28):
-        self._show_energy_fit(plot_type='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, show_ytics=show_ytics)
-        self.ax.set_xlabel(r'E$_{kin}$ (eV)')
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right', fontsize=fontsize_clusterid) 
-        self._addtext_fitvalues(self.ax, plot_type='ekin', fit_par=fit_par, text_pos='right')            
-        self.fig.show()  
+                      fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6, export=False):
+        self._show_energy_fit(plot_type='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale,
+                              show_ytics=show_ytics, fontsize_label=fontsize_label,
+                              fontsize_ref=fontsize_ref)
+        self.ax.set_xlabel(r'E$_{kin}$ (eV)', fontsize=fontsize_label)
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
+                                 fontsize=fontsize_clusterid) 
+        self._addtext_fitvalues(self.ax, plot_type='ekin', fit_par=fit_par, fontsize=fontsize_label,
+                                text_pos='right')            
+        if not export:          
+            self.fig.show()  
 
 
     def show_ebin_fit(self, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, show_ytics=False,
-                      fontsize_clusterid=28):
-        self._show_energy_fit(plot_type='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, show_ytics=show_ytics)
-        self.ax.set_xlabel(r'E$_{bin}$ (eV)')
+                      fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6, export=False):
+        self._show_energy_fit(plot_type='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale,
+                              show_ytics=show_ytics, fontsize_label=fontsize_label,
+                              fontsize_ref=fontsize_ref)
+        self.ax.set_xlabel(r'E$_{bin}$ (eV)', fontsize=fontsize_label)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), fontsize=fontsize_clusterid) 
-        self._addtext_fitvalues(self.ax, plot_type='ebin', fit_par=fit_par)            
-        self.fig.show()  
+        self._addtext_fitvalues(self.ax, plot_type='ebin', fit_par=fit_par, fontsize=fontsize_label)            
+        if not export:          
+            self.fig.show()  
 
 
 
@@ -1120,24 +1181,27 @@ class ViewMs(View):
         
         
     def show_ms(self, mass_key='cluster', xlim=['auto', 'auto'], xlim_scale=None, color='black',
-                show_ytics=True, fontsize_clusterid=28, show_mdata=None):
+                show_ytics=False, fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6,
+                export=False, show_mdata=None):
         self._single_fig_output()
         self.plot_ms(ax=self.ax, mass_key=mass_key, xlim=xlim, xlim_scale=xlim_scale, color=color)
-        self.ax.set_xlabel(self._xlabel_str(mass_key))
-        self.ax.set_ylabel('Intensity (a.u.)')
-        self._addtext_file_id(self.ax)
+        self.ax.set_xlabel(self._xlabel_str(mass_key), fontsize=fontsize_label)
+        self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
+        self.ax.tick_params(labelsize=fontsize_label)
+        self._addtext_file_id(self.ax, fontsize=fontsize_ref)
         if fontsize_clusterid:
             self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(ms=True),
                                      fontsize=fontsize_clusterid)
         if show_mdata:
-            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), fontsize=9,
-                                    text_pos='right')
+            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), fontsize=fontsize_label,
+                                    text_pos='left')
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
             self.ax.yaxis.set_major_locator(plt.NullLocator())
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
-        self.fig.show()
+        if not export:          
+            self.fig.show()
         
         
         
