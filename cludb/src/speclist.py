@@ -99,7 +99,84 @@ class SpecList(object):
         for entry in self.dbanswer:
             cs = load_pickle(self.cfg, entry['pickleFile'])
             cs.remove()
-            del cs        
+            del cs      
+            
+    def _export_single_plots(self, plot_fct, export_dir=os.path.expanduser('~/test'),
+                             latex_fname=None, layout=[7,3], size=[20,14], latex=True,
+                             **keywords):
+        export_fnames = []
+        total_plots = len(self.pfile_list)
+        print('number of spec to export:', total_plots)
+        rows = layout[0]
+        col = layout[1]
+        if isinstance(size, str) and size=='latex':
+            page_width = 14.576
+            page_height = 20.7
+            size = [page_width/col, page_height/rows]
+        for si in range(0, total_plots):
+            cs = self.get_spec(si)
+            getattr(cs.view, plot_fct)(export=True, **keywords)
+            fname = '{}{}_{}.pdf'.format(cs.mdata.data('clusterBaseUnit'),
+                                         cs.mdata.data('clusterBaseUnitNumber'),
+                                         os.path.splitext(os.path.basename(cs.mdata.data('datFile')))[0])
+            cs.view.export(fname=fname, export_dir=export_dir, size=size)
+            export_fnames.append(fname)
+            plt.close(plt.gcf())
+            
+        'index juggling for latex output'
+        if latex:
+            if not latex_fname:
+                latex_fname = '{}-{}.tex'.format(os.path.splitext(export_fnames[0])[0],
+                                                 os.path.splitext(export_fnames[-1])[0])
+            latex_fullpath = os.path.join(export_dir, latex_fname)
+            ppp = rows*col       
+            plotcount = 0
+            pagecount = 0
+            with open(latex_fullpath, mode='w', encoding='utf-8') as lf:
+                while plotcount < total_plots:
+                    # create page
+#                     print('Creating page', pagecount)
+                    if pagecount:
+                        lf.write('\\newpage\n')
+                    #lf.write('\\begin{center}\n')
+                    fname_idx = np.arange(0,ppp).reshape(col,rows).transpose().reshape(ppp) + pagecount*ppp
+                    plotidx = 0
+                    label_col = 1
+                    while plotidx < ppp and plotcount < total_plots:
+                        row_idx = 0
+                        while row_idx < rows and plotcount < total_plots:
+                            if row_idx:
+                                lf.write('\\newline\n')
+                            else:
+                                lf.write('\\noindent\n')
+                            #lf.write('% line {}\n'.format(row_idx + 1))
+                            col_idx = 0
+                            while col_idx < col: # and plotcount < total_plots:
+                                if fname_idx[plotidx] < total_plots:
+#                                     print('Adding plot', plotcount)
+#                                     print('with plot idx', plotidx)
+#                                     print('and fname idx', fname_idx[plotidx])
+#                                     print('thats file', export_fnames[fname_idx[plotidx]])
+                                    lf.write('\\includegraphics{{{}}}\n'.format(export_fnames[fname_idx[plotidx]]))
+                                    plotcount += 1
+                                #elif label_col == 0 and row_idx > 0 and plotidx > rows:
+                                elif fname_idx[plotidx] == total_plots:
+                                    raisebox_raise = page_height/rows - 0.18
+                                    lf.write('\\raisebox{{{}cm}}[0cm][0cm]{{\\makebox[{}cm]{{\\textsf{{\\scriptsize Binding energy (eV)}}}}}}\n'.format(raisebox_raise,
+                                                                                                                                                page_width/col))
+                                    label_col = col_idx
+                                else:
+                                    lf.write('\\makebox[{}cm]{{}}\n'.format(page_width/col))
+                                col_idx += 1
+                                plotidx += 1
+                            row_idx += 1
+                    lf.write('\\\\*[-3mm]\n')
+                    if plotcount%ppp == 0:
+                        label_col = col
+                    for c in range(label_col):
+                        lf.write('\\makebox[{}cm]{{\\textsf{{\\scriptsize Binding energy (eV)}}}}\n'.format(page_width/col))
+                    #lf.write('\\end{center}\n')
+                    pagecount += 1
 
 
 
