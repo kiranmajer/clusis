@@ -120,13 +120,18 @@ class View(object):
 #         print('Got size: {}, {}'.format(w,h))
         ypos_offset = self.__scale_text_vpos(ax, offset=0.05, scale_to_width=True)
         if text_pos == 'left':
-            pos_x, pos_y = 0.05, 1 - ypos_offset + voffset
+            pos_x, pos_y = 0.05, 1 - ypos_offset #+ voffset
         elif text_pos == 'right':
-            pos_x, pos_y = 0.95, 1 - ypos_offset + voffset
+            pos_x, pos_y = 0.95, 1 - ypos_offset #+ voffset
         else:
             raise ValueError('text_pos must be one of: left, right. Got "%s" instead.'%(str(text_pos)))
         #print('Placing at: {}, {}'.format(pos_x,pos_y))
-        self.txt_clusterid = ax.text(pos_x, pos_y, cluster_id, transform = ax.transAxes, fontsize=fontsize,
+        id_str = cluster_id
+        if voffset < 0:
+            id_str = '\n'*abs(voffset) + id_str
+        elif voffset > 0:
+            id_str = id_str + '\n'*voffset
+        self.txt_clusterid = ax.text(pos_x, pos_y, id_str, transform = ax.transAxes, fontsize=fontsize,
                                      horizontalalignment=text_pos, verticalalignment='top', color=color)
         
         
@@ -552,7 +557,7 @@ class ViewPes(View):
         
         
     def _add_spec(self, specfile, xscale=1, yscale=1, yscale_type=None, xoffset=0, yoffset=0,
-                  color='blue', linestyle='-' , linewidth=.5, clusterid_fontsize=28, ax=None):
+                  color='blue', linestyle='-' , linewidth=.5, fontsize_clusterid=28, ax=None):
         '''
         Adds another spectrum to the plot using the same data keys as the original plot.
         The spectrum can be modified by:
@@ -607,7 +612,7 @@ class ViewPes(View):
                                                      addspec.ydata[self.ydata_key][ilb:iub])
             else:
                 raise ValueError('yscale_type must be "area" or "max"')
-            print('New scale factor:', yscale)    
+            #print('New scale factor:', yscale)    
         
         ydata = addspec.ydata[self.ydata_key]*yscale + yoffset
         if self.txt_clusterid.get_position()[0] == 0.05:
@@ -615,7 +620,7 @@ class ViewPes(View):
         else:
             text_pos = 'right'
         self._addtext_cluster_id(ax, addspec.view._pretty_format_clusterid(), text_pos=text_pos, 
-                                 fontsize=clusterid_fontsize, color=color, voffset=-0.12)
+                                 fontsize=fontsize_clusterid, color=color, voffset=-1)
         #cluster_ids = '{}\n{}'.format(self._pretty_format_clusterid(), addspec.view._pretty_format_clusterid())
         #self.txt_clusterid.set_text(cluster_ids)
         self.add_plot(ax, xdata, ydata, color=color, linestyle=linestyle, linewidth=linewidth,
@@ -623,15 +628,17 @@ class ViewPes(View):
         
         
     def add_spec(self, specfile, xscale=1, yscale=1, yscale_type=None, xoffset=0, yoffset=0, color='blue',
-                 linestyle='-' , linewidth=.5, clusterid_fontsize=28, ax=None):
+                 linestyle='-' , linewidth=.5, fontsize_clusterid=28, ax=None):
         self._add_spec(specfile, xscale=xscale, yscale=yscale, yscale_type=yscale_type, xoffset=xoffset,
                        yoffset=yoffset, color=color, linestyle=linestyle, linewidth=linewidth,
-                       clusterid_fontsize=clusterid_fontsize, ax=ax)
+                       fontsize_clusterid=fontsize_clusterid, ax=ax)
         self.fig.canvas.draw()
         
         
-    def _add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1, yscale_type='area', xoffset='ea',
-                              color='blue', linestyle='-' , linewidth=.5, clusterid_fontsize=28, ax=None):
+    def _add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1,
+                              yscale_type='area', xoffset='ea', color='blue',
+                              linestyle='-' , linewidth=.5, fontsize_clusterid=28,
+                              ax=None):
         '''
         Right now a alkali specific shortcut for _add_spec, which automatically sets some values.
         Might be moved to a special class (?).
@@ -664,21 +671,21 @@ class ViewPes(View):
             self.spec.mdata.add_tag('manual offset')
         self._add_spec(specfile=specfile, xscale=xscale, yscale=yscale, yscale_type=yscale_type,
                        xoffset=xoffset, color=color, linestyle=linestyle, linewidth=linewidth,
-                       clusterid_fontsize=clusterid_fontsize, ax=ax)
+                       fontsize_clusterid=fontsize_clusterid, ax=ax)
 #         if ea_xoffset:
 #             self.comp_spec_data['xoffset'] = 'ea'
         
         
     def add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1, yscale_type='area',
                              xoffset='ea', color='blue', linestyle='-' , linewidth=.5,
-                             clusterid_fontsize=28, ax=None):
+                             fontsize_clusterid=28, ax=None):
         self._add_fermiscaled_spec(specfile, xscale=xscale, yscale=yscale, yscale_type=yscale_type,
-                                   xoffset=xoffset, color=color, clusterid_fontsize=clusterid_fontsize,
+                                   xoffset=xoffset, color=color, fontsize_clusterid=fontsize_clusterid,
                                    ax=ax)
         self.fig.canvas.draw()
 
 
-    def show_comp_spec(self, comp_spec_id, **keywords):
+    def show_comp_spec(self, comp_spec_id, fontsize_clusterid=10, **keywords):
         base_plot_map = {'tof': self.show_tof,
                          'ekin': self.show_ekin,
                          'ebin': self.show_ebin}
@@ -692,7 +699,7 @@ class ViewPes(View):
             if base_plot_mode is None:
                 for k in base_plot_map.keys():
                     if k in self.spec.mdata.data('compSpecs')[csid]['xdata_key']:
-                        base_plot_map[k](**keywords)
+                        base_plot_map[k](fontsize_clusterid=fontsize_clusterid, **keywords)
                         base_plot_mode = k
                         break
             elif base_plot_mode not in self.spec.mdata.data('compSpecs')[csid]['xdata_key']:
@@ -704,7 +711,8 @@ class ViewPes(View):
                                            xscale=self.spec.mdata.data('compSpecs')[csid]['xscale_type'],
                                            yscale=self.spec.mdata.data('compSpecs')[csid]['yscale'],
                                            yscale_type=self.spec.mdata.data('compSpecs')[csid]['yscale_type'],
-                                           color=self.spec.mdata.data('compSpecs')[csid]['color'])
+                                           color=self.spec.mdata.data('compSpecs')[csid]['color'],
+                                           fontsize_clusterid=fontsize_clusterid)
             else:
                 self._add_spec(self.spec.mdata.data('compSpecs')[csid]['specfile'],
                                self.spec.mdata.data('compSpecs')[csid]['xscale'],
@@ -712,7 +720,8 @@ class ViewPes(View):
                                self.spec.mdata.data('compSpecs')[csid]['yscale_type'],
                                self.spec.mdata.data('compSpecs')[csid]['xoffset'],
                                self.spec.mdata.data('compSpecs')[csid]['yoffset'],
-                               self.spec.mdata.data('compSpecs')[csid]['color'])
+                               self.spec.mdata.data('compSpecs')[csid]['color'],
+                               fontsize_clusterid=fontsize_clusterid)
             
         
 

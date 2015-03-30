@@ -211,7 +211,7 @@ class ViewPesList(ViewList):
                                                 color=spec.mdata.data('compSpecs')[csid]['color'],
                                                 linestyle=linestyle,
                                                 linewidth=linewidth,
-                                                clusterid_fontsize=10,
+                                                fontsize_clusterid=10,
                                                 ax=ax)
             else:
                 spec.view._add_spec(spec.mdata.data('compSpecs')[csid]['specfile'],
@@ -223,12 +223,12 @@ class ViewPesList(ViewList):
                               spec.mdata.data('compSpecs')[csid]['color'],
                               linestyle=linestyle,
                               linewidth=linewidth,
-                              clusterid_fontsize=10,
+                              fontsize_clusterid=10,
                               ax=ax)
     
         
-    def show_comp_spec(self, comp_spec_id, layout=[7,3], size=[21,29.7], xlim=['auto', 'auto'], xlim_scale=None,
-                       pdf=True, show_mdata=None, linestyle='-', linewidth=0.5,):
+    def show_comp_spec(self, comp_spec_id, layout=[7,3], size=[21,29.7], xlim=['auto', 'auto'],
+                       xlim_scale=None, pdf=True, show_mdata=None, linestyle='-', linewidth=0.5,):
         self._show(self._show_comp_spec, xlabel_str='TODO', comp_spec_id=comp_spec_id, linestyle=linestyle,
                    linewidth=linewidth, layout=layout, size=size, pdf=pdf, xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata)
 

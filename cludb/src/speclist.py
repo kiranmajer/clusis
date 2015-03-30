@@ -118,9 +118,15 @@ class SpecList(object):
             cs = self.get_spec(si)
             if not skip_plots:
                 getattr(cs.view, plot_fct)(export=True, **keywords)
-            fname = '{}{}_{}.pdf'.format(cs.mdata.data('clusterBaseUnit'),
-                                         cs.mdata.data('clusterBaseUnitNumber'),
-                                         os.path.splitext(os.path.basename(cs.mdata.data('datFile')))[0])
+            if 'comp' in plot_fct:
+                fname = '{}{}{}_{}.pdf'.format(cs.mdata.data('clusterBaseUnit'),
+                                             cs.mdata.data('clusterBaseUnitNumber'),
+                                             'comp',
+                                             os.path.splitext(os.path.basename(cs.mdata.data('datFile')))[0])
+            else:
+                fname = '{}{}_{}.pdf'.format(cs.mdata.data('clusterBaseUnit'),
+                                             cs.mdata.data('clusterBaseUnitNumber'),
+                                            os.path.splitext(os.path.basename(cs.mdata.data('datFile')))[0])
             if not skip_plots:
                 print('Exporting {} ...'.format(fname))
                 cs.view.export(fname=fname, export_dir=export_dir, size=size, overwrite=overwrite)
