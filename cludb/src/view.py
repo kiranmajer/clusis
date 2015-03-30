@@ -355,7 +355,12 @@ class View(object):
         return  max_ref/max_comp
 
 
-    def export(self, fname='export.pdf', export_dir=os.path.expanduser('~'), size=[20,14]):
+    def export(self, fname='export.pdf', export_dir='~/test', size=[20,14], overwrite=False):
+        'validate export dir'
+        'TODO: put this in helper library for reuse.'
+        if export_dir.startswith('~'):
+            export_dir = os.path.expanduser(export_dir)
+        os.makedirs(export_dir, exist_ok=overwrite)
         f = os.path.join(export_dir, fname)
         'TODO: presets are mere personal. For a general approach probably not suitable.'
         presets = {'p1': [14, 14*3/7],
