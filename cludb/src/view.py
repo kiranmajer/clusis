@@ -48,7 +48,7 @@ class View(object):
     def _addtext_file_id(self, ax, fontsize=6):
         ypos_offset = self.__scale_text_vpos(ax, offset=1.3)        
         ypos = 1 + ypos_offset
-        print('Adding file_id at relative height: {}'.format(ypos))
+        #print('Adding file_id at relative height: {}'.format(ypos))
         self.txt_fileid = ax.text(1.0, ypos, '%s'%(os.path.basename(self.spec.mdata.data('datFile'))),
                                   transform = ax.transAxes, fontsize=fontsize, horizontalalignment='right',
                                   verticalalignment='bottom')  
@@ -125,7 +125,7 @@ class View(object):
             pos_x, pos_y = 0.95, 1 - ypos_offset + voffset
         else:
             raise ValueError('text_pos must be one of: left, right. Got "%s" instead.'%(str(text_pos)))
-        print('Placing at: {}, {}'.format(pos_x,pos_y))
+        #print('Placing at: {}, {}'.format(pos_x,pos_y))
         self.txt_clusterid = ax.text(pos_x, pos_y, cluster_id, transform = ax.transAxes, fontsize=fontsize,
                                      horizontalalignment=text_pos, verticalalignment='top', color=color)
         
