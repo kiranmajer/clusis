@@ -685,7 +685,7 @@ class ViewPes(View):
         self.fig.canvas.draw()
 
 
-    def show_comp_spec(self, comp_spec_id, fontsize_clusterid=10, **keywords):
+    def show_comp_spec(self, comp_spec_id, fontsize_clusterid=28, **keywords):
         base_plot_map = {'tof': self.show_tof,
                          'ekin': self.show_ekin,
                          'ebin': self.show_ebin}

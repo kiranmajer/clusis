@@ -75,17 +75,18 @@ class Db(object):
                 valueList[specType].append(tuple(values))
                 
         db_cursor = self.__db.cursor()
-        print('cursor created')
+        #print('cursor created')
         for specType,values in valueList.items():
             if update:
                 sql = 'INSERT OR REPLACE INTO ' + specType + " VALUES (" + "?,"*(len(self.__dbProps['layout'][specType])-1) + "?)"
+                #print('Adding with sql string:\n', sql, values)
             else:
                 sql = 'INSERT INTO ' + specType + " VALUES (" + "?,"*(len(self.__dbProps['layout'][specType])-1) + "?)"
             db_cursor.executemany(sql, tuple(values))
             
                    
         db_cursor.close()
-        print('cursor closed')
+        #print('cursor closed')
         #del db_cursor
         self.__db.commit()
         

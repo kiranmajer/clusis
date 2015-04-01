@@ -49,6 +49,7 @@ class Mdata(object):
         '''
         Getter method to read mdata via .data()
         '''
+        'TODO: for mutable types, like list,dict return copy! Prevents altering mdata from outside.'
         if key == None:
             return self.__mdata
         else:

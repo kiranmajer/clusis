@@ -326,6 +326,11 @@ class SpecPe(Spec):
         else:
             raise ValueError('No spectrum added yet. Use one of the add_* methods to add one.')
         
+    def remove_comp_spec(self, comp_spec_id):
+        compspecs = self.mdata.data('compSpecs')
+        del compspecs[comp_spec_id]
+        self.mdata.update({'compSpecs': compspecs})
+        
         
 class SpecPePt(SpecPe):
     def __init__(self, mdata, xdata, ydata, cfg):
