@@ -351,7 +351,15 @@ class SpecPePtFitList(SpecPeList):
             lastDate = format_recTime(row[0])
             
             
-    def plot_fit_par(self, max_tof=10e-6, fontsize_label=12, fname=None, export_dir='~'):
+    def plot_fit_par(self, max_tof=10e-6, fontsize_label=12, fname=None, export_dir='~',
+                     legend_pos='r'):
+        
+        lpar = {'fig_hscale':{'r': 2.25, 'b': 2},
+                'margins': {'r': [.08, .07, .66, .98], # [left, bottom, right, top]
+                            'b': [.08, .48, .98, .98]},
+                'legend_anchor': {'r': (1.04, 1), 'b': (.47, -.2)},
+                'legend_loc': {'r':2, 'b': 9},
+                'legend_col': {'r': 1, 'b': 3}}
         if export_dir.startswith('~'):
             export_dir = os.path.expanduser(export_dir)
         if fname:
@@ -367,8 +375,11 @@ class SpecPePtFitList(SpecPeList):
         ax.grid()
         ax.set_xlim(0,10)
         ax.set_ylim(0,20)
-        fig.subplots_adjust(left=.08, bottom=.48, right=.98, top=.98)
-        fig.set_size_inches(14/2.54, 2*(14*3/7)/2.54)
+        fig.subplots_adjust(left=lpar['margins'][legend_pos][0],
+                            bottom=lpar['margins'][legend_pos][1], 
+                            right=lpar['margins'][legend_pos][2],
+                            top=lpar['margins'][legend_pos][3])
+        fig.set_size_inches(14/2.54, lpar['fig_hscale'][legend_pos]*(14*3/7)/2.54)
         fx=np.arange(1e-9, max_tof, 1e-7)
         def g_time(xdata, lscale, Eoff, toff, pFactor):
             return 1/np.sqrt(lscale*(1/(xdata)**2 - Eoff/pFactor)) - toff 
@@ -376,9 +387,9 @@ class SpecPePtFitList(SpecPeList):
             if rec_date < time.mktime(time.strptime('01.2008', '%m.%Y')):
                 color = 'black'
             elif time.mktime(time.strptime('01.2008', '%m.%Y')) < rec_date < time.mktime(time.strptime('01.2009', '%m.%Y')):
-                color = 'violet'
-            elif time.mktime(time.strptime('01.2011', '%m.%Y')) < rec_date < time.mktime(time.strptime('28.02.2012', '%d.%m.%Y')):
                 color = 'blue'
+            elif time.mktime(time.strptime('01.2011', '%m.%Y')) < rec_date < time.mktime(time.strptime('28.02.2012', '%d.%m.%Y')):
+                color = 'grey'
             elif time.mktime(time.strptime('28.02.2012', '%d.%m.%Y')) < rec_date < time.mktime(time.strptime('01.2013', '%m.%Y')):
                 color = 'green'
             else:
@@ -398,8 +409,9 @@ class SpecPePtFitList(SpecPeList):
                         label='{}: $E_{{off}}={:.1f}$'.format(dat_filename, Eoff*1000),
                         color=colormap(cs.mdata.data('recTime')))
                 
-        leg = ax.legend(bbox_to_anchor=(.47, -.2), loc=9, borderaxespad=0., ncol=3,
-                        fontsize=fontsize_label)
+        leg = ax.legend(bbox_to_anchor=lpar['legend_anchor'][legend_pos],
+                        loc=lpar['legend_loc'][legend_pos], borderaxespad=0.,
+                        ncol=lpar['legend_col'][legend_pos], fontsize=fontsize_label)
         for legobj in leg.legendHandles:
             legobj.set_linewidth(4)
         if fname:
