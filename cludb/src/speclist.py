@@ -351,17 +351,39 @@ class SpecPePtFitList(SpecPeList):
             lastDate = format_recTime(row[0])
             
             
-    def plot_fit_par(self, max_tof=10e-6, fontsize_label=12):
+    def plot_fit_par(self, max_tof=10e-6, fontsize_label=12, fname=None, export_dir='~'):
+        if export_dir.startswith('~'):
+            export_dir = os.path.expanduser(export_dir)
+        if fname:
+            if not os.path.isdir(export_dir):
+                os.makedirs(export_dir, exist_ok=False)
+            f = os.path.join(export_dir, fname)
         fig = plt.figure()
         #print 'Figure created.'
         ax = fig.add_subplot(1,1,1)
-        ax.set_xlabel('tof ($\mu$s)', fontsize=fontsize_label)
-        ax.set_ylabel('corrected tof ($\mu$s)', fontsize=fontsize_label)
+        ax.set_xlabel('measured tof ($\mu$s)', fontsize=fontsize_label)
+        ax.set_ylabel('calibrated tof ($\mu$s)', fontsize=fontsize_label)
         ax.tick_params(labelsize=fontsize_label)
         ax.grid()
+        ax.set_xlim(0,10)
+        ax.set_ylim(0,20)
+        fig.subplots_adjust(left=.08, bottom=.48, right=.98, top=.98)
+        fig.set_size_inches(14/2.54, 2*(14*3/7)/2.54)
         fx=np.arange(1e-9, max_tof, 1e-7)
         def g_time(xdata, lscale, Eoff, toff, pFactor):
-            return 1/np.sqrt(lscale*(1/(xdata)**2 - Eoff/pFactor)) - toff        
+            return 1/np.sqrt(lscale*(1/(xdata)**2 - Eoff/pFactor)) - toff 
+        def colormap(rec_date):
+            if rec_date < time.mktime(time.strptime('01.2008', '%m.%Y')):
+                color = 'black'
+            elif time.mktime(time.strptime('01.2008', '%m.%Y')) < rec_date < time.mktime(time.strptime('01.2009', '%m.%Y')):
+                color = 'violet'
+            elif time.mktime(time.strptime('01.2011', '%m.%Y')) < rec_date < time.mktime(time.strptime('28.02.2012', '%d.%m.%Y')):
+                color = 'blue'
+            elif time.mktime(time.strptime('28.02.2012', '%d.%m.%Y')) < rec_date < time.mktime(time.strptime('01.2013', '%m.%Y')):
+                color = 'green'
+            else:
+                color = 'red'
+            return color
         
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
@@ -371,11 +393,19 @@ class SpecPePtFitList(SpecPeList):
                 lscale = cs.mdata.data('fitPar')[-1]
                 toff = cs.mdata.data('fitPar')[-2]
                 Eoff = cs.mdata.data('fitPar')[-3]
-                dat_filename = os.path.basename(cs.mdata.data('datFile'))
-                ax.plot(fx*1e6,g_time(fx, lscale, Eoff, toff, cs._pFactor)*1e6, label=dat_filename)
+                dat_filename = os.path.basename(cs.mdata.data('datFile')).strip('.dat')
+                ax.plot(fx*1e6, g_time(fx, lscale, Eoff, toff, cs._pFactor)*1e6,
+                        label='{}: $E_{{off}}={:.1f}$'.format(dat_filename, Eoff*1000),
+                        color=colormap(cs.mdata.data('recTime')))
                 
-        ax.legend(loc=2)
-        fig.show()            
+        leg = ax.legend(bbox_to_anchor=(.47, -.2), loc=9, borderaxespad=0., ncol=3,
+                        fontsize=fontsize_label)
+        for legobj in leg.legendHandles:
+            legobj.set_linewidth(4)
+        if fname:
+            fig.savefig(f)
+        else:
+            fig.show()            
 
 
     def regauge(self, rel_y_min=None, cutoff=None):
