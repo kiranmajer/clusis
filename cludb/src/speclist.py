@@ -352,7 +352,7 @@ class SpecPePtFitList(SpecPeList):
             
             
     def plot_fit_par(self, max_tof=10e-6, fontsize_label=12, fname=None, export_dir='~',
-                     legend_pos='r'):
+                     legend_pos='r', ymax=20, stepsize=5):
         
         lpar = {'fig_hscale':{'r': 2.25, 'b': 2},
                 'margins': {'r': [.08, .07, .66, .98], # [left, bottom, right, top]
@@ -373,14 +373,17 @@ class SpecPePtFitList(SpecPeList):
         ax.set_ylabel('calibrated tof ($\mu$s)', fontsize=fontsize_label)
         ax.tick_params(labelsize=fontsize_label)
         ax.grid()
-        ax.set_xlim(0,10)
-        ax.set_ylim(0,20)
+        axes_max = [max_tof*1e6, ymax]
+        ax.set_xlim(0, axes_max[0])
+        ax.set_ylim(0,axes_max[1])
+        ax.xaxis.set_ticks(np.arange(0, axes_max[0]+stepsize/2, stepsize))
+        ax.yaxis.set_ticks(np.arange(0, axes_max[1]+stepsize/2, stepsize))
         fig.subplots_adjust(left=lpar['margins'][legend_pos][0],
                             bottom=lpar['margins'][legend_pos][1], 
                             right=lpar['margins'][legend_pos][2],
                             top=lpar['margins'][legend_pos][3])
         fig.set_size_inches(14/2.54, lpar['fig_hscale'][legend_pos]*(14*3/7)/2.54)
-        fx=np.arange(1e-9, max_tof, 1e-7)
+        fx=np.arange(1e-9, max_tof+1e-7, 1e-7)
         def g_time(xdata, lscale, Eoff, toff, pFactor):
             return 1/np.sqrt(lscale*(1/(xdata)**2 - Eoff/pFactor)) - toff 
         def colormap(rec_date):
