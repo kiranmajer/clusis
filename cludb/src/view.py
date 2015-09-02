@@ -265,7 +265,7 @@ class View(object):
                             xlim_scale)
             
             
-    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_info=False,
+    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, show_mdata=False,
                  show_ytics=False, fontsize_label=12, fontsize_ref=6, export=False, show_xlabel=True,
                  show_ylabel=True):
         self._single_fig_output()
@@ -280,8 +280,9 @@ class View(object):
         self.ax.tick_params(labelsize=fontsize_label)      
         self._addtext_file_id(self.ax, fontsize=fontsize_ref)
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fontsize=fontsize_ref)
-        if show_info:
-            self._addtext_info(self.ax, self.spec.mdata.data('info'), text_pos='right', fontsize=fontsize_label)
+        if show_mdata:
+            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_pos='right',
+                               fontsize=fontsize_label)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
@@ -292,7 +293,7 @@ class View(object):
 
 
     def show_tof(self, xdata_key='auto', ydata_key='auto', time_label='Time',
-                 time_unit=1e-6, xlim=['auto', 'auto'], xlim_scale=None, show_info=False,
+                 time_unit=1e-6, xlim=['auto', 'auto'], xlim_scale=None, show_mdata=False,
                  show_ytics=False, fontsize_label=12, fontsize_ref=6, export=False, show_xlabel=True,
                  show_ylabel=True):     
         self._single_fig_output()
@@ -311,8 +312,8 @@ class View(object):
         self._addtext_file_id(self.ax, fontsize=fontsize_ref)
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
                                    fontsize=fontsize_ref)
-        if show_info:
-            self._addtext_info(self.ax, self.spec.mdata.data('info'), text_pos='right',
+        if show_mdata:
+            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_pos='right',
                                fontsize=fontsize_label)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
@@ -460,10 +461,10 @@ class ViewPes(View):
 
 
     def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None,
-                 show_info=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
+                 show_mdata=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
                  fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True):
         View.show_idx(self, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale,
-                      show_info=show_info, show_ytics=show_ytics, fontsize_label=fontsize_label,
+                      show_mdata=show_mdata, show_ytics=show_ytics, fontsize_label=fontsize_label,
                       fontsize_ref=fontsize_ref, export=export, show_xlabel=show_xlabel,
                       show_ylabel=show_ylabel)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
@@ -473,11 +474,11 @@ class ViewPes(View):
 
         
     def show_tof(self, xdata_key='auto', ydata_key='auto', time_label='Flight Time',
-                 time_unit=1e-6, xlim=[0, 'auto'], xlim_scale=None, show_info=False, show_ytics=False,
+                 time_unit=1e-6, xlim=[0, 'auto'], xlim_scale=None, show_mdata=False, show_ytics=False,
                  fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6, export=False, show_xlabel=True,
                  show_ylabel=True):
         View.show_tof(self, xdata_key=xdata_key, ydata_key=ydata_key, time_label=time_label, 
-                      time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, show_info=show_info,
+                      time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, show_mdata=show_mdata,
                       show_ytics=show_ytics, fontsize_label=fontsize_label, fontsize_ref=fontsize_ref,
                       export=export, show_xlabel=show_xlabel, show_ylabel=show_ylabel)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
@@ -487,7 +488,7 @@ class ViewPes(View):
         
 
     def show_ekin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None,
-                  show_info=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
+                  show_mdata=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
                   fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True):
         self._single_fig_output()
         # set data keys
@@ -507,8 +508,8 @@ class ViewPes(View):
                                  fontsize=fontsize_clusterid)
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
                                    fontsize=fontsize_ref)
-        if show_info:
-            self._addtext_info(self.ax, self.spec.mdata.data('info'), text_pos='right',
+        if show_mdata:
+            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_pos='right',
                                fontsize=fontsize_label)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
@@ -520,7 +521,7 @@ class ViewPes(View):
 
 
     def show_ebin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None,
-                  show_info=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
+                  show_mdata=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
                   fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True):
         self._single_fig_output()
         # set data keys
@@ -539,8 +540,8 @@ class ViewPes(View):
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), fontsize=fontsize_clusterid)
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
                                    fontsize=fontsize_ref)
-        if show_info:
-            self._addtext_info(self.ax, self.spec.mdata.data('info'), fontsize=fontsize_label)
+        if show_mdata:
+            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), fontsize=fontsize_label)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
@@ -684,6 +685,13 @@ class ViewPes(View):
                                    ax=ax)
         self.fig.canvas.draw()
 
+    def add_che_spec(self, point, shifted_point, yscale, linewidth=1.5):
+        '''Shortcut for shifting the same spectrum by the difference of point_shifted - point.
+        Method to determin charging energy by manual shift'''
+        xoffset = shifted_point[0] - point[0]
+        yoffset = shifted_point[1] - point[1]
+        self.add_spec(self.spec.mdata.data('pickleFile'), linewidth=linewidth,
+                      xoffset=xoffset, yoffset=yoffset, yscale=yscale)
 
     def show_comp_spec(self, comp_spec_id, fontsize_clusterid=28, **keywords):
         base_plot_map = {'tof': self.show_tof,
@@ -739,7 +747,7 @@ class ViewPt(ViewPes):
         else:
             raise ValueError('text_pos must be one of: left, right. Got "%s" instead.'%(str(text_pos)))        
         ax.text(pos_x, pos_y,
-                'E$_{offset}$: %.2f meV\nt$_{offset}$: %.3f ns\nl$_{scale}$: %.3f\n$\Delta$l: %.1f mm'%(self.spec.mdata.data(fit_par)[-3]*1e3,
+                '$E_{off}$: %.2f meV\n$t_{off}$: %.3f ns\n$l_{s}$: %.3f\n$\Delta l$: %.1f mm'%(self.spec.mdata.data(fit_par)[-3]*1e3,
                                         self.spec.mdata.data(fit_par)[-2]*1e9,
                                         self.spec.mdata.data(fit_par)[-1],
                                         self.spec.mdata.data('flightLength')*1000*

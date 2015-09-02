@@ -351,8 +351,8 @@ class SpecPePtFitList(SpecPeList):
             lastDate = format_recTime(row[0])
             
             
-    def plot_fit_par(self, max_tof=10e-6, fontsize_label=12, fname=None, export_dir='~',
-                     legend_pos='r', ymax=20, stepsize=5):
+    def plot_fit_par(self, var='time', max_tof=10e-6, fontsize_label=12, fname=None, export_dir='~',
+                     legend_pos='r', ymax=20, stepsize=5, hv=6):
         
         lpar = {'fig_hscale':{'r': 2.25, 'b': 2},
                 'margins': {'r': [.08, .07, .66, .98], # [left, bottom, right, top]
@@ -369,8 +369,6 @@ class SpecPePtFitList(SpecPeList):
         fig = plt.figure()
         #print 'Figure created.'
         ax = fig.add_subplot(1,1,1)
-        ax.set_xlabel('measured tof ($\mu$s)', fontsize=fontsize_label)
-        ax.set_ylabel('calibrated tof ($\mu$s)', fontsize=fontsize_label)
         ax.tick_params(labelsize=fontsize_label)
         ax.grid()
         axes_max = [max_tof*1e6, ymax]
@@ -386,6 +384,11 @@ class SpecPePtFitList(SpecPeList):
         fx=np.arange(1e-9, max_tof+1e-7, 1e-7)
         def g_time(xdata, lscale, Eoff, toff, pFactor):
             return 1/np.sqrt(lscale*(1/(xdata)**2 - Eoff/pFactor)) - toff 
+        #Ex=np.arange(0, 6, 1e-7)
+        def E_t(xdata, pFactor):
+            return pFactor/xdata**2
+        def E_cal(xdata, lscale, Eoff, toff, pFactor):
+            return pFactor/(lscale*(xdata - toff)**2) - Eoff
         def colormap(rec_date):
             if rec_date < time.mktime(time.strptime('01.2008', '%m.%Y')):
                 color = 'black'
@@ -408,10 +411,21 @@ class SpecPePtFitList(SpecPeList):
                 toff = cs.mdata.data('fitPar')[-2]
                 Eoff = cs.mdata.data('fitPar')[-3]
                 dat_filename = os.path.basename(cs.mdata.data('datFile')).strip('.dat')
-                ax.plot(fx*1e6, g_time(fx, lscale, Eoff, toff, cs._pFactor)*1e6,
-                        label='{}: $E_{{off}}={:.1f}$'.format(dat_filename, Eoff*1000),
-                        color=colormap(cs.mdata.data('recTime')))
-                
+                if var == 'time':
+                    ax.plot(fx*1e6, g_time(fx, lscale, Eoff, toff, cs._pFactor)*1e6,
+                            label='{}: $E_{{off}}={:.1f}$'.format(dat_filename, Eoff*1000),
+                            color=colormap(cs.mdata.data('recTime')))
+                    ylabel = 'calibrated tof ($\mu$s)'
+                elif var == 'energy':
+                    ax.plot(fx*1e6, hv - E_cal(fx, lscale, Eoff, toff, cs._pFactor),
+                            label='{}: $E_{{off}}={:.1f}$'.format(dat_filename, Eoff*1000),
+                            color=colormap(cs.mdata.data('recTime')))
+                    ylabel = 'calibrated binding energy (eV)'
+                else:
+                    raise ValueError('var must be one of: "time", "energy".')
+        
+        ax.set_xlabel('measured tof ($\mu$s)', fontsize=fontsize_label)
+        ax.set_ylabel(ylabel, fontsize=fontsize_label)        
         leg = ax.legend(bbox_to_anchor=lpar['legend_anchor'][legend_pos],
                         loc=lpar['legend_loc'][legend_pos], borderaxespad=0.,
                         ncol=lpar['legend_col'][legend_pos], fontsize=fontsize_label)
