@@ -368,19 +368,28 @@ class SpecPePtFitList(SpecPeList):
             f = os.path.join(export_dir, fname)
         fig = plt.figure()
         #print 'Figure created.'
-        ax = fig.add_subplot(1,1,1)
-        ax.tick_params(labelsize=fontsize_label)
-        ax.grid()
+        ax1 = fig.add_subplot(2,1,1)
+        ax1.tick_params(labelsize=fontsize_label)
+        ax1.grid()
         axes_max = [max_tof*1e6, ymax]
-        ax.set_xlim(0, axes_max[0])
-        ax.set_ylim(0,axes_max[1])
-        ax.xaxis.set_ticks(np.arange(0, axes_max[0]+stepsize/2, stepsize))
-        ax.yaxis.set_ticks(np.arange(0, axes_max[1]+stepsize/2, stepsize))
+        ax1.set_xlim(0, axes_max[0])
+        ax1.set_ylim(0,axes_max[1])
+        ax1.xaxis.set_ticks(np.arange(0, axes_max[0]+stepsize/2, stepsize))
+        ax1.yaxis.set_ticks(np.arange(0, axes_max[1]+stepsize/2, stepsize))
+        ax2 = fig.add_subplot(2,1,2)
+        ax2.tick_params(labelsize=fontsize_label)
+        ax2.grid()
+        axes_max = [max_tof*1e6, hv]
+        ax2.set_xlim(0, axes_max[0])
+        ax2.set_ylim(0,axes_max[1])
+        ax2.xaxis.set_ticks(np.arange(0, axes_max[0]+stepsize/2, stepsize))
+        ax2.yaxis.set_ticks(np.arange(0, axes_max[1]+stepsize/2, stepsize))
         fig.subplots_adjust(left=lpar['margins'][legend_pos][0],
                             bottom=lpar['margins'][legend_pos][1], 
                             right=lpar['margins'][legend_pos][2],
-                            top=lpar['margins'][legend_pos][3])
-        fig.set_size_inches(14/2.54, lpar['fig_hscale'][legend_pos]*(14*3/7)/2.54)
+                            top=lpar['margins'][legend_pos][3],
+                            hspace=0.17)
+        fig.set_size_inches(14/2.54, lpar['fig_hscale'][legend_pos]*(18*3/7)/2.54)
         fx=np.arange(1e-9, max_tof+1e-7, 1e-7)
         def g_time(xdata, lscale, Eoff, toff, pFactor):
             return 1/np.sqrt(lscale*(1/(xdata)**2 - Eoff/pFactor)) - toff 
@@ -411,22 +420,24 @@ class SpecPePtFitList(SpecPeList):
                 toff = cs.mdata.data('fitPar')[-2]
                 Eoff = cs.mdata.data('fitPar')[-3]
                 dat_filename = os.path.basename(cs.mdata.data('datFile')).strip('.dat')
-                if var == 'time':
-                    ax.plot(fx*1e6, g_time(fx, lscale, Eoff, toff, cs._pFactor)*1e6,
-                            label='{}: $E_{{off}}={:.1f}$'.format(dat_filename, Eoff*1000),
-                            color=colormap(cs.mdata.data('recTime')))
-                    ylabel = 'calibrated tof ($\mu$s)'
-                elif var == 'energy':
-                    ax.plot(fx*1e6, hv - E_cal(fx, lscale, Eoff, toff, cs._pFactor),
-                            label='{}: $E_{{off}}={:.1f}$'.format(dat_filename, Eoff*1000),
-                            color=colormap(cs.mdata.data('recTime')))
-                    ylabel = 'calibrated binding energy (eV)'
-                else:
-                    raise ValueError('var must be one of: "time", "energy".')
+                #if var == 'time':
+                ax1.plot(fx*1e6, g_time(fx, lscale, Eoff, toff, cs._pFactor)*1e6,
+                        label='{}: $E_{{off}}={:.1f}$'.format(dat_filename, Eoff*1000),
+                        color=colormap(cs.mdata.data('recTime')))
+                #ylabel = 'calibrated tof ($\mu$s)'
+                #elif var == 'energy':
+                ax2.plot(fx*1e6, hv - E_cal(fx, lscale, Eoff, toff, cs._pFactor),
+                        label='{}: $E_{{off}}={:.1f}$'.format(dat_filename, Eoff*1000),
+                        color=colormap(cs.mdata.data('recTime')))
+                #ylabel = 'calibrated binding energy (eV)'
+#                 else:
+#                     raise ValueError('var must be one of: "time", "energy".')
         
-        ax.set_xlabel('measured tof ($\mu$s)', fontsize=fontsize_label)
-        ax.set_ylabel(ylabel, fontsize=fontsize_label)        
-        leg = ax.legend(bbox_to_anchor=lpar['legend_anchor'][legend_pos],
+        ax1.set_xlabel('measured tof ($\mu$s)', fontsize=fontsize_label)
+        ax1.set_ylabel('calibrated tof ($\mu$s)', fontsize=fontsize_label)
+        ax2.set_xlabel('measured tof ($\mu$s)', fontsize=fontsize_label)
+        ax2.set_ylabel('calibrated binding energy (eV)', fontsize=fontsize_label) 
+        leg = ax1.legend(bbox_to_anchor=lpar['legend_anchor'][legend_pos],
                         loc=lpar['legend_loc'][legend_pos], borderaxespad=0.,
                         ncol=lpar['legend_col'][legend_pos], fontsize=fontsize_label)
         for legobj in leg.legendHandles:
