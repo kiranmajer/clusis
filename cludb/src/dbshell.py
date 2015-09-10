@@ -122,7 +122,8 @@ class Db(object):
 
     def query(self, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None, clusterBaseUnitNumberRange=None,
               recTime=None, recTimeRange=None, inTags=None, notInTags=None, datFileName=None, waveLength=None,
-              trapTemp=None, trapTempRange=None):
+              trapTemp=None, trapTempRange=None, hide_trash=True):
+        
 
         
         def sqlformat_ClusterBaseUnit(clusterBaseUnit, key):
@@ -249,7 +250,13 @@ class Db(object):
                 wavesQuery = 'waveLength IS "{}" AND '.format(waves[0])
             return wavesQuery
         
-        
+        if hide_trash:
+            if type(notInTags) is list:
+                notInTags.append('trash')
+            elif type(notInTags) is str:
+                notInTags =[notInTags, 'trash']
+            else:
+                notInTags = ['trash']
                 
         q = {'clusterBaseUnit': [sqlformat_ClusterBaseUnit, clusterBaseUnit, 'clusterBaseUnit'],
              'clusterBaseUnitNumber': [sqlformat_number, clusterBaseUnitNumber, 'clusterBaseUnitNumber'],

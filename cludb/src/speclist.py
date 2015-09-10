@@ -15,14 +15,15 @@ class SpecList(object):
     '''
     Applies the methods of single spec-object to a list of spec-objects.
     '''
-    def __init__(self, cfg, recTime=None, recTimeRange=None,
-                 inTags=None, notInTags=None, datFileName=None):
+    def __init__(self, cfg, recTime=None, recTimeRange=None, inTags=None,
+                 notInTags=None, datFileName=None, hide_trash=True):
         self.cfg = cfg
         self.spec_type = 'generic'
         with Db('casi', self.cfg) as db:
             self.dbanswer = db.query(self.spec_type, recTime=recTime,
                                      recTimeRange=recTimeRange, inTags=inTags,
-                                     notInTags=notInTags, datFileName=datFileName)
+                                     notInTags=notInTags, datFileName=datFileName,
+                                     hide_trash=hide_trash)
         self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
         self.view = viewlist.ViewList(self)
         
@@ -207,7 +208,7 @@ class SpecPeList(SpecList):
     def __init__(self, cfg, clusterBaseUnit=None, clusterBaseUnitNumber=None,
                  clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
                  inTags=None, notInTags=None, datFileName=None, waveLength=None, trapTemp=None,
-                 trapTempRange=None):
+                 trapTempRange=None, hide_trash=True):
         self.cfg = cfg
         self.spec_type = 'pes'
         with Db('casi', self.cfg) as db:
@@ -217,7 +218,8 @@ class SpecPeList(SpecList):
                                      recTime=recTime, recTimeRange=recTimeRange, inTags=inTags,
                                      notInTags=notInTags, datFileName=datFileName,
                                      waveLength=waveLength, trapTemp=trapTemp,
-                                     trapTempRange=trapTempRange)
+                                     trapTempRange=trapTempRange,
+                                     hide_trash=hide_trash)
         self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
         self.view = viewlist.ViewPesList(self)
         
@@ -268,11 +270,11 @@ class SpecPeList(SpecList):
 
 class SpecPePtList(SpecPeList):
     def __init__(self, cfg, clusterBaseUnitNumber=None, recTime=None, recTimeRange=None,
-                 inTags=None, notInTags=None, datFileName=None, waveLength=None):
+                 inTags=None, notInTags=None, datFileName=None, waveLength=None, hide_trash=True):
         SpecPeList.__init__(self, cfg, clusterBaseUnit='Pt', clusterBaseUnitNumber=clusterBaseUnitNumber,
                             recTime=recTime, recTimeRange=recTimeRange, inTags=inTags,
                                      notInTags=notInTags, datFileName=datFileName,
-                                     waveLength=waveLength)
+                                     waveLength=waveLength, hide_trash=hide_trash)
         self.view = viewlist.ViewPesList(self)
         
     def gauge(self):
@@ -283,7 +285,7 @@ class SpecPePtList(SpecPeList):
 
 class SpecPePtFitList(SpecPeList):
     def __init__(self, cfg, clusterBaseUnitNumber=None, recTime=None, recTimeRange=None,
-                 inTags=None, notInTags=None, datFileName=None, waveLength=None):
+                 inTags=None, notInTags=None, datFileName=None, waveLength=None, hide_trash=True):
         inTags_list = []
         if inTags is not None:
             if type(inTags) is str:
@@ -303,7 +305,7 @@ class SpecPePtFitList(SpecPeList):
         SpecPePtList.__init__(self, cfg, clusterBaseUnitNumber=clusterBaseUnitNumber, 
                               recTime=recTime, recTimeRange=recTimeRange, inTags=inTags_list,
                               notInTags=notInTags_list, datFileName=datFileName,
-                              waveLength=waveLength)
+                              waveLength=waveLength, hide_trash=hide_trash)
         self.view = viewlist.ViewPtFitList(self)
 
 
@@ -461,13 +463,13 @@ class SpecPeWaterList(SpecPeList):
     def __init__(self, cfg, clusterBaseUnitNumber=None, clusterBaseUnitNumberRange=None,
                  recTime=None, recTimeRange=None, inTags=None, notInTags=None,
                  datFileName=None, waveLength=None, trapTemp=None,
-                 trapTempRange=None):
+                 trapTempRange=None, hide_trash=True):
         SpecPeList.__init__(self, cfg, clusterBaseUnit='H2O', clusterBaseUnitNumber=clusterBaseUnitNumber,
                             clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
                             recTime=recTime, recTimeRange=recTimeRange, inTags=inTags,
                             notInTags=notInTags, datFileName=datFileName,
                             waveLength=waveLength, trapTemp=trapTemp,
-                            trapTempRange=trapTempRange)
+                            trapTempRange=trapTempRange, hide_trash=hide_trash)
         self.view = viewlist.ViewPesList(self)
         
     def gauge(self, gauge_ref=None, refit=None):
@@ -498,7 +500,7 @@ class SpecPeWaterFitList(SpecPeList):
     def __init__(self, cfg, clusterBaseUnitNumber=None, clusterBaseUnitNumberRange=None,
                  recTime=None, recTimeRange=None, inTags=None, notInTags=None,
                  datFileName=None, waveLength=None, trapTemp=None,
-                 trapTempRange=None):
+                 trapTempRange=None, hide_trash=True):
         inTags_list = []
         if inTags is not None:
             if type(inTags) is str:
@@ -520,7 +522,7 @@ class SpecPeWaterFitList(SpecPeList):
                                  recTime=recTime, recTimeRange=recTimeRange, inTags=inTags_list,
                                  notInTags=notInTags_list, datFileName=datFileName,
                                  waveLength=waveLength, trapTemp=trapTemp,
-                                 trapTempRange=trapTempRange)
+                                 trapTempRange=trapTempRange, hide_trash=hide_trash)
         self.view = viewlist.ViewWaterFitList(self)
 
     def list_fit_par(self):
@@ -811,7 +813,7 @@ class SpecMList(SpecList):
     def __init__(self, cfg, clusterBaseUnit=None, clusterBaseUnitNumber=None,
                  clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
                  inTags=None, notInTags=None, datFileName=None, trapTemp=None,
-                 trapTempRange=None):
+                 trapTempRange=None, hide_trash=True):
         self.cfg = cfg
         self.spec_type = 'ms'
         with Db('casi', self.cfg) as db:
@@ -820,8 +822,8 @@ class SpecMList(SpecList):
                                      clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
                                      recTime=recTime, recTimeRange=recTimeRange, inTags=inTags,
                                      notInTags=notInTags, datFileName=datFileName,
-                                     trapTemp=trapTemp,
-                                     trapTempRange=trapTempRange)
+                                     trapTemp=trapTemp, trapTempRange=trapTempRange,
+                                     hide_trash=hide_trash)
         self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
         self.view = viewlist.ViewMsList(self)
 
