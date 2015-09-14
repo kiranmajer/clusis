@@ -224,7 +224,7 @@ class SpecPeList(SpecList):
         self.view = viewlist.ViewPesList(self)
         
         
-    def gauge(self, gauge_ref=None):
+    def gauge(self, gauge_ref=None, ignore_wavelength=False):
         '''
         Gauge all spectra in list with gauge_ref or
         re-gauge them with their previous gauge_ref.
@@ -232,9 +232,9 @@ class SpecPeList(SpecList):
         for s in self.dbanswer:
             cs = load_pickle(self.cfg, s['pickleFile'])
             if gauge_ref is not None:
-                cs.gauge(gauge_ref)
+                cs.gauge(gauge_ref, ignore_wavelength=ignore_wavelength)
             elif 'gaugeRef' in cs.mdata.data().keys():
-                cs.gauge(cs.mdata.data('gaugeRef'))
+                cs.gauge(cs.mdata.data('gaugeRef'), ignore_wavelength=ignore_wavelength)
             else:
                 print('Spec has no gauge reference yet; skipping.')
             
@@ -472,7 +472,7 @@ class SpecPeWaterList(SpecPeList):
                             trapTempRange=trapTempRange, hide_trash=hide_trash)
         self.view = viewlist.ViewPesList(self)
         
-    def gauge(self, gauge_ref=None, refit=None):
+    def gauge(self, gauge_ref=None, refit=None, ignore_wavelength=False):
         '''
         Gauge all spectra in list with gauge_ref or
         re-gauge them with their previous gauge_ref.
@@ -480,9 +480,9 @@ class SpecPeWaterList(SpecPeList):
         for s in self.dbanswer:
             cs = load_pickle(self.cfg, s['pickleFile'])
             if gauge_ref is not None:
-                cs.gauge(gauge_ref, refit=refit)
+                cs.gauge(gauge_ref, refit=refit, ignore_wavelength=ignore_wavelength)
             elif 'gaugeRef' in cs.mdata.data().keys():
-                cs.gauge(cs.mdata.data('gaugeRef'), refit=refit)
+                cs.gauge(cs.mdata.data('gaugeRef'), refit=refit, ignore_wavelength=ignore_wavelength)
             else:
                 print('Spec has no gauge reference yet; skipping.')
             
@@ -786,7 +786,7 @@ class SpecPeWaterFitList(SpecPeList):
             #cs.commit()
             del cs
             
-    def gauge(self, gauge_ref=None, refit='y', commit_after=True):
+    def gauge(self, gauge_ref=None, refit='y', commit_after=True, ignore_wavelength=False):
         '''
         Gauge all spectra in list with gauge_ref or
         re-gauge them with their previous gauge_ref.
@@ -798,9 +798,9 @@ class SpecPeWaterFitList(SpecPeList):
         for s in self.dbanswer:
             cs = load_pickle(self.cfg, s['pickleFile'])
             if gauge_ref is not None:
-                cs.gauge(gauge_ref, refit=refit, commit_after=commit_after)
+                cs.gauge(gauge_ref, refit=refit, commit_after=commit_after, ignore_wavelength=ignore_wavelength)
             elif 'gaugeRef' in cs.mdata.data().keys():
-                cs.gauge(cs.mdata.data('gaugeRef'), refit=refit, commit_after=commit_after)
+                cs.gauge(cs.mdata.data('gaugeRef'), refit=refit, commit_after=commit_after, ignore_wavelength=ignore_wavelength)
             else:
                 print('Spec has no gauge reference yet; skipping.')
             

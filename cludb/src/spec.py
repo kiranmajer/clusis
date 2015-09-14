@@ -269,12 +269,14 @@ class SpecPe(Spec):
         self._calc_jacoby_intensity()
         
         
-    def gauge(self, gaugeRef):
+    def gauge(self, gaugeRef, ignore_wavelength=False):
         gaugeSpec = load.load_pickle(self.cfg, gaugeRef)
         if gaugeSpec.mdata.data('specTypeClass') not in ['specPePt']:
             raise ValueError('Gauge reference is not a Pt-spectrum.')
-        if not gaugeSpec.mdata.data('waveLength') == self.mdata.data('waveLength'):
+        if not gaugeSpec.mdata.data('waveLength') == self.mdata.data('waveLength') and not ignore_wavelength:
             raise ValueError('Gauge reference has different laser wavelength.')
+        elif not gaugeSpec.mdata.data('waveLength') == self.mdata.data('waveLength') and ignore_wavelength:
+            self.mdata.add_tag('gauge ref has different wave length')
         lscale = gaugeSpec.mdata.data('fitPar')[-1]
         toff = gaugeSpec.mdata.data('fitPar')[-2]
         Eoff = gaugeSpec.mdata.data('fitPar')[-3]
@@ -767,8 +769,8 @@ class SpecPeWater(SpecPe):
         
         
         
-    def gauge(self, gaugeRef, refit=None, commit_after=False):
-        SpecPe.gauge(self, gaugeRef)
+    def gauge(self, gaugeRef, refit=None, commit_after=False, ignore_wavelength=False):
+        SpecPe.gauge(self, gaugeRef, ignore_wavelength=ignore_wavelength)
         self._ask_for_refit('gauging', refit=refit, commit_after=commit_after)
 
                     

@@ -1098,9 +1098,9 @@ class ViewWater(ViewPes):
 
 
     def show_tof_fit(self, fit_par='fitPar', time_unit=1e-6, time_label='Flight Time',
-                     xlim=[0, 'auto'], xlim_scale=None, show_ytics=False, fontsize_clusterid=28,
-                     fontsize_label=12, fontsize_ref=6, export=False, show_xlabel=True,
-                     show_ylabel=True):
+                     xlim=[0, 'auto'], xlim_scale=None, show_mdata=False, show_ytics=False,
+                     fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6, export=False,
+                     show_xlabel=True, show_ylabel=True):
         if 'fitted' not in self.spec.mdata.data('systemTags'):
             raise ValueError('Spectrum not yet fitted. Fit first.')            
         self._single_fig_output()
@@ -1124,6 +1124,8 @@ class ViewWater(ViewPes):
                                  fontsize=fontsize_clusterid)
         self._addtext_fitvalues(self.ax, plot_type='tof', fit_par=fit_par, time_unit=time_unit,
                                 fontsize=fontsize_label, text_pos='right')
+        if show_mdata:
+            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), fontsize=fontsize_label)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
@@ -1164,9 +1166,9 @@ class ViewWater(ViewPes):
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
 
 
-    def show_ekin_fit(self, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, show_ytics=False,
-                      fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6, export=False,
-                      show_xlabel=True, show_ylabel=True):
+    def show_ekin_fit(self, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, show_mdata=False, 
+                      show_ytics=False, fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6,
+                      export=False, show_xlabel=True, show_ylabel=True):
         self._show_energy_fit(plot_type='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale,
                               show_ytics=show_ytics, fontsize_label=fontsize_label,
                               fontsize_ref=fontsize_ref, show_ylabel=show_ylabel)
@@ -1175,21 +1177,25 @@ class ViewWater(ViewPes):
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
                                  fontsize=fontsize_clusterid) 
         self._addtext_fitvalues(self.ax, plot_type='ekin', fit_par=fit_par, fontsize=fontsize_label,
-                                text_pos='right')            
+                                text_pos='right')
+        if show_mdata:
+            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), fontsize=fontsize_label)            
         if not export:          
             self.fig.show()  
 
 
-    def show_ebin_fit(self, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, show_ytics=False,
-                      fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6, export=False,
-                      show_xlabel=True, show_ylabel=True):
+    def show_ebin_fit(self, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, show_mdata=False,
+                      show_ytics=False, fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6,
+                      export=False, show_xlabel=True, show_ylabel=True):
         self._show_energy_fit(plot_type='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale,
                               show_ytics=show_ytics, fontsize_label=fontsize_label,
                               fontsize_ref=fontsize_ref, show_ylabel=show_ylabel)
         if show_xlabel:
             self.ax.set_xlabel(r'E$_{bin}$ (eV)', fontsize=fontsize_label)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), fontsize=fontsize_clusterid) 
-        self._addtext_fitvalues(self.ax, plot_type='ebin', fit_par=fit_par, fontsize=fontsize_label)            
+        self._addtext_fitvalues(self.ax, plot_type='ebin', fit_par=fit_par, fontsize=fontsize_label)  
+        if show_mdata:
+            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_pos='right', fontsize=fontsize_label)          
         if not export:          
             self.fig.show()  
 
