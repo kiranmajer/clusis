@@ -551,6 +551,8 @@ class SpecPeWaterFitList(SpecPeList):
                         mdataList[rowCount].append([round(float(cs.ebin(p)),2) for p in cs.mdata.data(key)[:-2:2]])
                         #mdataList[rowCount].append(round(np.sum(cs.mdata.data(key)[-2:]), 3))
                         mdataList[rowCount].append(round(cs._get_peak_width('fitPar'), 3))
+                        mdataList[rowCount].append(round(cs.mdata.data(key)[-2], 3))
+                        mdataList[rowCount].append(round(cs.mdata.data(key)[-1], 3))
                     elif key == 'fitInfo':
                         mdataList[rowCount].append(cs.mdata.data(key)[0])
                     else:
@@ -567,11 +569,13 @@ class SpecPeWaterFitList(SpecPeList):
               'cutoff'.ljust(6+3),
               'chi2*1e3'.ljust(7+3),
               'fwhm'.ljust(5+3),
+              's_g'.ljust(5+3),
+              's_l'.ljust(5+3),
               'Ebin of peaks [eV]')
         last_size = 0
         for row in mdataList:
             if not row[0] == last_size:
-                print('-'*85)
+                print('-'*101)
             print(str(row[0]).ljust(4+3), 
                   str(round(row[1]*1e9)).ljust(6+3),
                   format_recTime(row[2]).ljust(10+3), end=' ')
@@ -581,6 +585,8 @@ class SpecPeWaterFitList(SpecPeList):
                 print(str(round(row[3]*1e6, 2)).ljust(6+3), end=' ')
             print(str(round(row[4]*1e3, 3)).ljust(7+3),
                   str(row[6]).ljust(5+3),
+                  str(row[7]).ljust(5+3),
+                  str(row[8]).ljust(5+3),
                   format_fitpeaks(row[5]))
             last_size = row[0]
             
