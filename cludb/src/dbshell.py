@@ -122,7 +122,7 @@ class Db(object):
 
     def query(self, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None, clusterBaseUnitNumberRange=None,
               recTime=None, recTimeRange=None, inTags=None, notInTags=None, datFileName=None, waveLength=None,
-              trapTemp=None, trapTempRange=None, hide_trash=True):
+              trapTemp=None, trapTempRange=None, hide_trash=True, order_by='recTime'):
         
 
         
@@ -297,7 +297,12 @@ class Db(object):
             sql = sql.rstrip(' AND ')
         
         # build order part
-        orderResults = {'pes': ' ORDER BY clusterBaseUnit, clusterBaseUnitNumber, recTime, datFile',
+        if order_by in ['recTime', 'trapTemp']:
+            pes_order = ' ORDER BY clusterBaseUnit, clusterBaseUnitNumber, {}, datFile'.format(order_by)
+        else:
+            raise ValueError('oder_by must be "recTime" or "trapTemp"')
+        
+        orderResults = {'pes': pes_order,
                         'ms': ' ORDER BY clusterBaseUnit, recTime, datFile',
                         'generic': ' ORDER BY recTime, datFile'}
         sql += orderResults[specType]
