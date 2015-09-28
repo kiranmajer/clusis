@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
+from scipy.stats import linregress
 
 
 
@@ -605,39 +606,46 @@ class SpecPeWaterFitList(SpecPeList):
 
     def compare_water_fits(self, plot_iso_borders=False, comp_data=None, cutoff=None,
                            fname=None, export_dir=os.path.expanduser('~'), size=[20,14]):
-        # methods to sort peak position to isomers
-        linear_par = {'iso2': [[abs((1.12-.91)/0.1), -1.72]],#, [abs((2-1.62)/0.1), -2.25]],
-                      'iso1a': [[abs((3.26-2.99)/0.1), -2.3], [abs((3.26-2.7)/0.1), -3.26]],  #[abs((4.275-3.3)/0.1), -4.275]],
-                      'iso1b': [[abs((3.8-3.2)/0.1), -3.77]] #, [abs((3.93-2.82)/0.1), -3.93]]   #[abs((4.5-3.6)/0.1), -4.5]]
-                      }
-        def border_iso(size):
-            def b_part1(iso, size):
-                return linear_par[iso][0][0]*size**(-1/3) + linear_par[iso][0][1]
-            def b_part2(iso, size):
-                return linear_par[iso][1][0]*size**(-1/3) + linear_par[iso][1][1]
-            iso2 = b_part1('iso2', size) #if size < 50 else b_part2('iso2', size)
-            iso1a = b_part1('iso1a', size) if size < 25 else b_part2('iso1a', size)
-            iso1b = b_part1('iso1b', size) #if size < 50 else b_part2('iso1b', size)
-            #print('Border parameter for size {} are:'.format(str(size)), iso2, iso1a, iso1b)
-            return iso2, iso1a, iso1b
+        # select tupels in the compare plot to define the borders between isomers
+        linpar = {'iso2': [[0.36, 0.89], [0.27, 1.19]],
+                  'iso1a': [[0.356, 1.398], [0.269, 1.687], [0.2155, 2.2], [0.1, 2.66]],
+                  'iso1b': [[0.31, 1.96], [0.269, 2.03], [0.25, 2.21]]
+                  }
         
-        def sort_peaks(size, peak_list, p_2, p_1a, p_1b, p_vib):
-            iso2, iso1a, iso1b = border_iso(size)
+        def iso_border(lpar, inv_size):
+            border = None
+            i = 1
+            while i < len(lpar) and inv_size:
+                if inv_size >= lpar[i][0]:
+                    border = (lpar[i][1] - lpar[i-1][1])/np.abs(lpar[i][0] - lpar[i-1][0])*(inv_size - lpar[i-1][0]) - lpar[i-1][1]
+                    inv_size = None
+                    i += 1
+                else:
+                    i += 1
+                    
+            if not border:
+                i -= 1
+                border = (lpar[i][1] - lpar[i-1][1])/np.abs(lpar[i][0] - lpar[i-1][0])*(inv_size - lpar[i-1][0]) - lpar[i-1][1]
+            
+            return border
+
+        
+        def sort_peaks(size, linpar, peak_list, p_2, p_1a, p_1b, p_vib):
             for p in peak_list:
-                if -1*p > iso2:
+                if -1*p > iso_border(linpar['iso2'], size**(-1/3)):
                     p_2.append([size, p])
                     #print('p_2:', p_2)
-                elif iso2 >= -1*p > iso1a:
+                elif iso_border(linpar['iso2'], size**(-1/3)) >= -1*p > iso_border(linpar['iso1a'], size**(-1/3)):
                     p_1a.append([size, p])
                     #print('p_1a:', p_1a)
-                elif iso1a >= -1*p > iso1b:
+                elif iso_border(linpar['iso1a'], size**(-1/3)) >= -1*p > iso_border(linpar['iso1b'], size**(-1/3)):
                     p_1b.append([size, p])
                     #print('p_1b:', p_1b)
                 else:
                     p_vib.append([size, p])
                     #print('p_vib:', p_vib)
                     
-        def plot_comp(plot_data, fit_par, cutoff, comp_data=None, fontsize_label=12):
+        def plot_comp(plot_data, fit_par, fit_res, cutoff, comp_data=None, fontsize_label=12):
             fig = plt.figure()
             # setup lower axis
             ax = host_subplot(111, axes_class=AA.Axes)
@@ -656,11 +664,16 @@ class SpecPeWaterFitList(SpecPeList):
             # write fit values
             if len(fit_par) > 0:
                 if cutoff is None:
-                    ex_str = 'Extrapolations:'
+                    ex_str = 'Extrapolation:'
                 else:
-                    ex_str = 'Extrapolations (from size {}):'.format(cutoff)
+                    ex_str = 'Extrapolation (from size {}):'.format(cutoff)
+                i = 0
                 for par_set in fit_par:
-                    ex_str += '\n{:.2f} eV'.format(par_set[1])
+                    if i == 1:
+                        ex_str = ex_str.replace('Extrapolation', 'Extrapolations')
+                    res_set = fit_res[i]
+                    i += 1
+                    ex_str += '\n{:.2f}$\pm${:.2f}eV'.format(par_set[1], res_set[1])
                 ax.text(0.01, -0.6, ex_str, verticalalignment='top')
             # plot data
             for peak_set in plot_data:
@@ -672,21 +685,20 @@ class SpecPeWaterFitList(SpecPeList):
                     ax.plot(peak_set[0], -1*peak_set[1], 'o', label=key)
                 ax.legend(loc=4)
             # plot fits
-            c = 1
+            c = 0.5
             if cutoff is not None:
                 c = cutoff**(-1/3)            
             for par_set in fit_par:
                 lin_fit = np.poly1d(par_set)
                 ax.plot([0,c], lin_fit([0,c]), '-', color='grey')
-                ax.plot([c,1], lin_fit([c, 1]), '--', color='grey')
-#             else:
-#                 for par_set in fit_par:
-#                     lin_fit = np.poly1d(par_set)
-#                     ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')
+                ax.plot([c,0.5], lin_fit([c, 0.5]), '--', color='grey')
             # plot borders for isomer classification
             if plot_iso_borders:
-                for par in linear_par.values():
-                    ax.plot([0, 1], par[0][0]*np.array([0,1]) + par[0][1], ':', color='grey')
+                for par in linpar.values():
+                    s = [p[0] for p in par]
+                    s[0] = 0.5
+                    s[-1] = 1e-7
+                    ax.plot(s, [iso_border(par, y) for y in s], color='black')#':', color='grey')
             if fname is None:
                 fig.show()
             else:
@@ -702,7 +714,7 @@ class SpecPeWaterFitList(SpecPeList):
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
             peak_list = [cs.ebin(p) for p in cs.mdata.data('fitPar')[:-2:2]]
-            sort_peaks(cs.mdata.data('clusterBaseUnitNumber'), peak_list, p_2, p_1a, p_1b, p_vib)
+            sort_peaks(cs.mdata.data('clusterBaseUnitNumber'), linpar, peak_list, p_2, p_1a, p_1b, p_vib)
             del cs
         
         #print('p_* are:', p_2, p_1a, p_1b, p_vib)
@@ -726,12 +738,19 @@ class SpecPeWaterFitList(SpecPeList):
         
         # linear fit
         fit_par = []
+        fit_res = []
         for peak_set in fit_data:
-            fitpar = np.polyfit(peak_set[2], peak_set[1], 1)
+#             slope, intercept, r_value, p_value, std_err = linregress(peak_set[2], peak_set[1])
+#             fit_par.append(np.array([slope, intercept]))
+#             fit_res.append(std_err)            
+            fitpar, cov = np.polyfit(peak_set[2], peak_set[1], 1, cov=True)
             fit_par.append(fitpar)
+            res=np.sqrt(np.diag(cov))
+            fit_res.append(res)
+
             
-        plot_comp(plot_data, fit_par, cutoff, comp_data=comp_data)
-        #return fit_par
+        plot_comp(plot_data, fit_par, fit_res, cutoff, comp_data=comp_data)
+#         return fit_par, fit_res
 
 
     def compare_peak_widths(self, fname=None, export_dir=os.path.expanduser('~'),
