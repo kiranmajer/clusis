@@ -605,7 +605,8 @@ class SpecPeWaterFitList(SpecPeList):
 
 
     def compare_water_fits(self, plot_iso_borders=False, comp_data=None, cutoff=None,
-                           fname=None, export_dir=os.path.expanduser('~'), size=[20,14]):
+                           fname=None, export_dir=os.path.expanduser('~'), size=[20,14],
+                           mark_iso=True):
         # select tupels in the compare plot to define the borders between isomers
         linpar = {'iso2': [[0.36, 0.89], [0.27, 1.19]],
                   'iso1a': [[0.356, 1.398], [0.269, 1.687], [0.2155, 2.2], [0.1, 2.66]],
@@ -714,7 +715,11 @@ class SpecPeWaterFitList(SpecPeList):
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
             peak_list = [cs.ebin(p) for p in cs.mdata.data('fitPar')[:-2:2]]
-            sort_peaks(cs.mdata.data('clusterBaseUnitNumber'), linpar, peak_list, p_2, p_1a, p_1b, p_vib)
+            if mark_iso:
+                sort_peaks(cs.mdata.data('clusterBaseUnitNumber'), linpar, peak_list, p_2, p_1a, p_1b, p_vib)
+            else:
+                for p in peak_list:
+                    p_1b.append([cs.mdata.data('clusterBaseUnitNumber'), p])
             del cs
         
         #print('p_* are:', p_2, p_1a, p_1b, p_vib)
