@@ -84,17 +84,25 @@ class SpecList(object):
             print('{}:'.format(os.path.basename(cs.mdata.data('datFile'))), values)
             del cs
             
-    def _export(self, fname='export.pdf', export_dir=os.path.expanduser('~'), size=[20,14],
+    def _export(self, fname='export.pdf', export_dir=os.path.expanduser('~'), size='p1h',
                 figure=None):
         f = os.path.join(export_dir, fname)
+        'TODO: presets are mere personal. For a general approach probably not suitable.'
+        presets = {'p1': [14, 14*3/7],
+                   'p1h': [14, 9],
+                   'p2': [7, 7*5/7],
+                   'p3': [4.8, 4.8*5/6]}
+        if isinstance(size, str) and size in presets.keys():
+            size = presets[size]
         w = size[0]/2.54
         h = size[1]/2.54
         #orig_size = self.fig.get_size_inches()
         if figure is None:
             figure = self.fig
         figure.set_size_inches(w,h)
-        'TODO: Set up margins so we dont have to use bbox_inches'
-        figure.savefig(f, bbox_inches='tight')
+        'TODO: hard coded margins are not a good idea.'
+        figure.subplots_adjust(left=0.09, bottom=0.088, right=0.995, top=0.905)
+        figure.savefig(f)
         #self.fig.set_size_inches(orig_size)
         
     def remove_spec(self):
@@ -604,14 +612,20 @@ class SpecPeWaterFitList(SpecPeList):
         return comp_data
 
 
-    def compare_water_fits(self, plot_iso_borders=False, comp_data=None, cutoff=None,
+    def compare_water_fits(self, plot_iso_borders=False, comp_data=None, cutoff=None, mark_iso=True,
                            fname=None, export_dir=os.path.expanduser('~'), size=[20,14],
-                           mark_iso=True):
+                           fontsize_label=12, markersize=6, xlim=[0,0.42], ylim=[-4,0],
+                           ax2_ticks=[10, 20,40,80,150,350,1000, 5000], color=None,
+                           color_comp_data=None):
         # select tupels in the compare plot to define the borders between isomers
         linpar = {'iso2': [[0.36, 0.89], [0.27, 1.19]],
                   'iso1a': [[0.356, 1.398], [0.269, 1.687], [0.2155, 2.2], [0.1, 2.66]],
                   'iso1b': [[0.31, 1.96], [0.269, 2.03], [0.25, 2.21]]
                   }
+        if color is None:
+            color = ['indigo', 'limegreen', 'blue', 'red']
+        if color_comp_data is None:
+            color_comp_data = ['whitesmoke', 'lightblue', 'yellow', 'violet', 'black', 'navy']
         
         def iso_border(lpar, inv_size):
             border = None
@@ -646,20 +660,26 @@ class SpecPeWaterFitList(SpecPeList):
                     p_vib.append([size, p])
                     #print('p_vib:', p_vib)
                     
-        def plot_comp(plot_data, fit_par, fit_res, cutoff, comp_data=None, fontsize_label=12):
+        def plot_comp(plot_data, fit_par, fit_res, cutoff, fontsize_label, markersize,
+                      xlim, ylim, ax2_ticks, comp_data=None):
             fig = plt.figure()
             # setup lower axis
             ax = host_subplot(111, axes_class=AA.Axes)
-            ax.set_xlabel('n$^{-1/3}$', fontsize=fontsize_label)
-            ax.set_xlim(0,0.42)
-            ax.set_ylabel('-VDE (eV)', fontsize=fontsize_label)
-            ax.tick_params(labelsize=fontsize_label)
-            ax.set_ylim(-4,0)
+            ax.set_xlabel('n$^{-1/3}$')
+            ax.axis['bottom'].label.set_fontsize(fontsize_label)
+            ax.set_xlim(xlim[0], xlim[1])
+            ax.set_ylabel('-VDE (eV)')
+            ax.axis['left'].label.set_fontsize(fontsize_label)
+            ax.axis['bottom'].major_ticklabels.set_fontsize(fontsize_label)
+            ax.axis['left'].major_ticklabels.set_fontsize(fontsize_label)
+            ax.set_ylim(ylim[0], ylim[1])
             # setup upper axis
             ax2 = ax.twin()
-            ax2.set_xticks(np.array([10, 20,40,80,150,350,1000, 5000])**(-1/3))
-            ax2.set_xticklabels(["10","20","40","80","150","350","1000","5000"])
-            ax2.set_xlabel('number of water molecules', fontsize=fontsize_label)
+            ax2.set_xticks(np.array(ax2_ticks)**(-1/3))
+            ax2.set_xticklabels([str(t) for t in ax2_ticks])
+            ax2.set_xlabel('number of water molecules (n)')
+            ax2.axis['top'].label.set_fontsize(fontsize_label)
+            ax2.axis['top'].major_ticklabels.set_fontsize(fontsize_label)
             ax2.axis["right"].major_ticklabels.set_visible(False)
             ax2.grid(b=True)
             # write fit values
@@ -675,16 +695,28 @@ class SpecPeWaterFitList(SpecPeList):
                     res_set = fit_res[i]
                     i += 1
                     ex_str += '\n{:.2f}$\pm${:.2f}eV'.format(par_set[1], res_set[1])
-                ax.text(0.01, -0.6, ex_str, verticalalignment='top')
+                bbox_props = {'boxstyle': 'square', 'facecolor': 'white'} 
+                # TODO: text position relative to axis?
+                ax.text(0.015, -0.2 + ylim[1], ex_str, verticalalignment='top', fontsize=fontsize_label,
+                        bbox=bbox_props)
             # plot data
+            color_idx = 0
             for peak_set in plot_data:
-                ax.plot(peak_set[2], peak_set[1], 's')
+                ax.plot(peak_set[2], peak_set[1], 's', markersize=markersize, color=color[color_idx])
+                color_idx += 1
             # plot comparison data
             if comp_data is not None:
                 print('Got comparison data. Plotting...')
-                for key, peak_set in comp_data.items():
-                    ax.plot(peak_set[0], -1*peak_set[1], 'o', label=key)
-                ax.legend(loc=4)
+                color_idx = 0
+                for key, peak_set in sorted(comp_data.items()):
+#                     if color_idx < 4:
+#                         marker ='o'
+#                     else:
+#                         marker='D'
+                    ax.plot(peak_set[0], -1*peak_set[1], 'o', label=key, markersize=markersize,
+                            color=color_comp_data[color_idx])
+                    color_idx += 1
+                ax.legend(loc=4, fontsize=fontsize_label, numpoints=1)
             # plot fits
             c = 0.5
             if cutoff is not None:
@@ -754,12 +786,14 @@ class SpecPeWaterFitList(SpecPeList):
             fit_res.append(res)
 
             
-        plot_comp(plot_data, fit_par, fit_res, cutoff, comp_data=comp_data)
+        plot_comp(plot_data, fit_par, fit_res, cutoff, fontsize_label=fontsize_label,
+                  markersize=markersize, xlim=xlim, ylim=ylim, ax2_ticks=ax2_ticks,
+                  comp_data=comp_data)
 #         return fit_par, fit_res
 
 
     def compare_peak_widths(self, fname=None, export_dir=os.path.expanduser('~'),
-                            size=[20,14], fontsize_label=12):
+                            size=[20,14], fontsize_label=12, markersize=6, color=None):
         widths = {1: [], 2: [], 3: [], 4: []}
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
@@ -776,34 +810,53 @@ class SpecPeWaterFitList(SpecPeList):
                 plot_data[k] = np.transpose(v)
         #xdata = plot_data[0]**(-1/3)
         
+        if color is None:
+            color = ['blue', 'grey', 'limegreen', 'red']
         # create plot
         fig = plt.figure()
         # setup lower axis
         ax = host_subplot(111, axes_class=AA.Axes)
-        ax.set_xlabel('n$^{-1/3}$', fontsize=fontsize_label)
-        ax.set_xlim(0,0.4)
-        ax.set_ylabel('fwhm (eV)', fontsize=fontsize_label)
-        ax.tick_params(labelsize=fontsize_label)
+        ax.set_xlabel('n$^{-1/3}$')
+        ax.axis['bottom'].label.set_fontsize(fontsize_label)
+        ax.set_xlim(0,0.42)
+        ax.set_ylabel('fwhm (eV)')
+        ax.axis['left'].label.set_fontsize(fontsize_label)
+        ax.axis['bottom'].major_ticklabels.set_fontsize(fontsize_label)
+        ax.axis['left'].major_ticklabels.set_fontsize(fontsize_label)
         ax.set_ylim(0,1.3)
         # setup upper axis
         ax2 = ax.twin()
         ax2.set_xticks(np.array([10, 20,40,80,150,350,1000, 5000])**(-1/3))
         ax2.set_xticklabels(["10","20","40","80","150","350","1000","5000"])
-        ax2.set_xlabel('number of water molecules', fontsize=fontsize_label)
+        ax2.set_xlabel('number of water molecules (n)')
+        ax2.axis['top'].label.set_fontsize(fontsize_label)
+        ax2.axis['top'].major_ticklabels.set_fontsize(fontsize_label)
         ax2.axis["right"].major_ticklabels.set_visible(False)
         ax2.grid(b=True)
         # plot data
+        color_idx = 0
         for k,v in plot_data.items():
             xdata = v[0]**(-1/3)
-            ax.plot(xdata, v[1], 's', label='{}'.format(k))
-            # linear fit
-            if len(v[0]) > 2 and np.abs(v[0][0] - v[0][-1]) > 20: 
-                fitpar = np.polyfit(xdata, v[1], 1)
-                # plot fit
-                xdata_fit = np.arange(0, 1, 0.1)
-                lin_fit = np.poly1d(fitpar)
-                ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')
-        ax.legend(title='Number of fit peaks:')
+            ax.plot(xdata, v[1], 's', label='{}'.format(k), markersize=markersize,
+                    color=color[color_idx])
+            color_idx += 1
+# linear fits make no sense here, its something asymptotic.
+#             # linear fit
+#             if len(v[0]) > 2 and np.abs(v[0][0] - v[0][-1]) > 20: 
+#                 fitpar = np.polyfit(xdata, v[1], 1)
+#                 # plot fit
+#                 xdata_fit = np.arange(0, 1, 0.1)
+#                 lin_fit = np.poly1d(fitpar)
+#                 ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')#             # linear fit
+#             if len(v[0]) > 2 and np.abs(v[0][0] - v[0][-1]) > 20: 
+#                 fitpar = np.polyfit(xdata, v[1], 1)
+#                 # plot fit
+#                 xdata_fit = np.arange(0, 1, 0.1)
+#                 lin_fit = np.poly1d(fitpar)
+#                 ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')
+        leg = ax.legend(title='Number of GL functions:', loc=3, fontsize=fontsize_label,
+                        numpoints=1)
+        leg.get_title().set_fontsize(fontsize_label)
         if fname is None:
             fig.show()
         else:
