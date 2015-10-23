@@ -1,7 +1,7 @@
 import numpy as np
 import os.path
 
-chemical_symbols = ['X',  'H',  'He', 'Li', 'Be',
+chemical_symbols = ['X',  'H',  'D', 'He', 'Li', 'Be',
                     'B',  'C',  'N',  'O',  'F',
                     'Ne', 'Na', 'Mg', 'Al', 'Si',
                     'P',  'S',  'Cl', 'Ar', 'K',
@@ -28,7 +28,7 @@ for Z, symbol in enumerate(chemical_symbols):
     atomic_numbers[symbol] = Z
 
 atomic_names = [
-    '', 'Hydrogen', 'Helium', 'Lithium', 'Beryllium', 'Boron',
+    '', 'Hydrogen', 'Deuterium', 'Helium', 'Lithium', 'Beryllium', 'Boron',
     'Carbon', 'Nitrogen', 'Oxygen', 'Fluorine', 'Neon', 'Sodium',
     'Magnesium', 'Aluminium', 'Silicon', 'Phosphorus', 'Sulfur',
     'Chlorine', 'Argon', 'Potassium', 'Calcium', 'Scandium',
@@ -54,6 +54,7 @@ atomic_names = [
 atomic_masses = np.array([
    0.00000, # X
    1.00794, # H
+   2.01410, # D
    4.00260, # He
    6.94100, # Li
    9.01218, # Be
@@ -162,6 +163,7 @@ covalent_radius_default = 0.20 # for anything we don't know better
 covalent_radii = np.array([
  covalent_radius_default, # X
  0.32, # H
+ covalent_radius_default, # D
  0.93, # He
  1.23, # Li
  0.90, # Be
@@ -269,6 +271,7 @@ covalent_radii = np.array([
 reference_states = [\
     None, #X
     {'symmetry': 'diatom', 'd': 0.74}, #H
+    None, # D
     {'symmetry': 'atom'}, #He
     {'symmetry': 'BCC', 'a': 3.49}, #Li
     {'symmetry': 'hcp', 'c/a': 1.567, 'a': 2.29}, #Be
