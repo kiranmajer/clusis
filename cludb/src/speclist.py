@@ -474,8 +474,11 @@ class SpecPeWaterList(SpecPeList):
     def __init__(self, cfg, clusterBaseUnitNumber=None, clusterBaseUnitNumberRange=None,
                  recTime=None, recTimeRange=None, inTags=None, notInTags=None,
                  datFileName=None, waveLength=None, trapTemp=None,
-                 trapTempRange=None, hide_trash=True, order_by='recTime'):
-        SpecPeList.__init__(self, cfg, clusterBaseUnit='H2O', clusterBaseUnitNumber=clusterBaseUnitNumber,
+                 trapTempRange=None, hide_trash=True, order_by='recTime', heavy_water=False):
+        water_type = 'H2O'
+        if heavy_water:
+            water_type = 'D2O'
+        SpecPeList.__init__(self, cfg, clusterBaseUnit=water_type, clusterBaseUnitNumber=clusterBaseUnitNumber,
                             clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
                             recTime=recTime, recTimeRange=recTimeRange, inTags=inTags,
                             notInTags=notInTags, datFileName=datFileName,
@@ -511,7 +514,7 @@ class SpecPeWaterFitList(SpecPeList):
     def __init__(self, cfg, clusterBaseUnitNumber=None, clusterBaseUnitNumberRange=None,
                  recTime=None, recTimeRange=None, inTags=None, notInTags=None,
                  datFileName=None, waveLength=None, trapTemp=None,
-                 trapTempRange=None, hide_trash=True, order_by='recTime'):
+                 trapTempRange=None, hide_trash=True, order_by='recTime', heavy_water=False):
         inTags_list = []
         if inTags is not None:
             if type(inTags) is str:
@@ -533,7 +536,8 @@ class SpecPeWaterFitList(SpecPeList):
                                  recTime=recTime, recTimeRange=recTimeRange, inTags=inTags_list,
                                  notInTags=notInTags_list, datFileName=datFileName,
                                  waveLength=waveLength, trapTemp=trapTemp,
-                                 trapTempRange=trapTempRange, hide_trash=hide_trash, order_by=order_by)
+                                 trapTempRange=trapTempRange, hide_trash=hide_trash, order_by=order_by,
+                                 heavy_water=heavy_water)
         self.view = viewlist.ViewWaterFitList(self)
 
     def list_fit_par(self):
