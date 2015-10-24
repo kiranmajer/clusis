@@ -124,6 +124,8 @@ class Mdata(object):
         """
         Safely add new meta data to the mdata dict. Only accepts valid key, value pairs
         for the given spec type.
+        
+        TODO: if k == wavelength self._hv needs to be adapted and specdata needs to be recalculated!
         """
         mdata = self.__mdata
         if type(newMdata) is dict:
