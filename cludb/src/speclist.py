@@ -515,6 +515,7 @@ class SpecPeWaterFitList(SpecPeList):
                  recTime=None, recTimeRange=None, inTags=None, notInTags=None,
                  datFileName=None, waveLength=None, trapTemp=None,
                  trapTempRange=None, hide_trash=True, order_by='recTime', heavy_water=False):
+        self.heavy_water = heavy_water
         inTags_list = []
         if inTags is not None:
             if type(inTags) is str:
@@ -622,10 +623,19 @@ class SpecPeWaterFitList(SpecPeList):
                            ax2_ticks=[10, 20,40,80,150,350,1000, 5000], color=None,
                            color_comp_data=None):
         # select tupels in the compare plot to define the borders between isomers
-        linpar = {'iso2': [[0.36, 0.89], [0.27, 1.19]],
-                  'iso1a': [[0.356, 1.398], [0.269, 1.687], [0.2155, 2.2], [0.1, 2.66]],
-                  'iso1b': [[0.31, 1.96], [0.269, 2.03], [0.25, 2.21]]
-                  }
+        linpar_h2o = {'iso2': [[0.36, 0.89], [0.27, 1.19]],
+                      'iso1a': [[0.356, 1.398], [0.269, 1.687], [0.2155, 2.2], [0.1, 2.66]],
+                      'iso1b': [[0.31, 1.96], [0.269, 2.03], [0.25, 2.21]]
+                      }
+        linpar_d2o = {'iso2': [[0.366, 0.85], [0.27, 1.19]],
+                      'iso1a': [[0.385, 1.28], [0.36, 1.27], [0.27, 1.73], [0.25, 1.78]],
+                      'iso1b': [[0.276, 2.05], [0.264, 2.058], [0.25, 2.16]]
+                      }
+        if self.heavy_water:
+            linpar = linpar_d2o
+        else:
+            linpar = linpar_h2o
+        
         if color is None:
             color = ['indigo', 'limegreen', 'blue', 'red']
         if color_comp_data is None:
