@@ -349,6 +349,20 @@ class Cfg():
 # m* from papers about experimental band structures
         self.bulk_fermi_energy = {'Na': 3.2/1.28,
                                   'K': 2.12/1.33}
+        
+        
+        # select tupels in the compare plot to define the borders between isomers
+        self.h2o_isoborder_linpar = {'iso2': [[0.36, 0.89], [0.27, 1.19]],
+                                     'iso1a': [[0.356, 1.398], [0.269, 1.687], [0.2155, 2.2],
+                                               [0.1, 2.66]],
+                                     'iso1b': [[0.31, 1.96], [0.269, 2.03], [0.25, 2.21]]
+                                     }
+        
+        self.d2o_isoborder_linpar = {'iso2': [[0.366, 0.85], [0.27, 1.19]],
+                                     'iso1a': [[0.385, 1.28], [0.36, 1.27], [0.27, 1.73],
+                                               [0.25, 1.78]],
+                                     'iso1b': [[0.276, 2.05], [0.264, 2.058], [0.25, 2.16]]
+                                     }
 
         
 
