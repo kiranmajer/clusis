@@ -85,7 +85,7 @@ class SpecList(object):
             del cs
             
     def _export(self, fname='export.pdf', export_dir=os.path.expanduser('~'), size='p1h',
-                figure=None):
+                figure=None, twin_axes=True):
         f = os.path.join(export_dir, fname)
         'TODO: presets are mere personal. For a general approach probably not suitable.'
         presets = {'p1': [14, 14*3/7],
@@ -101,7 +101,10 @@ class SpecList(object):
             figure = self.fig
         figure.set_size_inches(w,h)
         'TODO: hard coded margins are not a good idea.'
-        figure.subplots_adjust(left=0.09, bottom=0.088, right=0.995, top=0.905)
+        if twin_axes:
+            figure.subplots_adjust(left=0.09, bottom=0.088, right=0.995, top=0.905)
+        else:
+            figure.subplots_adjust(left=0.08, bottom=0.095, right=0.995, top=0.98)
         figure.savefig(f)
         #self.fig.set_size_inches(orig_size)
         
@@ -879,6 +882,7 @@ class SpecPeWaterFitList(SpecPeList):
 
         energy_ratio = []
         energy_ratio_by_size = {}
+        peak_stats = {}
         # populate peak lists
         for s in self.dbanswer:
             d2o_2 = []
@@ -911,6 +915,27 @@ class SpecPeWaterFitList(SpecPeList):
                             energy_ratio_by_size[cn].append(h2o_dE/d2o_dE)
                         else:
                             energy_ratio_by_size[cn] = [h2o_dE/d2o_dE]
+                            
+                        if cn not in peak_stats.keys():
+                            peak_stats[cn] = [[], [], [], [], [], [], []]
+                            
+                        peak_stats[cn][0].append(h2o_1a[0][1])
+                        peak_stats[cn][1].append(h2o_1b[0][1])
+                        peak_stats[cn][2].append(h2o_dE)
+                        peak_stats[cn][3].append(d2o_1a[0][1])
+                        peak_stats[cn][4].append(d2o_1b[0][1])
+                        peak_stats[cn][5].append(d2o_dE)
+                        peak_stats[cn][6].append(h2o_dE/d2o_dE)
+#                         else:
+#                             peak_stats[cn] = [[], [], [], [], [], [], []]
+#                             peak_stats[cn][0] = [h2o_1a[0][1]]
+#                             peak_stats[cn][1] = [h2o_1b[0][1]]
+#                             peak_stats[cn][2] = [h2o_dE]
+#                             peak_stats[cn][3] = [d2o_1a[0][1]]
+#                             peak_stats[cn][4] = [d2o_1b[0][1]]
+#                             peak_stats[cn][5] = [d2o_dE]
+#                             peak_stats[cn][6] = [h2o_dE/d2o_dE]
+                            
         # prepare plot data
         #plot_data = [ps for ps in [p_2, p_1a, p_1b, p_vib] if len(ps) > 0]
         #plot_data = [np.array(ps).transpose() for ps in energy_ratio]
@@ -937,19 +962,22 @@ class SpecPeWaterFitList(SpecPeList):
 #         ax2.axis["right"].major_ticklabels.set_visible(False)
 #         ax2.grid(b=True)
         ax.xaxis.grid(True)
+        # plot lines for 1 and sqrt(2)
+        ax.plot([15, 65], [np.sqrt(2), np.sqrt(2)], 'black', lw=.4)
+        ax.plot([15, 65], [1, 1], 'black', lw=.4)
         # plot data
         if show_single_points:
-            ax.plot(plot_data[0], plot_data[1], 's', color='yellow')
+            ax.plot(plot_data[0], plot_data[1], 's', color='limegreen', markersize=markersize)
         ax.plot(plot_data_mean[0], plot_data_mean[1], color='grey')
-        ax.errorbar(plot_data_mean[0], plot_data_mean[1], plot_data_mean[2], fmt='s', color=color)
-        ax.plot([15, 65], [np.sqrt(2), np.sqrt(2)], 'black')
-        ax.plot([15, 65], [1, 1], 'black')
+        ax.errorbar(plot_data_mean[0], plot_data_mean[1], plot_data_mean[2], fmt='s',
+                    color=color, markersize=markersize, capsize=markersize/2)
         if fname is None:
             fig.show()
         else:
-            self._export(fname=fname, export_dir=export_dir, size=size, figure=fig)
+            self._export(fname=fname, export_dir=export_dir, size=size, figure=fig,
+                         twin_axes=False)
         
-        return energy_ratio, plot_data
+        return peak_stats, energy_ratio_by_size
             
         
             
