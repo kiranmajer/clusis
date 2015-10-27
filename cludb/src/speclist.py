@@ -658,9 +658,9 @@ class SpecPeWaterFitList(SpecPeList):
                            color_comp_data=None):
         
         if self.heavy_water:
-            linpar = self.cfg.d20_isoborder_linpar
+            linpar = self.cfg.d2o_isoborder_linpar
         else:
-            linpar = self.cfg.h20_isoborder_linpar
+            linpar = self.cfg.h2o_isoborder_linpar
          
         if color is None:
             color = ['indigo', 'limegreen', 'blue', 'red']
@@ -869,8 +869,90 @@ class SpecPeWaterFitList(SpecPeList):
             self._export(fname=fname, export_dir=export_dir, size=size, figure=fig)
 
 
-    def plot_offset_energy_ratio(self):
-        pass
+    def plot_offset_energy_ratio(self, show_single_points=False, fname=None,
+                                 export_dir=os.path.expanduser('~'),
+                                 size=[20,14], fontsize_label=12, markersize=6,
+                                 color='blue'):
+        # this only makes sense for heavy water
+        if not self.heavy_water:
+            raise ValueError('Only applicable for heavy water.')
+
+        energy_ratio = []
+        energy_ratio_by_size = {}
+        # populate peak lists
+        for s in self.dbanswer:
+            d2o_2 = []
+            d2o_1a = []
+            d2o_1b = []
+            d2o_vib = []
+            cs = load_pickle(self.cfg, s[str('pickleFile')])
+            cn = cs.mdata.data('clusterBaseUnitNumber')
+            peak_list = [cs.ebin(p) for p in cs.mdata.data('fitPar')[:-2:2]]
+            # sort d2o isomers
+            self._sort_peaks(cn, self.cfg.d2o_isoborder_linpar, peak_list,
+                             d2o_2, d2o_1a, d2o_1b, d2o_vib)
+            if len(d2o_1a)==1 and len(d2o_1b)==1:
+                d2o_dE = np.abs(d2o_1a[0][1] - d2o_1b[0][1])
+                # add h20 ref
+                comp_list = SpecPeWaterFitList(self.cfg, clusterBaseUnitNumber=cn)
+                for rs in comp_list.dbanswer:
+                    h2o_2 = []
+                    h2o_1a = []
+                    h2o_1b = []
+                    h2o_vib = []
+                    crs = load_pickle(self.cfg,rs[str('pickleFile')])
+                    ref_peak_list = [crs.ebin(p) for p in crs.mdata.data('fitPar')[:-2:2]]
+                    self._sort_peaks(cn, self.cfg.h2o_isoborder_linpar, ref_peak_list,
+                                     h2o_2, h2o_1a, h2o_1b, h2o_vib)
+                    if len(h2o_1a)==1 and len(h2o_1b)==1:
+                        h2o_dE = np.abs(h2o_1a[0][1] - h2o_1b[0][1])
+                        energy_ratio.append([cn, h2o_dE/d2o_dE])
+                        if cn in energy_ratio_by_size.keys():
+                            energy_ratio_by_size[cn].append(h2o_dE/d2o_dE)
+                        else:
+                            energy_ratio_by_size[cn] = [h2o_dE/d2o_dE]
+        # prepare plot data
+        #plot_data = [ps for ps in [p_2, p_1a, p_1b, p_vib] if len(ps) > 0]
+        #plot_data = [np.array(ps).transpose() for ps in energy_ratio]
+        #plot_data = [np.vstack((ps, ps[0]**(-1/3))) for ps in plot_data]
+        plot_data = np.array([[ps[0], ps[1], ps[0]**(-1/3)] for ps in energy_ratio]).transpose()
+        plot_data_mean = np.array([[k, np.mean(item), np.std(item)] for k,item in 
+                                   energy_ratio_by_size.items()]).transpose()
+        # create plot
+        fig = plt.figure()
+        # setup lower axis
+        ax = fig.add_subplot(1, 1, 1) #, axes_class=AA.Axes)
+        ax.set_xlabel('number of water molecules (n)', fontsize=fontsize_label)
+        ax.tick_params(labelsize=fontsize_label)
+        ax.set_xlim(15, 65)
+        ax.set_ylabel('$\Delta E_{H_2O}/\Delta E_{D_2O}$', fontsize=fontsize_label)
+        #ax.set_ylim(0,1.3)
+        # setup upper axis
+#         ax2 = ax.twin()
+#         ax2.set_xticks(np.array([20, 25, 35, 50, 70])**(-1/3))
+#         ax2.set_xticklabels(["20","25","35","50","70"])
+#         ax2.set_xlabel('number of water molecules (n)')
+#         ax2.axis['top'].label.set_fontsize(fontsize_label)
+#         ax2.axis['top'].major_ticklabels.set_fontsize(fontsize_label)
+#         ax2.axis["right"].major_ticklabels.set_visible(False)
+#         ax2.grid(b=True)
+        ax.xaxis.grid(True)
+        # plot data
+        if show_single_points:
+            ax.plot(plot_data[0], plot_data[1], 's', color='yellow')
+        ax.plot(plot_data_mean[0], plot_data_mean[1], color='grey')
+        ax.errorbar(plot_data_mean[0], plot_data_mean[1], plot_data_mean[2], fmt='s', color=color)
+        ax.plot([15, 65], [np.sqrt(2), np.sqrt(2)], 'black')
+        ax.plot([15, 65], [1, 1], 'black')
+        if fname is None:
+            fig.show()
+        else:
+            self._export(fname=fname, export_dir=export_dir, size=size, figure=fig)
+        
+        return energy_ratio, plot_data
+            
+        
+            
         
         
     def refit(self, fit_par=None, cutoff=None):
