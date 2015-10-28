@@ -658,7 +658,7 @@ class SpecPeWaterFitList(SpecPeList):
                            mark_iso=True, fname=None, export_dir=os.path.expanduser('~'),
                            size=[20,14], fontsize_label=12, markersize=6, xlim=[0,0.42],
                            ylim=[-4,0], ax2_ticks=[10, 20,40,80,150,350,1000, 5000], color=None,
-                           color_comp_data=None):
+                           color_comp_data=None, show_own_data_legend=False):
         
         if self.heavy_water:
             linpar = self.cfg.d2o_isoborder_linpar
@@ -667,9 +667,13 @@ class SpecPeWaterFitList(SpecPeList):
          
         if color is None:
             color = ['indigo', 'limegreen', 'blue', 'red']
+        if mark_iso:
+            leg_label = ['Isomer II', 'Isomer Ia', 'Isomer Ib', 'Vibrational']
+        else:
+            leg_label = ['Single GL Fit']
         if color_comp_data is None:
-            color_comp_data = ['whitesmoke', 'lightblue', 'yellow', 'violet', 'black', 'navy']
-                     
+            color_comp_data = ['lightblue', 'whitesmoke', 'black', 'yellow', 'violet', 'grey', 'navy']
+                         
         def plot_comp(plot_data, fit_par, fit_res, cutoff, fontsize_label, markersize,
                       xlim, ylim, ax2_ticks, comp_data=None):
             fig = plt.figure()
@@ -695,9 +699,9 @@ class SpecPeWaterFitList(SpecPeList):
             # write fit values
             if len(fit_par) > 0:
                 if cutoff is None:
-                    ex_str = 'Extrapolation:'
+                    ex_str = 'Extrapolation to bulk:'
                 else:
-                    ex_str = 'Extrapolation (from size {}):'.format(cutoff)
+                    ex_str = 'Extrapolation to bulk (from size {}):'.format(cutoff)
                 i = 0
                 for par_set in fit_par:
                     if i == 1:
@@ -710,23 +714,42 @@ class SpecPeWaterFitList(SpecPeList):
                 ax.text(0.015, -0.2 + ylim[1], ex_str, verticalalignment='top', fontsize=fontsize_label,
                         bbox=bbox_props)
             # plot data
-            color_idx = 0
+            idx = 0
+            own_data = []
             for peak_set in plot_data:
-                ax.plot(peak_set[2], peak_set[1], 's', markersize=markersize, color=color[color_idx])
-                color_idx += 1
+                # mind the ',' after ods, because plot returns a list
+                ods, = ax.plot(peak_set[2], peak_set[1], 's', markersize=markersize, color=color[idx],
+                        label=leg_label[idx])
+                own_data.append(ods)
+                idx += 1
+            # optionally add legend for our data points
+            if show_own_data_legend and not comp_data:
+                # handles argument requires matplotlib >= 1.4(.2)
+                own_legend = plt.legend(handles=own_data, loc=4, fontsize=fontsize_label, numpoints=1)
+                ax.add_artist(own_legend)
             # plot comparison data
             if comp_data is not None:
-                print('Got comparison data. Plotting...')
-                color_idx = 0
+                idx = 0
+                ext_data = []
                 for key, peak_set in sorted(comp_data.items()):
-#                     if color_idx < 4:
+#                     if idx < 4:
 #                         marker ='o'
 #                     else:
 #                         marker='D'
-                    ax.plot(peak_set[0], -1*peak_set[1], 'o', label=key, markersize=markersize,
-                            color=color_comp_data[color_idx])
-                    color_idx += 1
-                ax.legend(loc=4, fontsize=fontsize_label, numpoints=1)
+                    # TODO: this is shoulden't be hard coded
+                    label = {'bowen_iso1_table': 'Isomer I (Bowen)',
+                             'bowen_iso1_stretch': 'Vibrational (Bowen)',
+                             'neumark_iso1': 'Isomer I (Neumark)',
+                             'neumark_iso1_high_press': 'Isomer I [Ne] (Neumark)',
+                             'neumark_iso2': 'Isomer II (Neumark)',
+                             'neumark_iso3': 'Isomer III (Neumark)',
+                             'water_jets': 'Water jets (several)'
+                             }
+                    eds, = ax.plot(peak_set[0], -1*peak_set[1], 'o', label=label[key], markersize=markersize,
+                            color=color_comp_data[idx])
+                    ext_data.append(eds)
+                    idx += 1
+                ax.legend(handles=ext_data, loc=4, fontsize=fontsize_label, numpoints=1)
             # plot fits
             c = 0.5
             if cutoff is not None:
