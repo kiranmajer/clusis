@@ -86,6 +86,8 @@ class SpecList(object):
             
     def _export(self, fname='export.pdf', export_dir=os.path.expanduser('~'), size='p1h',
                 figure=None, twin_axes=True):
+        if export_dir.startswith('~'):
+            export_dir = os.path.expanduser(export_dir)
         f = os.path.join(export_dir, fname)
         'TODO: presets are mere personal. For a general approach probably not suitable.'
         presets = {'p1': [14, 14*3/7],
@@ -756,8 +758,8 @@ class SpecPeWaterFitList(SpecPeList):
                 c = cutoff**(-1/3)            
             for par_set in fit_par:
                 lin_fit = np.poly1d(par_set)
-                ax.plot([0,c], lin_fit([0,c]), '-', color='grey')
-                ax.plot([c,0.5], lin_fit([c, 0.5]), '--', color='grey')
+                ax.plot([xlim[0], c], lin_fit([xlim[0], c]), '-', color='grey')
+                ax.plot([c, xlim[1]], lin_fit([c, xlim[1]]), '--', color='grey')
             # plot borders for isomer classification
             if plot_iso_borders:
                 for par in linpar.values():
