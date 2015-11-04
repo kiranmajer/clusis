@@ -766,7 +766,8 @@ class SpecPeWaterFitList(SpecPeList):
                     s = [p[0] for p in par]
                     s[0] = 0.5
                     s[-1] = 1e-7
-                    ax.plot(s, [self.__iso_border(par, y) for y in s], color='black')#':', color='grey')
+                    ax.plot(s, [self.__iso_border(par, y) for y in s], color='black')
+                    ax.plot([p[0] for p in par], [-p[1] for p in par], 'D', color='black')
             if fname is None:
                 fig.show()
             else:
@@ -897,10 +898,10 @@ class SpecPeWaterFitList(SpecPeList):
             self._export(fname=fname, export_dir=export_dir, size=size, figure=fig)
 
 
-    def plot_offset_energy_ratio(self, show_single_points=False, fname=None,
-                                 export_dir=os.path.expanduser('~'),
+    def plot_offset_energy_ratio(self, offset_peaks=['1a', '1b'], show_single_points=False,
+                                 fname=None, export_dir=os.path.expanduser('~'),
                                  size=[20,14], fontsize_label=12, markersize=6,
-                                 color='blue'):
+                                 color='blue', xlim=None, ylim=None):
         # this only makes sense for heavy water
         if not self.heavy_water:
             raise ValueError('Only applicable for heavy water.')
@@ -910,31 +911,31 @@ class SpecPeWaterFitList(SpecPeList):
         peak_stats = {}
         # populate peak lists
         for s in self.dbanswer:
-            d2o_2 = []
-            d2o_1a = []
-            d2o_1b = []
-            d2o_vib = []
+            d2o_isomers = {'2': [], '1a': [], '1b': [], 'vib': []} 
             cs = load_pickle(self.cfg, s[str('pickleFile')])
             cn = cs.mdata.data('clusterBaseUnitNumber')
             peak_list = [cs.ebin(p) for p in cs.mdata.data('fitPar')[:-2:2]]
             # sort d2o isomers
             self._sort_peaks(cn, self.cfg.d2o_isoborder_linpar, peak_list,
-                             d2o_2, d2o_1a, d2o_1b, d2o_vib)
-            if len(d2o_1a)==1 and len(d2o_1b)==1:
-                d2o_dE = np.abs(d2o_1a[0][1] - d2o_1b[0][1])
+                             d2o_isomers['2'], d2o_isomers['1a'], d2o_isomers['1b'],
+                             d2o_isomers['vib'])
+            d2o_p1 = d2o_isomers[offset_peaks[0]]
+            d2o_p2 = d2o_isomers[offset_peaks[1]]
+            if len(d2o_p1)==1 and len(d2o_p2)==1:
+                d2o_dE = np.abs(d2o_p1[0][1] - d2o_p2[0][1])
                 # add h20 ref
                 comp_list = SpecPeWaterFitList(self.cfg, clusterBaseUnitNumber=cn)
                 for rs in comp_list.dbanswer:
-                    h2o_2 = []
-                    h2o_1a = []
-                    h2o_1b = []
-                    h2o_vib = []
+                    h2o_isomers = {'2': [], '1a': [], '1b': [], 'vib': []}
                     crs = load_pickle(self.cfg,rs[str('pickleFile')])
                     ref_peak_list = [crs.ebin(p) for p in crs.mdata.data('fitPar')[:-2:2]]
                     self._sort_peaks(cn, self.cfg.h2o_isoborder_linpar, ref_peak_list,
-                                     h2o_2, h2o_1a, h2o_1b, h2o_vib)
-                    if len(h2o_1a)==1 and len(h2o_1b)==1:
-                        h2o_dE = np.abs(h2o_1a[0][1] - h2o_1b[0][1])
+                                     h2o_isomers['2'], h2o_isomers['1a'], h2o_isomers['1b'],
+                                     h2o_isomers['vib'])
+                    h2o_p1 = h2o_isomers[offset_peaks[0]]
+                    h2o_p2 = h2o_isomers[offset_peaks[1]]
+                    if len(h2o_p1)==1 and len(h2o_p2)==1:
+                        h2o_dE = np.abs(h2o_p1[0][1] - h2o_p2[0][1])
                         energy_ratio.append([cn, h2o_dE/d2o_dE])
                         if cn in energy_ratio_by_size.keys():
                             energy_ratio_by_size[cn].append(h2o_dE/d2o_dE)
@@ -944,52 +945,32 @@ class SpecPeWaterFitList(SpecPeList):
                         if cn not in peak_stats.keys():
                             peak_stats[cn] = [[], [], [], [], [], [], []]
                             
-                        peak_stats[cn][0].append(h2o_1a[0][1])
-                        peak_stats[cn][1].append(h2o_1b[0][1])
+                        peak_stats[cn][0].append(h2o_p1[0][1])
+                        peak_stats[cn][1].append(h2o_p2[0][1])
                         peak_stats[cn][2].append(h2o_dE)
-                        peak_stats[cn][3].append(d2o_1a[0][1])
-                        peak_stats[cn][4].append(d2o_1b[0][1])
+                        peak_stats[cn][3].append(d2o_p1[0][1])
+                        peak_stats[cn][4].append(d2o_p2[0][1])
                         peak_stats[cn][5].append(d2o_dE)
                         peak_stats[cn][6].append(h2o_dE/d2o_dE)
-#                         else:
-#                             peak_stats[cn] = [[], [], [], [], [], [], []]
-#                             peak_stats[cn][0] = [h2o_1a[0][1]]
-#                             peak_stats[cn][1] = [h2o_1b[0][1]]
-#                             peak_stats[cn][2] = [h2o_dE]
-#                             peak_stats[cn][3] = [d2o_1a[0][1]]
-#                             peak_stats[cn][4] = [d2o_1b[0][1]]
-#                             peak_stats[cn][5] = [d2o_dE]
-#                             peak_stats[cn][6] = [h2o_dE/d2o_dE]
-                            
-        # prepare plot data
-        #plot_data = [ps for ps in [p_2, p_1a, p_1b, p_vib] if len(ps) > 0]
-        #plot_data = [np.array(ps).transpose() for ps in energy_ratio]
-        #plot_data = [np.vstack((ps, ps[0]**(-1/3))) for ps in plot_data]
         plot_data = np.array([[ps[0], ps[1], ps[0]**(-1/3)] for ps in energy_ratio]).transpose()
-        plot_data_mean = np.array([[k, np.mean(item), np.std(item)] for k,item in 
-                                   energy_ratio_by_size.items()]).transpose()
+        plot_data_mean = [[k, np.mean(item), np.std(item)] for k,item in energy_ratio_by_size.items()]
+        plot_data_mean.sort()
+        plot_data_mean = np.array(plot_data_mean).transpose()
         # create plot
         fig = plt.figure()
         # setup lower axis
-        ax = fig.add_subplot(1, 1, 1) #, axes_class=AA.Axes)
+        ax = fig.add_subplot(1, 1, 1)
         ax.set_xlabel('number of water molecules (n)', fontsize=fontsize_label)
         ax.tick_params(labelsize=fontsize_label)
-        ax.set_xlim(15, 65)
+        if xlim:
+            ax.set_xlim(xlim[0], xlim[1])
+        if ylim:
+            ax.set_ylim(ylim[0], ylim[1])
         ax.set_ylabel('$\Delta E_{H_2O}/\Delta E_{D_2O}$', fontsize=fontsize_label)
-        #ax.set_ylim(0,1.3)
-        # setup upper axis
-#         ax2 = ax.twin()
-#         ax2.set_xticks(np.array([20, 25, 35, 50, 70])**(-1/3))
-#         ax2.set_xticklabels(["20","25","35","50","70"])
-#         ax2.set_xlabel('number of water molecules (n)')
-#         ax2.axis['top'].label.set_fontsize(fontsize_label)
-#         ax2.axis['top'].major_ticklabels.set_fontsize(fontsize_label)
-#         ax2.axis["right"].major_ticklabels.set_visible(False)
-#         ax2.grid(b=True)
         ax.xaxis.grid(True)
         # plot lines for 1 and sqrt(2)
-        ax.plot([15, 65], [np.sqrt(2), np.sqrt(2)], 'black', lw=.4)
-        ax.plot([15, 65], [1, 1], 'black', lw=.4)
+        ax.axhline(1, color='black', lw=.4)
+        ax.axhline(np.sqrt(2), color='black', lw=.4)
         # plot data
         if show_single_points:
             ax.plot(plot_data[0], plot_data[1], 's', color='limegreen', markersize=markersize)
