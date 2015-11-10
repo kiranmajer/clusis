@@ -336,34 +336,45 @@ class ViewWaterFitList(ViewPesList):
         spec.view._addtext_statusmarker(ax, xdata_key=xdata_key, ydata_key=ydata_key, text_pos='left')
 
 
-    def _show_ekin_fit(self, spec, ax, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, show_mdata=None):
-        self._show_energy_fit(spec, ax, plot_type='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
-        spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), text_pos='right', fontsize=10) 
+    def _show_ekin_fit(self, spec, ax, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None,
+                       show_mdata=None):
+        self._show_energy_fit(spec, ax, plot_type='ekin', fit_par=fit_par, xlim=xlim,
+                              xlim_scale=xlim_scale)
+        spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), text_pos='right',
+                                      fontsize=10) 
         spec.view._addtext_fitvalues(ax, plot_type='ekin', fit_par=fit_par, text_pos='right', fontsize=6)
         if show_mdata is not None:
-            spec.view._addtext_info(ax, spec.view._pretty_print_info(show_mdata), fontsize=6, text_vpos='top')
+            spec.view._addtext_info(ax, spec.view._pretty_print_info(show_mdata), fontsize=6,
+                                    text_vpos='top')
 
-    def _show_ebin_fit(self, spec, ax, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, show_mdata=None):
-        self._show_energy_fit(spec, ax, plot_type='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale)
+    def _show_ebin_fit(self, spec, ax, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None,
+                       show_mdata=None):
+        self._show_energy_fit(spec, ax, plot_type='ebin', fit_par=fit_par, xlim=xlim,
+                              xlim_scale=xlim_scale)
         spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), fontsize=10) 
         spec.view._addtext_fitvalues(ax, plot_type='ebin', fit_par=fit_par, fontsize=6)
         if show_mdata is not None:
-            spec.view._addtext_info(ax, spec.view._pretty_print_info(show_mdata), fontsize=6, text_pos='right', text_vpos='top')
+            spec.view._addtext_info(ax, spec.view._pretty_print_info(show_mdata), fontsize=6,
+                                    text_pos='right', text_vpos='top')
 
 
     def show_tof_fit(self, layout=[7,3], size=[21,29.7], fit_par='fitPar', time_unit=1e-6,
                      xlim=[0, 'auto'], xlim_scale=None, pdf=True, show_mdata=None, show_yticks=False):
-        self._show(self._show_tof_fit, xlabel_str=self._format_time_label('Flight Time', time_unit), layout=layout,
-                   pdf=pdf, fit_par=fit_par, time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale,
-                   show_mdata=show_mdata, show_yticks=show_yticks)
+        self._show(self._show_tof_fit, xlabel_str=self._format_time_label('Flight Time', time_unit),
+                   layout=layout, pdf=pdf, fit_par=fit_par, time_unit=time_unit, xlim=xlim,
+                   xlim_scale=xlim_scale, show_mdata=show_mdata, show_yticks=show_yticks)
 
-    def show_ekin_fit(self, layout=[7,3], size=[21,29.7], fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, pdf=True, show_mdata=None):
-        self._show(self._show_ekin_fit, xlabel_str='E$_{kin}$ (eV)', layout=layout, size=size, pdf=pdf, fit_par=fit_par, xlim=xlim,
-                   xlim_scale=xlim_scale, show_mdata=show_mdata)
+    def show_ekin_fit(self, layout=[7,3], size=[21,29.7], fit_par='fitPar', xlim=[0, 'auto'],
+                      xlim_scale=None, pdf=True, show_mdata=None):
+        self._show(self._show_ekin_fit, xlabel_str='E$_{kin}$ (eV)', layout=layout, size=size,
+                   pdf=pdf, fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale,
+                   show_mdata=show_mdata)
         
-    def show_ebin_fit(self, layout=[7,3], size=[21,29.7], fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, pdf=True, show_mdata=None):
-        self._show(self._show_ebin_fit, xlabel_str='E$_{bin}$ (eV)', layout=layout, size=size, pdf=pdf, fit_par=fit_par, xlim=xlim,
-                   xlim_scale=xlim_scale, show_mdata=show_mdata) 
+    def show_ebin_fit(self, layout=[7,3], size=[21,29.7], fit_par='fitPar', xlim=[0, 'auto'],
+                      xlim_scale=None, pdf=True, show_mdata=None):
+        self._show(self._show_ebin_fit, xlabel_str='E$_{bin}$ (eV)', layout=layout, size=size,
+                   pdf=pdf, fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale,
+                   show_mdata=show_mdata) 
 
 
 

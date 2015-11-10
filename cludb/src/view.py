@@ -314,7 +314,7 @@ class View(object):
                                    fontsize=fontsize_ref)
         if show_mdata:
             self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_pos='right',
-                               fontsize=fontsize_label)
+                               text_vpos='top', fontsize=fontsize_label)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
@@ -510,7 +510,7 @@ class ViewPes(View):
                                    fontsize=fontsize_ref)
         if show_mdata:
             self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_pos='right',
-                               fontsize=fontsize_label)
+                               text_vpos='top', fontsize=fontsize_label)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
@@ -541,7 +541,8 @@ class ViewPes(View):
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
                                    fontsize=fontsize_ref)
         if show_mdata:
-            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), fontsize=fontsize_label)
+            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_pos='right',
+                               text_vpos='top', fontsize=fontsize_label)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
@@ -1125,7 +1126,8 @@ class ViewWater(ViewPes):
         self._addtext_fitvalues(self.ax, plot_type='tof', fit_par=fit_par, time_unit=time_unit,
                                 fontsize=fontsize_label, text_pos='right')
         if show_mdata:
-            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), fontsize=fontsize_label)
+            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_vpos='top',
+                               fontsize=fontsize_label)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
@@ -1179,7 +1181,8 @@ class ViewWater(ViewPes):
         self._addtext_fitvalues(self.ax, plot_type='ekin', fit_par=fit_par, fontsize=fontsize_label,
                                 text_pos='right')
         if show_mdata:
-            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), fontsize=fontsize_label)            
+            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_vpos='top',
+                               fontsize=fontsize_label)            
         if not export:          
             self.fig.show()  
 
@@ -1195,7 +1198,8 @@ class ViewWater(ViewPes):
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), fontsize=fontsize_clusterid) 
         self._addtext_fitvalues(self.ax, plot_type='ebin', fit_par=fit_par, fontsize=fontsize_label)  
         if show_mdata:
-            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_pos='right', fontsize=fontsize_label)          
+            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_pos='right',
+                               text_vpos='top', fontsize=fontsize_label)          
         if not export:          
             self.fig.show()  
 
