@@ -64,7 +64,7 @@ class View(object):
         if 'waveLength' in self.spec.mdata.data().keys():
             human_wl = '{} nm'.format(round(self.spec.mdata.data('waveLength')*1e9))
             stats.append(human_wl)
-        if not 'Gauged' in xdata_key:
+        if 'Gauged' not in xdata_key and self.spec.mdata.data('specType') not in ['generic']:
             stats.append('not gauged')
         if 'Sub' in ydata_key:
             stats.append('subtracted')
