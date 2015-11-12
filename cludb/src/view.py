@@ -338,7 +338,7 @@ class View(object):
         added_line = ax.plot(xdata, ydata, color=color, linestyle=linestyle, linewidth=linewidth)[0]
         if linestyle in ['--', ':']:
             added_line.set_dashes((1,1))
-        #self.fig.canvas.draw()
+        self.fig.canvas.draw()
         
         
     def _scalefactor_equal_area(self, xdata_ref, ydata_ref, xdata, ydata, yoffset):
@@ -361,7 +361,8 @@ class View(object):
         return  max_ref/max_comp
 
 
-    def export(self, fname='export.pdf', export_dir='~/test', size=[20,14], overwrite=False):
+    def export(self, fname='export.pdf', export_dir='~/test', size=[20,14], overwrite=False,
+               linewidth=None):
         'validate export dir'
         'TODO: put this in helper library for reuse.'
         if export_dir.startswith('~'):
@@ -393,10 +394,11 @@ class View(object):
             l = 0.15/size[0]
             r = 0.15/size[0]
         self.fig.subplots_adjust(left=l, bottom=b, right=1-r, top=1-t)
-#         ax = figure.gca()
+
         self.ax.yaxis.labelpad = 3
-        for l in self.ax.lines:
-            l.set_linewidth(.6)
+        if isinstance(linewidth, (int, float)):
+            for l in self.ax.lines:
+                l.set_linewidth(linewidth)
         'adapt voffset for text'
         '''TODO: don't use hard coded positions and offsets. This is really hard to maintain.'''
         if hasattr(self, 'txt_clusterid'):
