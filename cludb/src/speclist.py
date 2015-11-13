@@ -118,7 +118,7 @@ class SpecList(object):
             del cs      
             
     def export_single_plots(self, plot_fct, export_dir='~/test', latex_fname=None, overwrite=True, 
-                            layout=[8,4], size='latex', latex=True, firstpage_offset=0,
+                            linewidth=.8, layout=[8,4], size='latex', latex=True, firstpage_offset=0,
                             xlabel_str='Binding energy (eV)', skip_plots=False, **keywords):
         export_fnames = []
         total_plots = len(self.pfile_list)
@@ -144,7 +144,8 @@ class SpecList(object):
                                             os.path.splitext(os.path.basename(cs.mdata.data('datFile')))[0])
             if not skip_plots:
                 print('Exporting {} ...'.format(fname))
-                cs.view.export(fname=fname, export_dir=export_dir, size=size, overwrite=overwrite)
+                cs.view.export(fname=fname, export_dir=export_dir, size=size, overwrite=overwrite,
+                               linewidth=linewidth)
                 plt.close(plt.gcf())
             export_fnames.append(fname)
         #print('number of fnames to export:', len(export_fnames))
