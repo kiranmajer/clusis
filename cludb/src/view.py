@@ -1251,7 +1251,13 @@ class ViewMs(View):
         
     def _xlabel_str(self, mass_key):
         if mass_key == 'cluster':
-            xlabel = 'Cluster Size (#%s)'%self.spec.mdata.data('clusterBaseUnit')
+            # TODO: better a generic str parser and formatter
+            id_str = self._pretty_format_clusterid(ms=True)
+            ref_str = self.spec.mdata.data('clusterBaseUnit')
+            id_str = id_str[id_str.index(ref_str[0]):id_str.index(ref_str[-1])+1]
+            if '_' in id_str:
+                id_str = '$\mathrm{\mathsf{' + id_str + '}}$'
+            xlabel = 'Cluster Size (number of {})'.format(id_str)
         elif mass_key == 's_u':
             xlabel = 'Cluster Mass (simplified u)'
         else:
