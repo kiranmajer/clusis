@@ -963,7 +963,8 @@ class ViewWater(ViewPes):
         ViewPes.__init__(self, spec)
         
 
-    def _addtext_fitvalues(self, ax, plot_type, fit_par, time_unit=1, text_pos='left', fontsize=12):
+    def _addtext_fitvalues(self, ax, plot_type, fit_par, time_unit=1, text_pos='left', show_fwhm=True,
+                           fontsize=12):
         def time_prefix(time_unit):
             if time_unit not in [1, 1e-3, 1e-6, 1e-9]:
                 raise ValueError('time_unit must be one of: 1, 1e-3, 1e-6, 1e-9.')
@@ -1000,7 +1001,8 @@ class ViewWater(ViewPes):
 #         ax.text(pos_x, pos_y-0.025, 'fwhm: %.3f eV'%(peak_width),
 #                 transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
         fit_values_str = '\n'.join(['{:.2f} {}'.format(p/time_unit, peakPos_unit) for p in peak_values])
-        fit_values_str += '\n\nfwhm: {:.3f} eV'.format(self.spec._get_peak_width(fit_par))
+        if show_fwhm:
+            fit_values_str += '\n\nfwhm: {:.3f} eV'.format(self.spec._get_peak_width(fit_par))
         ax.text(pos_x, pos_y, fit_values_str,transform = ax.transAxes, fontsize=fontsize, 
                 horizontalalignment=text_pos, verticalalignment='center')
    
@@ -1132,10 +1134,10 @@ class ViewWater(ViewPes):
 #                            color='DimGray')             
 
 
-    def show_tof_fit(self, fit_par='fitPar', time_unit=1e-6, time_label='Flight Time',
-                     xlim=[0, 'auto'], xlim_scale=None, n_xticks=None, show_mdata=False, show_ytics=False,
-                     fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6, export=False,
-                     show_xlabel=True, show_ylabel=True, size=None):
+    def show_tof_fit(self, fit_par='fitPar', fit_par_pos='right', show_fwhm=True, time_unit=1e-6, 
+                     time_label='Flight Time', xlim=[0, 'auto'], xlim_scale=None, n_xticks=None, 
+                     show_mdata=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12, 
+                     fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None):
         if 'fitted' not in self.spec.mdata.data('systemTags'):
             raise ValueError('Spectrum not yet fitted. Fit first.')            
         self._single_fig_output(size=size)
@@ -1157,8 +1159,9 @@ class ViewWater(ViewPes):
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fontsize=fontsize_ref)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
                                  fontsize=fontsize_clusterid)
-        self._addtext_fitvalues(self.ax, plot_type='tof', fit_par=fit_par, time_unit=time_unit,
-                                fontsize=fontsize_label, text_pos='right')
+        if fit_par_pos in ['left', 'right']:
+            self._addtext_fitvalues(self.ax, plot_type='tof', fit_par=fit_par, time_unit=time_unit,
+                                    fontsize=fontsize_label, text_pos=fit_par_pos, show_fwhm=show_fwhm)
         if show_mdata:
             self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_vpos='top',
                                fontsize=fontsize_label)
@@ -1203,9 +1206,10 @@ class ViewWater(ViewPes):
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
 
 
-    def show_ekin_fit(self, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, n_xticks=None,
-                      show_mdata=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
-                      fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None):
+    def show_ekin_fit(self, fit_par='fitPar', fit_par_pos='right', show_fwhm=True, xlim=[0, 'auto'],
+                      xlim_scale=None, n_xticks=None,  show_mdata=False, show_ytics=False,
+                      fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6, export=False,
+                      show_xlabel=True, show_ylabel=True, size=None):
         self._show_energy_fit(plot_type='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale,
                               n_xticks=n_xticks, show_ytics=show_ytics, fontsize_label=fontsize_label,
                               fontsize_ref=fontsize_ref, show_ylabel=show_ylabel, size=size)
@@ -1213,8 +1217,9 @@ class ViewWater(ViewPes):
             self.ax.set_xlabel(r'E$_{kin}$ (eV)', fontsize=fontsize_label)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
                                  fontsize=fontsize_clusterid) 
-        self._addtext_fitvalues(self.ax, plot_type='ekin', fit_par=fit_par, fontsize=fontsize_label,
-                                text_pos='right')
+        if fit_par_pos in ['left', 'right']:
+            self._addtext_fitvalues(self.ax, plot_type='ekin', fit_par=fit_par, fontsize=fontsize_label,
+                                    text_pos=fit_par_pos, show_fwhm=show_fwhm)
         if show_mdata:
             self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_vpos='top',
                                fontsize=fontsize_label)            
@@ -1222,17 +1227,19 @@ class ViewWater(ViewPes):
             self.fig.show()  
 
 
-    def show_ebin_fit(self, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None, n_xticks=None,
-                      show_mdata=False, show_ytics=False, fontsize_clusterid=28,
-                      fontsize_label=12, fontsize_ref=6, export=False, show_xlabel=True,
-                      show_ylabel=True, size=None):
+    def show_ebin_fit(self, fit_par='fitPar', fit_par_pos='left', show_fwhm=True, xlim=[0, 'auto'],
+                      xlim_scale=None, n_xticks=None, show_mdata=False, show_ytics=False,
+                      fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6, export=False, 
+                      show_xlabel=True, show_ylabel=True, size=None):
         self._show_energy_fit(plot_type='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale,
                               n_xticks=n_xticks, show_ytics=show_ytics, fontsize_label=fontsize_label,
                               fontsize_ref=fontsize_ref, show_ylabel=show_ylabel, size=size)
         if show_xlabel:
             self.ax.set_xlabel(r'E$_{bin}$ (eV)', fontsize=fontsize_label)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), fontsize=fontsize_clusterid) 
-        self._addtext_fitvalues(self.ax, plot_type='ebin', fit_par=fit_par, fontsize=fontsize_label)  
+        if fit_par_pos in ['left', 'right']:
+            self._addtext_fitvalues(self.ax, plot_type='ebin', fit_par=fit_par, fontsize=fontsize_label,
+                                    text_pos=fit_par_pos, show_fwhm=show_fwhm)  
         if show_mdata:
             self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_pos='right',
                                text_vpos='top', fontsize=fontsize_label)          
