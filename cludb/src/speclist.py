@@ -664,9 +664,12 @@ class SpecPeWaterFitList(SpecPeList):
                            color_comp_data=None, show_own_data_legend=False):
         
         if self.heavy_water:
-            linpar = self.cfg.d2o_isoborder_linpar
+#             linpar = self.cfg.d2o_isoborder_linpar
+            linpar = self.cfg.water_isomer_limits['D2O']
         else:
-            linpar = self.cfg.h2o_isoborder_linpar
+#             linpar = self.cfg.h2o_isoborder_linpar
+            linpar = self.cfg.water_isomer_limits['H2O']
+        
          
         if color is None:
             color = ['indigo', 'limegreen', 'blue', 'red']
@@ -897,6 +900,92 @@ class SpecPeWaterFitList(SpecPeList):
             fig.show()
         else:
             self._export(fname=fname, export_dir=export_dir, size=size, figure=fig)
+ 
+    
+    def plot_temp_peakpos(self, ebin_keys=['iso1a', 'iso1b'], fontsize_clusterid=28,
+                          fontsize_label=12, markersize=6):
+                       
+        def plot_single_size(temp_ebin):
+            fig = plt.figure()
+            # setup lower axis
+            ax = fig.add_subplot(1, 1, 1)
+            ax.set_xlabel('Temperature (K)', fontsize=fontsize_label)
+            ax.tick_params(labelsize=fontsize_label)
+            cluster_id = temp_ebin.pop('id')
+            ax.text(0.05, 0.9, cluster_id, transform = ax.transAxes, fontsize=fontsize_clusterid,
+                    horizontalalignment='left', verticalalignment='top')
+            for iso, v in temp_ebin.items():
+                ax.plot(v['T'], v['ebin'], 's', markersize=markersize,
+                        label=iso)
+                ax.plot(v['T'], v['ebin'], color='grey')
+            
+            leg = ax.legend(title='Isomer Classes:', loc=0, fontsize=fontsize_label,
+                            numpoints=1)
+            leg.get_title().set_fontsize(fontsize_label)    
+            fig.show()
+            
+        ebin_dict = {}    
+        for s in self.dbanswer:
+            cs = load_pickle(self.cfg, s[str('pickleFile')])
+            cn = cs.mdata.data('clusterBaseUnitNumber')
+            ct = cs.mdata.data('trapTemp')
+            cic = cs._assort_fit_peaks()
+            for iso in ebin_keys:
+                if iso in cic.keys():
+                    if cn not in ebin_dict.keys():
+                        ebin_dict[cn] = {'id': cs.view._pretty_format_clusterid(),
+                                         iso: {'T': [ct], 'ebin': [cic[iso][0]]}
+                                         }
+                    if iso in ebin_dict[cn].keys():
+                        ebin_dict[cn][iso]['T'].append(ct)
+                        ebin_dict[cn][iso]['ebin'].append(cic[iso][0])
+                    else:
+                        ebin_dict[cn][iso] = {'T': [ct], 'ebin': [cic[iso][0]]}
+                        
+        for v in ebin_dict.values():
+            plot_single_size(v)
+            
+            
+    def plot_temp_peakheight_ratio(self, ratio_keys=['iso1a', 'iso1b'], fontsize_clusterid=28,
+                                   fontsize_label=12, markersize=6, xlim=[0,300], ylim=[0,2]):
+        
+        def plot_single_size(temp, ratios, cluster_id):
+            fig = plt.figure()
+            # setup lower axis
+            ax = fig.add_subplot(1, 1, 1)
+            ax.set_xlabel('Temperature (K)', fontsize=fontsize_label)
+            ax.tick_params(labelsize=fontsize_label)
+            ax.plot(temp, ratios, 's', markersize=markersize)
+            ax.plot(temp, ratios, color='grey')
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
+            ax.axhline(1, color='black', lw=.4)
+            ax.text(0.05, 0.9, cluster_id, transform = ax.transAxes, fontsize=fontsize_clusterid,
+                    horizontalalignment='left', verticalalignment='top')
+#             leg = ax.legend(title='Isomer Classes:', loc=0, fontsize=fontsize_label,
+#                             numpoints=1)
+#             leg.get_title().set_fontsize(fontsize_label)    
+            fig.show()
+        
+        ratio_dict = {}    
+        for s in self.dbanswer:
+            cs = load_pickle(self.cfg, s[str('pickleFile')])
+            cn = cs.mdata.data('clusterBaseUnitNumber')
+            ct = cs.mdata.data('trapTemp')
+            cic = cs._assort_fit_peaks()
+            if ratio_keys[0] in cic.keys() and ratio_keys[1] in cic.keys():
+                ratio =cic[ratio_keys[0]][1]/cic[ratio_keys[1]][1]
+                if cn not in ratio_dict.keys():
+                    ratio_dict[cn] = {'id': cs.view._pretty_format_clusterid(), 'T': [],
+                                      'ratio': []}
+                ratio_dict[cn]['T'].append(ct)
+                ratio_dict[cn]['ratio'].append(ratio)
+                
+        for s,v in ratio_dict.items():
+            plot_single_size(v['T'], v['ratio'], v['id'])
+            
+                
+            
 
 
     def plot_offset_energy_ratio(self, offset_peaks=['1a', '1b'], show_single_points=False,
@@ -917,7 +1006,7 @@ class SpecPeWaterFitList(SpecPeList):
             cn = cs.mdata.data('clusterBaseUnitNumber')
             peak_list = [cs.ebin(p) for p in cs.mdata.data('fitPar')[:-2:2]]
             # sort d2o isomers
-            self._sort_peaks(cn, self.cfg.d2o_isoborder_linpar, peak_list,
+            self._sort_peaks(cn, self.cfg.water_isomer_limits['D2O'], peak_list,
                              d2o_isomers['2'], d2o_isomers['1a'], d2o_isomers['1b'],
                              d2o_isomers['vib'])
             d2o_p1 = d2o_isomers[offset_peaks[0]]
@@ -930,7 +1019,7 @@ class SpecPeWaterFitList(SpecPeList):
                     h2o_isomers = {'2': [], '1a': [], '1b': [], 'vib': []}
                     crs = load_pickle(self.cfg,rs[str('pickleFile')])
                     ref_peak_list = [crs.ebin(p) for p in crs.mdata.data('fitPar')[:-2:2]]
-                    self._sort_peaks(cn, self.cfg.h2o_isoborder_linpar, ref_peak_list,
+                    self._sort_peaks(cn, self.cfg.water_isomer_limits['H2O'], ref_peak_list,
                                      h2o_isomers['2'], h2o_isomers['1a'], h2o_isomers['1b'],
                                      h2o_isomers['vib'])
                     h2o_p1 = h2o_isomers[offset_peaks[0]]

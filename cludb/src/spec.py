@@ -786,7 +786,47 @@ class SpecPeWater(SpecPe):
         #         ________ 
         # fwhm = V 2*ln(2)*s_g + s_l 
         fwhm = np.sqrt(2*np.log(2))*np.abs(self.mdata.data(fit_par)[-2]) + np.abs(self.mdata.data(fit_par)[-1])
-        return fwhm    
+        return fwhm
+    
+    def __isomer_binding_energy_limit(self, lpar, inv_size):
+        '''Returns the binding energy limit at inv_size for an isomer class spicified by lpar''' 
+        limit = None
+        i = 1
+        while i < len(lpar) and inv_size:
+            if inv_size >= lpar[i][0]:
+                limit = (lpar[i][1] - lpar[i-1][1])/np.abs(lpar[i][0] - lpar[i-1][0])*(inv_size - lpar[i-1][0]) - lpar[i-1][1]
+                inv_size = None
+                i += 1
+            else:
+                i += 1
+                 
+        if not limit:
+            i -= 1
+            limit = (lpar[i][1] - lpar[i-1][1])/np.abs(lpar[i][0] - lpar[i-1][0])*(inv_size - lpar[i-1][0]) - lpar[i-1][1]
+        
+        return limit
+    
+    
+    def _assort_fit_peaks(self, fit_par_key='fitPar'):
+        '''returns a dict containing {'isomer class name': (ebin, intensity), ...}'''
+        inv_size = self.mdata.data('clusterBaseUnitNumber')**(-1/3)
+        lin_par = self.cfg.water_isomer_limits[self.mdata.data('clusterBaseUnit')]
+        peaks = zip(self.mdata.data(fit_par_key)[:-2:2], self.mdata.data(fit_par_key)[1:-2:2])
+        isomer_classes = {}
+        for peak in peaks:
+            # TODO: find corect unit of peak[0] (tof, ebin, etc.)
+            tof, intensity = peak[0], peak[1]
+            p, h = self.ebin(tof), self.jtrans(intensity, tof)
+            if -1*p > self.__isomer_binding_energy_limit(lin_par['iso2'], inv_size):
+                isomer_classes['iso2'] = (p,h)
+            elif self.__isomer_binding_energy_limit(lin_par['iso2'], inv_size) >= -1*p > self.__isomer_binding_energy_limit(lin_par['iso1a'], inv_size):
+                isomer_classes['iso1a'] = (p,h)
+            elif self.__isomer_binding_energy_limit(lin_par['iso1a'], inv_size) >= -1*p > self.__isomer_binding_energy_limit(lin_par['iso1b'], inv_size):
+                isomer_classes['iso1b'] = (p,h)
+            else:
+                isomer_classes['vib'] = (p,h)
+                
+        return isomer_classes
         
         
         
