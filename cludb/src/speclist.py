@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 from scipy.stats import linregress
+from itertools import combinations
 
 
 
@@ -643,13 +644,13 @@ class SpecPeWaterFitList(SpecPeList):
     
     def _sort_peaks(self, size, linpar, peak_list, p_2, p_1a, p_1b, p_vib):
         for p in peak_list:
-            if -1*p > self.__iso_border(linpar['iso2'], size**(-1/3)):
+            if -1*p > self.__iso_border(linpar['2'], size**(-1/3)):
                 p_2.append([size, p])
                 #print('p_2:', p_2)
-            elif self.__iso_border(linpar['iso2'], size**(-1/3)) >= -1*p > self.__iso_border(linpar['iso1a'], size**(-1/3)):
+            elif self.__iso_border(linpar['2'], size**(-1/3)) >= -1*p > self.__iso_border(linpar['1a'], size**(-1/3)):
                 p_1a.append([size, p])
                 #print('p_1a:', p_1a)
-            elif self.__iso_border(linpar['iso1a'], size**(-1/3)) >= -1*p > self.__iso_border(linpar['iso1b'], size**(-1/3)):
+            elif self.__iso_border(linpar['1a'], size**(-1/3)) >= -1*p > self.__iso_border(linpar['1b'], size**(-1/3)):
                 p_1b.append([size, p])
                 #print('p_1b:', p_1b)
             else:
@@ -828,7 +829,7 @@ class SpecPeWaterFitList(SpecPeList):
         plot_comp(plot_data, fit_par, fit_res, cutoff, fontsize_label=fontsize_label,
                   markersize=markersize, xlim=xlim, ylim=ylim, ax2_ticks=ax2_ticks,
                   comp_data=comp_data)
-#         return fit_par, fit_res
+        return fit_par, fit_res
 
 
     def compare_peak_widths(self, fname=None, export_dir=os.path.expanduser('~'),
@@ -902,35 +903,74 @@ class SpecPeWaterFitList(SpecPeList):
             self._export(fname=fname, export_dir=export_dir, size=size, figure=fig)
  
     
-    def plot_temp_peakpos(self, ebin_keys=['iso1a', 'iso1b'], fontsize_clusterid=28,
-                          fontsize_label=12, markersize=6):
+    def plot_temp_peakpos(self, iso_keys=['1a', '1b'], fname_prefix=None, export_dir=os.path.expanduser('~'),
+                          size=[20,14], fontsize_clusterid=28, fontsize_label=12, markersize=6):
                        
-        def plot_single_size(temp_ebin):
+        def plot_single_size(temp_ebin, temp_diff, temp_ratio):
             fig = plt.figure()
-            # setup lower axis
-            ax = fig.add_subplot(1, 1, 1)
-            ax.set_xlabel('Temperature (K)', fontsize=fontsize_label)
+            # setup ebin(T) plot
+            ax = fig.add_subplot(3, 1, 1)
+            #ax.set_xlabel('Temperature (K)', fontsize=fontsize_label)
             ax.tick_params(labelsize=fontsize_label)
+            ax.set_ylim([-2.6,-1.2])
+            ax.grid()
             cluster_id = temp_ebin.pop('id')
             ax.text(0.05, 0.9, cluster_id, transform = ax.transAxes, fontsize=fontsize_clusterid,
                     horizontalalignment='left', verticalalignment='top')
             for iso, v in temp_ebin.items():
-                ax.plot(v['T'], v['ebin'], 's', markersize=markersize,
-                        label=iso)
-                ax.plot(v['T'], v['ebin'], color='grey')
+                ax.plot(v['T'], -1*np.array(v['ebin']), color='grey')
+                ax.plot(v['T'], -1*np.array(v['ebin']), 's', markersize=markersize,
+                        color=self.cfg.water_isomer_color_map[iso], label=iso)
             
-            leg = ax.legend(title='Isomer Classes:', loc=0, fontsize=fontsize_label,
+            leg = ax.legend(title='Isomer Classes:', loc=1, fontsize=fontsize_label,
                             numpoints=1)
-            leg.get_title().set_fontsize(fontsize_label)    
-            fig.show()
+            leg.get_title().set_fontsize(fontsize_label)
+            # setup diff(T) plot
+            if temp_diff:
+                ax_diff = fig.add_subplot(3, 1, 2)
+                #ax_diff.set_xlabel('Temperature (K)', fontsize=fontsize_label)
+                ax_diff.tick_params(labelsize=fontsize_label)
+                ax_diff.axhline(0, color='black', lw=.4)
+                ax_diff.set_xlim(ax.get_xlim())
+                ax_diff.set_ylim([-.15, .15])
+                ax_diff.grid()
+                for diff, v in temp_diff.items():
+                    ax_diff.plot(v['T'], v['diff'], color='grey')
+                    ax_diff.plot(v['T'], v['diff'], 's', markersize=markersize,
+                                 label=diff)
+                leg_diff = ax_diff.legend(title='Differences:', loc=1, fontsize=fontsize_label,
+                                          numpoints=1)
+                leg_diff.get_title().set_fontsize(fontsize_label)
+            # setup ratio(T) plot
+            if temp_ratio:
+                ax_ratio = fig.add_subplot(3, 1, 3)
+                ax_ratio.set_xlabel('Temperature (K)', fontsize=fontsize_label)
+                ax_ratio.tick_params(labelsize=fontsize_label)
+                ax_ratio.axhline(.5, color='black', lw=.4)
+                ax_ratio.set_xlim(ax.get_xlim())
+                ax_ratio.set_ylim([0, 1])
+                ax_ratio.grid()
+                for ratio, v in temp_ratio.items():
+                    ax_ratio.plot(v['T'], v['ratio'], color='grey')
+                    ax_ratio.plot(v['T'], v['ratio'], 's', markersize=markersize,
+                                  label=ratio)
+                leg_ratio = ax_ratio.legend(title='Ratios:', loc=1, fontsize=fontsize_label,
+                                            numpoints=1)
+                leg_ratio.get_title().set_fontsize(fontsize_label)
             
-        ebin_dict = {}    
+            return fig
+            
+        ebin_dict = {}
+        diff_dict = {} 
+        diff_ref = {}
+        ratio_dict = {}
         for s in self.dbanswer:
             cs = load_pickle(self.cfg, s[str('pickleFile')])
             cn = cs.mdata.data('clusterBaseUnitNumber')
             ct = cs.mdata.data('trapTemp')
             cic = cs._assort_fit_peaks()
-            for iso in ebin_keys:
+            # populate ebin_dict
+            for iso in iso_keys:
                 if iso in cic.keys():
                     if cn not in ebin_dict.keys():
                         ebin_dict[cn] = {'id': cs.view._pretty_format_clusterid(),
@@ -942,11 +982,63 @@ class SpecPeWaterFitList(SpecPeList):
                     else:
                         ebin_dict[cn][iso] = {'T': [ct], 'ebin': [cic[iso][0]]}
                         
-        for v in ebin_dict.values():
-            plot_single_size(v)
+            # populate diff_dict
+            i = 0
+            while i+1 < len(iso_keys):
+                k1, k2 = iso_keys[i], iso_keys[i+1]
+                diff_id = 'd_{}_{}'.format(k1, k2)
+                i += 1
+                if k1 in cic.keys() and k2 in cic.keys():
+                    if cn in diff_ref:
+                        diff = diff_ref[cn] - (cic[k1][0] - cic[k2][0])
+                    else:
+                        diff = 0
+                        diff_ref[cn] = cic[k1][0] - cic[k2][0]
+                    if cn not in diff_dict.keys():
+                        diff_dict[cn] = {}
+                    if diff_id in diff_dict[cn].keys():
+                        diff_dict[cn][diff_id]['T'].append(ct)
+                        diff_dict[cn][diff_id]['diff'].append(diff)
+                    else:
+                        diff_dict[cn][diff_id] = {'T': [ct], 'diff': [diff]}
+                        
+            # populate ratio_dict
+            for c in combinations(iso_keys, 2):
+                if c[0] in cic.keys() and c[1] in cic.keys():
+                    ratio_str = '{}/{}'.format(c[0], c[1])
+                    ratio =cic[c[0]][1]/(cic[c[0]][1] + cic[c[1]][1])
+                    if cn not in ratio_dict.keys():
+                        ratio_dict[cn] = {}
+                    if ratio_str in ratio_dict[cn].keys():
+                        ratio_dict[cn][ratio_str]['T'].append(ct)
+                        ratio_dict[cn][ratio_str]['ratio'].append(ratio)
+                    else:
+                        ratio_dict[cn][ratio_str] = {'T': [ct], 'ratio': [ratio]}
+                        
+        for n, e in ebin_dict.items():
+#             if n in diff_dict.keys():
+#                 fig = plot_single_size(e, diff_dict[n])
+#             else:
+#                 fig = plot_single_size(e, None)
+            if n in diff_dict.keys():
+                dd = diff_dict[n]
+            else:
+                dd = None
+            if n in ratio_dict.keys():
+                rd = ratio_dict[n]
+            else:
+                rd = None
+                
+            fig = plot_single_size(e, dd, rd)
+                
+            if fname_prefix is None:
+                fig.show()
+            else:
+                fname = '{}_w{}.pdf'.format(fname_prefix, n)
+                self._export(fname=fname, export_dir=export_dir, size=size, figure=fig)
             
             
-    def plot_temp_peakheight_ratio(self, ratio_keys=['iso1a', 'iso1b'], fontsize_clusterid=28,
+    def plot_temp_peakheight_ratio(self, ratio_keys=['1a', '1b'], fontsize_clusterid=28,
                                    fontsize_label=12, markersize=6, xlim=[0,300], ylim=[0,2]):
         
         def plot_single_size(temp, ratios, cluster_id):
@@ -973,13 +1065,19 @@ class SpecPeWaterFitList(SpecPeList):
             cn = cs.mdata.data('clusterBaseUnitNumber')
             ct = cs.mdata.data('trapTemp')
             cic = cs._assort_fit_peaks()
-            if ratio_keys[0] in cic.keys() and ratio_keys[1] in cic.keys():
-                ratio =cic[ratio_keys[0]][1]/cic[ratio_keys[1]][1]
-                if cn not in ratio_dict.keys():
-                    ratio_dict[cn] = {'id': cs.view._pretty_format_clusterid(), 'T': [],
-                                      'ratio': []}
-                ratio_dict[cn]['T'].append(ct)
-                ratio_dict[cn]['ratio'].append(ratio)
+            for c in combinations(ratio_keys):
+                if c[0] in cic.keys() and c[1] in cic.keys():
+                    ratio_str = '{}/{}'.format(c[0], c[1])
+                    ratio =cic[c[0]][1]/cic[c[1]][1]
+                    if cn not in ratio_dict.keys():
+                        ratio_dict[cn] = {'id': cs.view._pretty_format_clusterid(),
+                                          ratio_str: {'T': [], 'ratio': []}
+                                          }
+                    if ratio_str in ratio_dict[cn].keys():
+                        ratio_dict[cn][ratio_str]['T'].append(ct)
+                        ratio_dict[cn][ratio_str]['ratio'].append(ratio)
+                    else:
+                        ratio_dict[cn][ratio_str] = {'T': [], 'ratio': []}
                 
         for s,v in ratio_dict.items():
             plot_single_size(v['T'], v['ratio'], v['id'])

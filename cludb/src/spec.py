@@ -817,12 +817,12 @@ class SpecPeWater(SpecPe):
             # TODO: find corect unit of peak[0] (tof, ebin, etc.)
             tof, intensity = peak[0], peak[1]
             p, h = self.ebin(tof), self.jtrans(intensity, tof)
-            if -1*p > self.__isomer_binding_energy_limit(lin_par['iso2'], inv_size):
-                isomer_classes['iso2'] = (p,h)
-            elif self.__isomer_binding_energy_limit(lin_par['iso2'], inv_size) >= -1*p > self.__isomer_binding_energy_limit(lin_par['iso1a'], inv_size):
-                isomer_classes['iso1a'] = (p,h)
-            elif self.__isomer_binding_energy_limit(lin_par['iso1a'], inv_size) >= -1*p > self.__isomer_binding_energy_limit(lin_par['iso1b'], inv_size):
-                isomer_classes['iso1b'] = (p,h)
+            if -1*p > self.__isomer_binding_energy_limit(lin_par['2'], inv_size):
+                isomer_classes['2'] = (p,h)
+            elif self.__isomer_binding_energy_limit(lin_par['2'], inv_size) >= -1*p > self.__isomer_binding_energy_limit(lin_par['1a'], inv_size):
+                isomer_classes['1a'] = (p,h)
+            elif self.__isomer_binding_energy_limit(lin_par['1a'], inv_size) >= -1*p > self.__isomer_binding_energy_limit(lin_par['1b'], inv_size):
+                isomer_classes['1b'] = (p,h)
             else:
                 isomer_classes['vib'] = (p,h)
                 
