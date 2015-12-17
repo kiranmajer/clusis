@@ -59,11 +59,11 @@ class SpecList(object):
                 
             del cs
         
-    def remove_tag(self, tag):
+    def remove_tag(self, tag, tagkey='userTags'):
         for entry in self.dbanswer:
             cs = load_pickle(self.cfg, entry['pickleFile'])
             try:
-                cs.mdata.remove_tag(tag)
+                cs.mdata.remove_tag(tag, tagkey=tagkey)
             except ValueError:
                 print('Key not applicable, skipping.')
             else:
@@ -509,20 +509,26 @@ class SpecPeWaterList(SpecPeList):
             
             del cs
         
-    def fit(self, fit_par, cutoff=None):
+    def fit(self, fit_par, fit_id='default_fit', cutoff=None):
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
-            cs.fit(fitPar0=fit_par, cutoff=cutoff)
+            cs.fit(fitPar0=fit_par, fit_id=fit_id, cutoff=cutoff)
             cs.commit()
             del cs
 
 
-class SpecPeWaterFitList(SpecPeList):
+class SpecPeWaterFitList(SpecPeWaterList):
     def __init__(self, cfg, clusterBaseUnitNumber=None, clusterBaseUnitNumberRange=None,
                  recTime=None, recTimeRange=None, inTags=None, notInTags=None,
-                 datFileName=None, waveLength=None, trapTemp=None,
-                 trapTempRange=None, hide_trash=True, order_by='recTime', heavy_water=False):
+                 datFileName=None, waveLength=None, trapTemp=None, trapTempRange=None,
+                 hide_trash=True, order_by='recTime', heavy_water=False, fit_id='default_fit'):
+        '''
+        Creates a water fit list of spectra with certain fit id.
+        fit_id: A valid fit id or None (in which case all fitted spectra are included. However some
+                list methods work only, if fit_id is specified).
+        '''
         self.heavy_water = heavy_water
+        self.fit_id = fit_id
         inTags_list = []
         if inTags is not None:
             if type(inTags) is str:
@@ -530,7 +536,9 @@ class SpecPeWaterFitList(SpecPeList):
             else:
                 inTags_list.extend(inTags)
         if not 'fitted' in inTags_list:
-            inTags_list.append('fitted')       
+            inTags_list.append('fitted')
+        if self.fit_id and self.fit_id not in inTags_list:
+            inTags_list.append(self.fit_id)  
         notInTags_list = []
         if notInTags is not None:
             if type(notInTags) is str:
@@ -547,8 +555,16 @@ class SpecPeWaterFitList(SpecPeList):
                                  trapTempRange=trapTempRange, hide_trash=hide_trash, order_by=order_by,
                                  heavy_water=heavy_water)
         self.view = viewlist.ViewWaterFitList(self)
+        
+    def _eval_fit_id(self):
+        if not self.fit_id:
+            raise ValueError('No fit id specified. Create a water fit list with a fit id.')
+        else:
+            return self.fit_id
 
     def list_fit_par(self):
+        fit_id = self._eval_fit_id()
+            
         def format_recTime(unixtime):
             return time.strftime('%d.%m.%Y', time.localtime(unixtime))
         
@@ -559,7 +575,7 @@ class SpecPeWaterFitList(SpecPeList):
             return ', '.join(str(e) for e in peaklist)
         
         
-        items = ['clusterBaseUnitNumber', 'waveLength', 'recTime', 'fitCutoff', 'fitInfo', 'fitPar']
+        items = ['clusterBaseUnitNumber', 'waveLength', 'recTime', 'cutoff', 'info', 'par']
         mdataList = []
         rowCount = 0
         for s in self.dbanswer:
@@ -570,14 +586,16 @@ class SpecPeWaterFitList(SpecPeList):
             'fitted' in cs.mdata.data('systemTags'):
                 mdataList.append([])
                 for key in items:
-                    if key == 'fitPar':
-                        mdataList[rowCount].append([round(float(cs.ebin(p)),2) for p in cs.mdata.data(key)[:-2:2]])
+                    if key == 'par':
+                        mdataList[rowCount].append([round(float(cs.ebin(p)),2) for p in cs.mdata.data('fitData')[fit_id][key][:-2:2]])
                         #mdataList[rowCount].append(round(np.sum(cs.mdata.data(key)[-2:]), 3))
-                        mdataList[rowCount].append(round(cs._get_peak_width('fitPar'), 3))
-                        mdataList[rowCount].append(round(cs.mdata.data(key)[-2], 3))
-                        mdataList[rowCount].append(round(cs.mdata.data(key)[-1], 3))
-                    elif key == 'fitInfo':
-                        mdataList[rowCount].append(cs.mdata.data(key)[0])
+                        mdataList[rowCount].append(round(cs._get_peak_width(key, fit_id), 3))
+                        mdataList[rowCount].append(round(cs.mdata.data('fitData')[fit_id][key][-2], 3))
+                        mdataList[rowCount].append(round(cs.mdata.data('fitData')[fit_id][key][-1], 3))
+                    elif key in ['info']:
+                        mdataList[rowCount].append(cs.mdata.data('fitData')[fit_id][key][0])
+                    elif key in ['cutoff']:
+                        mdataList[rowCount].append(cs.mdata.data('fitData')[fit_id][key])
                     else:
                         mdataList[rowCount].append(cs.mdata.data(key))
                 rowCount += 1
@@ -663,6 +681,8 @@ class SpecPeWaterFitList(SpecPeList):
                            size=[20,14], fontsize_label=12, markersize=6, xlim=[0,0.42],
                            ylim=[-4,0], ax2_ticks=[10, 20,40,80,150,350,1000, 5000], color=None,
                            color_comp_data=None, show_own_data_legend=False):
+        
+        fit_id = self._eval_fit_id()
         
         if self.heavy_water:
 #             linpar = self.cfg.d2o_isoborder_linpar
@@ -786,7 +806,7 @@ class SpecPeWaterFitList(SpecPeList):
         p_vib = []
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
-            peak_list = [cs.ebin(p) for p in cs.mdata.data('fitPar')[:-2:2]]
+            peak_list = [cs.ebin(p) for p in cs.mdata.data('fitData')[fit_id]['par'][:-2:2]]
             if mark_iso:
                 self._sort_peaks(cs.mdata.data('clusterBaseUnitNumber'), linpar, peak_list, p_2, p_1a, p_1b, p_vib)
             else:
@@ -834,13 +854,16 @@ class SpecPeWaterFitList(SpecPeList):
 
     def compare_peak_widths(self, fname=None, export_dir=os.path.expanduser('~'),
                             size=[20,14], fontsize_label=12, markersize=6, color=None):
+        
+        fit_id = self._eval_fit_id()
+        
         widths = {1: [], 2: [], 3: [], 4: []}
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
             csize = cs.mdata.data('clusterBaseUnitNumber')
             #width = np.sum(cs.mdata.data('fitPar')[-2:])
-            width = cs._get_peak_width('fitPar')
-            peak_n = (len(cs.mdata.data('fitPar')) -2)/2
+            width = cs._get_peak_width('par', fit_id)
+            peak_n = (len(cs.mdata.data('fitData')[fit_id]['par']) -2)/2
             if 0.1 < width < 1.5:
                 widths[peak_n].append([csize, width])
             del cs
@@ -903,8 +926,11 @@ class SpecPeWaterFitList(SpecPeList):
             self._export(fname=fname, export_dir=export_dir, size=size, figure=fig)
  
     
-    def plot_temp_peakpos(self, iso_keys=['1a', '1b'], fname_prefix=None, export_dir=os.path.expanduser('~'),
-                          size=[20,14], fontsize_clusterid=28, fontsize_label=12, markersize=6):
+    def plot_temp_peakpos(self, iso_keys=['1a', '1b'], fname_prefix=None,
+                          export_dir=os.path.expanduser('~'), size=[20,14],
+                          fontsize_clusterid=28, fontsize_label=12, markersize=6):
+        
+        fit_id = self._eval_fit_id()
                        
         def plot_single_size(temp_ebin, temp_diff, temp_ratio):
             fig = plt.figure()
@@ -968,7 +994,7 @@ class SpecPeWaterFitList(SpecPeList):
             cs = load_pickle(self.cfg, s[str('pickleFile')])
             cn = cs.mdata.data('clusterBaseUnitNumber')
             ct = cs.mdata.data('trapTemp')
-            cic = cs._assort_fit_peaks()
+            cic = cs._assort_fit_peaks(fit_id)
             # populate ebin_dict
             for iso in iso_keys:
                 if iso in cic.keys():
@@ -1038,150 +1064,153 @@ class SpecPeWaterFitList(SpecPeList):
                 self._export(fname=fname, export_dir=export_dir, size=size, figure=fig)
             
             
-    def plot_temp_peakheight_ratio(self, ratio_keys=['1a', '1b'], fontsize_clusterid=28,
-                                   fontsize_label=12, markersize=6, xlim=[0,300], ylim=[0,2]):
-        
-        def plot_single_size(temp, ratios, cluster_id):
-            fig = plt.figure()
-            # setup lower axis
-            ax = fig.add_subplot(1, 1, 1)
-            ax.set_xlabel('Temperature (K)', fontsize=fontsize_label)
-            ax.tick_params(labelsize=fontsize_label)
-            ax.plot(temp, ratios, 's', markersize=markersize)
-            ax.plot(temp, ratios, color='grey')
-            ax.set_xlim(xlim)
-            ax.set_ylim(ylim)
-            ax.axhline(1, color='black', lw=.4)
-            ax.text(0.05, 0.9, cluster_id, transform = ax.transAxes, fontsize=fontsize_clusterid,
-                    horizontalalignment='left', verticalalignment='top')
-#             leg = ax.legend(title='Isomer Classes:', loc=0, fontsize=fontsize_label,
-#                             numpoints=1)
-#             leg.get_title().set_fontsize(fontsize_label)    
-            fig.show()
-        
-        ratio_dict = {}    
-        for s in self.dbanswer:
-            cs = load_pickle(self.cfg, s[str('pickleFile')])
-            cn = cs.mdata.data('clusterBaseUnitNumber')
-            ct = cs.mdata.data('trapTemp')
-            cic = cs._assort_fit_peaks()
-            for c in combinations(ratio_keys):
-                if c[0] in cic.keys() and c[1] in cic.keys():
-                    ratio_str = '{}/{}'.format(c[0], c[1])
-                    ratio =cic[c[0]][1]/cic[c[1]][1]
-                    if cn not in ratio_dict.keys():
-                        ratio_dict[cn] = {'id': cs.view._pretty_format_clusterid(),
-                                          ratio_str: {'T': [], 'ratio': []}
-                                          }
-                    if ratio_str in ratio_dict[cn].keys():
-                        ratio_dict[cn][ratio_str]['T'].append(ct)
-                        ratio_dict[cn][ratio_str]['ratio'].append(ratio)
-                    else:
-                        ratio_dict[cn][ratio_str] = {'T': [], 'ratio': []}
-                
-        for s,v in ratio_dict.items():
-            plot_single_size(v['T'], v['ratio'], v['id'])
+#     def plot_temp_peakheight_ratio(self, ratio_keys=['1a', '1b'], fontsize_clusterid=28,
+#                                    fontsize_label=12, markersize=6, xlim=[0,300], ylim=[0,2]):
+#         
+#         def plot_single_size(temp, ratios, cluster_id):
+#             fig = plt.figure()
+#             # setup lower axis
+#             ax = fig.add_subplot(1, 1, 1)
+#             ax.set_xlabel('Temperature (K)', fontsize=fontsize_label)
+#             ax.tick_params(labelsize=fontsize_label)
+#             ax.plot(temp, ratios, 's', markersize=markersize)
+#             ax.plot(temp, ratios, color='grey')
+#             ax.set_xlim(xlim)
+#             ax.set_ylim(ylim)
+#             ax.axhline(1, color='black', lw=.4)
+#             ax.text(0.05, 0.9, cluster_id, transform = ax.transAxes, fontsize=fontsize_clusterid,
+#                     horizontalalignment='left', verticalalignment='top')
+# #             leg = ax.legend(title='Isomer Classes:', loc=0, fontsize=fontsize_label,
+# #                             numpoints=1)
+# #             leg.get_title().set_fontsize(fontsize_label)    
+#             fig.show()
+#         
+#         ratio_dict = {}    
+#         for s in self.dbanswer:
+#             cs = load_pickle(self.cfg, s[str('pickleFile')])
+#             cn = cs.mdata.data('clusterBaseUnitNumber')
+#             ct = cs.mdata.data('trapTemp')
+#             cic = cs._assort_fit_peaks()
+#             for c in combinations(ratio_keys):
+#                 if c[0] in cic.keys() and c[1] in cic.keys():
+#                     ratio_str = '{}/{}'.format(c[0], c[1])
+#                     ratio =cic[c[0]][1]/cic[c[1]][1]
+#                     if cn not in ratio_dict.keys():
+#                         ratio_dict[cn] = {'id': cs.view._pretty_format_clusterid(),
+#                                           ratio_str: {'T': [], 'ratio': []}
+#                                           }
+#                     if ratio_str in ratio_dict[cn].keys():
+#                         ratio_dict[cn][ratio_str]['T'].append(ct)
+#                         ratio_dict[cn][ratio_str]['ratio'].append(ratio)
+#                     else:
+#                         ratio_dict[cn][ratio_str] = {'T': [], 'ratio': []}
+#                 
+#         for s,v in ratio_dict.items():
+#             plot_single_size(v['T'], v['ratio'], v['id'])
             
                 
             
 
 
-    def plot_offset_energy_ratio(self, offset_peaks=['1a', '1b'], show_single_points=False,
-                                 fname=None, export_dir=os.path.expanduser('~'),
-                                 size=[20,14], fontsize_label=12, markersize=6,
-                                 color='blue', xlim=None, ylim=None):
-        # this only makes sense for heavy water
-        if not self.heavy_water:
-            raise ValueError('Only applicable for heavy water.')
-
-        energy_ratio = []
-        energy_ratio_by_size = {}
-        peak_stats = {}
-        # populate peak lists
-        for s in self.dbanswer:
-            d2o_isomers = {'2': [], '1a': [], '1b': [], 'vib': []} 
-            cs = load_pickle(self.cfg, s[str('pickleFile')])
-            cn = cs.mdata.data('clusterBaseUnitNumber')
-            peak_list = [cs.ebin(p) for p in cs.mdata.data('fitPar')[:-2:2]]
-            # sort d2o isomers
-            self._sort_peaks(cn, self.cfg.water_isomer_limits['D2O'], peak_list,
-                             d2o_isomers['2'], d2o_isomers['1a'], d2o_isomers['1b'],
-                             d2o_isomers['vib'])
-            d2o_p1 = d2o_isomers[offset_peaks[0]]
-            d2o_p2 = d2o_isomers[offset_peaks[1]]
-            if len(d2o_p1)==1 and len(d2o_p2)==1:
-                d2o_dE = np.abs(d2o_p1[0][1] - d2o_p2[0][1])
-                # add h20 ref
-                comp_list = SpecPeWaterFitList(self.cfg, clusterBaseUnitNumber=cn)
-                for rs in comp_list.dbanswer:
-                    h2o_isomers = {'2': [], '1a': [], '1b': [], 'vib': []}
-                    crs = load_pickle(self.cfg,rs[str('pickleFile')])
-                    ref_peak_list = [crs.ebin(p) for p in crs.mdata.data('fitPar')[:-2:2]]
-                    self._sort_peaks(cn, self.cfg.water_isomer_limits['H2O'], ref_peak_list,
-                                     h2o_isomers['2'], h2o_isomers['1a'], h2o_isomers['1b'],
-                                     h2o_isomers['vib'])
-                    h2o_p1 = h2o_isomers[offset_peaks[0]]
-                    h2o_p2 = h2o_isomers[offset_peaks[1]]
-                    if len(h2o_p1)==1 and len(h2o_p2)==1:
-                        h2o_dE = np.abs(h2o_p1[0][1] - h2o_p2[0][1])
-                        energy_ratio.append([cn, h2o_dE/d2o_dE])
-                        if cn in energy_ratio_by_size.keys():
-                            energy_ratio_by_size[cn].append(h2o_dE/d2o_dE)
-                        else:
-                            energy_ratio_by_size[cn] = [h2o_dE/d2o_dE]
-                            
-                        if cn not in peak_stats.keys():
-                            peak_stats[cn] = [[], [], [], [], [], [], []]
-                            
-                        peak_stats[cn][0].append(h2o_p1[0][1])
-                        peak_stats[cn][1].append(h2o_p2[0][1])
-                        peak_stats[cn][2].append(h2o_dE)
-                        peak_stats[cn][3].append(d2o_p1[0][1])
-                        peak_stats[cn][4].append(d2o_p2[0][1])
-                        peak_stats[cn][5].append(d2o_dE)
-                        peak_stats[cn][6].append(h2o_dE/d2o_dE)
-        plot_data = np.array([[ps[0], ps[1], ps[0]**(-1/3)] for ps in energy_ratio]).transpose()
-        plot_data_mean = [[k, np.mean(item), np.std(item)] for k,item in energy_ratio_by_size.items()]
-        plot_data_mean.sort()
-        plot_data_mean = np.array(plot_data_mean).transpose()
-        # create plot
-        fig = plt.figure()
-        # setup lower axis
-        ax = fig.add_subplot(1, 1, 1)
-        ax.set_xlabel('number of water molecules (n)', fontsize=fontsize_label)
-        ax.tick_params(labelsize=fontsize_label)
-        if xlim:
-            ax.set_xlim(xlim[0], xlim[1])
-        if ylim:
-            ax.set_ylim(ylim[0], ylim[1])
-        ax.set_ylabel('$\Delta E_{H_2O}/\Delta E_{D_2O}$', fontsize=fontsize_label)
-        ax.xaxis.grid(True)
-        # plot lines for 1 and sqrt(2)
-        ax.axhline(1, color='black', lw=.4)
-        ax.axhline(np.sqrt(2), color='black', lw=.4)
-        # plot data
-        if show_single_points:
-            ax.plot(plot_data[0], plot_data[1], 's', color='limegreen', markersize=markersize)
-        ax.plot(plot_data_mean[0], plot_data_mean[1], color='grey')
-        ax.errorbar(plot_data_mean[0], plot_data_mean[1], plot_data_mean[2], fmt='s',
-                    color=color, markersize=markersize, capsize=markersize/2)
-        if fname is None:
-            fig.show()
-        else:
-            self._export(fname=fname, export_dir=export_dir, size=size, figure=fig,
-                         twin_axes=False)
-        
-        return peak_stats, energy_ratio_by_size
+#     def plot_offset_energy_ratio(self, offset_peaks=['1a', '1b'],
+#                                  show_single_points=False, fname=None,
+#                                  export_dir=os.path.expanduser('~'), size=[20,14],
+#                                  fontsize_label=12, markersize=6, color='blue', xlim=None,
+#                                  ylim=None):
+#         # this only makes sense for heavy water
+#         if not self.heavy_water:
+#             raise ValueError('Only applicable for heavy water.')
+#         fit_id = self._eval_fit_id()
+# 
+#         energy_ratio = []
+#         energy_ratio_by_size = {}
+#         peak_stats = {}
+#         # populate peak lists
+#         for s in self.dbanswer:
+#             d2o_isomers = {'2': [], '1a': [], '1b': [], 'vib': []} 
+#             cs = load_pickle(self.cfg, s[str('pickleFile')])
+#             cn = cs.mdata.data('clusterBaseUnitNumber')
+#             peak_list = [cs.ebin(p) for p in cs.mdata.data('fitData')[fit_id]['par'][:-2:2]]
+#             # sort d2o isomers
+#             self._sort_peaks(cn, self.cfg.water_isomer_limits['D2O'], peak_list,
+#                              d2o_isomers['2'], d2o_isomers['1a'], d2o_isomers['1b'],
+#                              d2o_isomers['vib'])
+#             d2o_p1 = d2o_isomers[offset_peaks[0]]
+#             d2o_p2 = d2o_isomers[offset_peaks[1]]
+#             if len(d2o_p1)==1 and len(d2o_p2)==1:
+#                 d2o_dE = np.abs(d2o_p1[0][1] - d2o_p2[0][1])
+#                 # add h20 ref
+#                 comp_list = SpecPeWaterFitList(self.cfg, clusterBaseUnitNumber=cn)
+#                 for rs in comp_list.dbanswer:
+#                     h2o_isomers = {'2': [], '1a': [], '1b': [], 'vib': []}
+#                     crs = load_pickle(self.cfg,rs[str('pickleFile')])
+#                     ref_peak_list = [crs.ebin(p) for p in crs.mdata.data('fitData')[fit_id]['par'][:-2:2]]
+#                     self._sort_peaks(cn, self.cfg.water_isomer_limits['H2O'], ref_peak_list,
+#                                      h2o_isomers['2'], h2o_isomers['1a'], h2o_isomers['1b'],
+#                                      h2o_isomers['vib'])
+#                     h2o_p1 = h2o_isomers[offset_peaks[0]]
+#                     h2o_p2 = h2o_isomers[offset_peaks[1]]
+#                     if len(h2o_p1)==1 and len(h2o_p2)==1:
+#                         h2o_dE = np.abs(h2o_p1[0][1] - h2o_p2[0][1])
+#                         energy_ratio.append([cn, h2o_dE/d2o_dE])
+#                         if cn in energy_ratio_by_size.keys():
+#                             energy_ratio_by_size[cn].append(h2o_dE/d2o_dE)
+#                         else:
+#                             energy_ratio_by_size[cn] = [h2o_dE/d2o_dE]
+#                             
+#                         if cn not in peak_stats.keys():
+#                             peak_stats[cn] = [[], [], [], [], [], [], []]
+#                             
+#                         peak_stats[cn][0].append(h2o_p1[0][1])
+#                         peak_stats[cn][1].append(h2o_p2[0][1])
+#                         peak_stats[cn][2].append(h2o_dE)
+#                         peak_stats[cn][3].append(d2o_p1[0][1])
+#                         peak_stats[cn][4].append(d2o_p2[0][1])
+#                         peak_stats[cn][5].append(d2o_dE)
+#                         peak_stats[cn][6].append(h2o_dE/d2o_dE)
+#         plot_data = np.array([[ps[0], ps[1], ps[0]**(-1/3)] for ps in energy_ratio]).transpose()
+#         plot_data_mean = [[k, np.mean(item), np.std(item)] for k,item in energy_ratio_by_size.items()]
+#         plot_data_mean.sort()
+#         plot_data_mean = np.array(plot_data_mean).transpose()
+#         # create plot
+#         fig = plt.figure()
+#         # setup lower axis
+#         ax = fig.add_subplot(1, 1, 1)
+#         ax.set_xlabel('number of water molecules (n)', fontsize=fontsize_label)
+#         ax.tick_params(labelsize=fontsize_label)
+#         if xlim:
+#             ax.set_xlim(xlim[0], xlim[1])
+#         if ylim:
+#             ax.set_ylim(ylim[0], ylim[1])
+#         ax.set_ylabel('$\Delta E_{H_2O}/\Delta E_{D_2O}$', fontsize=fontsize_label)
+#         ax.xaxis.grid(True)
+#         # plot lines for 1 and sqrt(2)
+#         ax.axhline(1, color='black', lw=.4)
+#         ax.axhline(np.sqrt(2), color='black', lw=.4)
+#         # plot data
+#         if show_single_points:
+#             ax.plot(plot_data[0], plot_data[1], 's', color='limegreen', markersize=markersize)
+#         ax.plot(plot_data_mean[0], plot_data_mean[1], color='grey')
+#         ax.errorbar(plot_data_mean[0], plot_data_mean[1], plot_data_mean[2], fmt='s',
+#                     color=color, markersize=markersize, capsize=markersize/2)
+#         if fname is None:
+#             fig.show()
+#         else:
+#             self._export(fname=fname, export_dir=export_dir, size=size, figure=fig,
+#                          twin_axes=False)
+#         
+#         return peak_stats, energy_ratio_by_size
             
         
             
         
         
     def refit(self, fit_par=None, cutoff=None):
-        '''TODO: inherit from fit'''
+        '''TODO: inherit from fit or use super()'''
+        fit_id = self._eval_fit_id()
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
-            cs._refit(fit_par=fit_par, cutoff=cutoff, commit_after=True)
+            cs._refit(fit_id=fit_id, fit_par=fit_par, cutoff=cutoff, commit_after=True)
             #cs.commit()
             del cs
             

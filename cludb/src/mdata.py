@@ -31,6 +31,7 @@ class Mdata(object):
             v = value
         elif type(ref[key][0]) is type:
             v = ref[key][0](value)
+        # checking explicitly given lists
         elif type(ref[key][0]) is list and value in ref[key][0]:
             v = value
         elif type(ref[key][0]) is list and float(value) in ref[key][0]:
@@ -89,6 +90,9 @@ class Mdata(object):
             tagkey = 'systemTags'
         if tagkey == 'systemTags' and tag not in self.__systemtags_ref:
             raise ValueError('{} not a valid system tag.'.format(tag))
+        'TODO: Better force all tag lists to be created or none.'
+        if tagkey not in self.__mdata:
+            self.__mdata[tagkey] = []
         current_tags = self.__mdata[tagkey]
         if current_tags.count(tag) == 0:
             current_tags.append(tag)
@@ -113,12 +117,32 @@ class Mdata(object):
             raise ValueError('Tag does not exist: {}'.format(tag))
         
     def __update_tags(self):
-        'For db usage: Merges userTags and systemTags and add keys of "compSpecs".'
-        self.__mdata['tags'] = list(set(self.__mdata['systemTags'])|set(self.__mdata['userTags']))
+        'For db usage: Merges userTags, systemTags and evalTags and add keys of "compSpecs".'
+        self.__mdata['tags'] = list(set(self.__mdata['systemTags'])|
+                                    set(self.__mdata['userTags'])|
+                                    set(self.__mdata['evalTags']))
         if 'compSpecs' in self.__mdata.keys() and self.__mdata['compSpecs'].keys():
             for k in self.__mdata['compSpecs'].keys():
                 self.__mdata['tags'].append('CompSpec: {}'.format(k))
+                
+    def __add_fit_data(self, fdata_dict):
+        mdata = self.__mdata
+        print('Got fit data.')
+        if 'fitData' not in mdata:
+            mdata['fitData'] = {}
+        mdata['fitData'].update(fdata_dict)
+        for fid in fdata_dict.keys():
+            self.add_tag(fid, 'evalTags')
+        
             
+    def _rm_fit_data(self, fit_id):
+        if len(self.__mdata['fitData']) > 1:
+            del self.__mdata['fitData'][fit_id]
+        else:
+            self.rm('fitData')
+            self.remove_tag('fitted', 'systemTags')
+        self.remove_tag(fit_id, 'evalTags')
+        
     
     def add(self, newMdata, update=False):
         """
@@ -133,15 +157,19 @@ class Mdata(object):
             mdataToAdd = dict(newMdata) # make a copy so we can use popitem()
             while len(mdataToAdd) > 0:
                 k,v = mdataToAdd.popitem()
-                if k in self.__reference.keys(): 
-                    if k not in mdata.keys():
+                if k in self.__reference.keys():
+                    if k == 'fitData': # fit data needs to be handled separately
+                        self.__add_fit_data(v)
+                    elif k not in mdata.keys(): # key not yet in mdata, so we just add them
                         mdata[k] = self.__validate_value(k, v)
-                    elif k in ['tags', 'userTags']: # special case userTags, 'tags' is treated like 'userTags' 
+                    elif k in ['tags', 'userTags', 'systemTags', 'evalTags']: 
+                        if k == 'tags': # 'tags' is treated like 'userTags' for convenience
+                            k = 'userTags'
                         if type(v) is list:
                             for t in v:
-                                self.add_tag(t)
+                                self.add_tag(t, tagkey=k)
                         else:
-                            self.add_tag(v)
+                            self.add_tag(v, tagkey=k)
                     elif k == 'compSpecs':
                         mdata[k].update(self.__validate_value(k, v))
                     elif k == 'info' and not mdata[k]: # info contains already a string

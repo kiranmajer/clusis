@@ -963,8 +963,8 @@ class ViewWater(ViewPes):
         ViewPes.__init__(self, spec)
         
 
-    def _addtext_fitvalues(self, ax, plot_type, fit_par, time_unit=1, text_pos='left', show_fwhm=True,
-                           fontsize=12):
+    def _addtext_fitvalues(self, ax, plot_type, fit_par, fit_id, time_unit=1, text_pos='left',
+                           show_fwhm=True, fontsize=12):
         def time_prefix(time_unit):
             if time_unit not in [1, 1e-3, 1e-6, 1e-9]:
                 raise ValueError('time_unit must be one of: 1, 1e-3, 1e-6, 1e-9.')
@@ -974,14 +974,14 @@ class ViewWater(ViewPes):
         
         #peak_width = round(self.spec._get_peak_width(), 3)
         
-        if plot_type == 'ebin' and 'tof' in self.spec.mdata.data('fitXdataKey'):
-            peak_values = list(self.spec.ebin(self.spec.mdata.data(fit_par)[:-2:2]))
+        if plot_type == 'ebin' and 'tof' in self.spec.mdata.data('fitData')[fit_id]['xdataKey']:
+            peak_values = list(self.spec.ebin(self.spec.mdata.data('fitData')[fit_id][fit_par][:-2:2]))
             peakPos_unit = 'eV'
-        elif plot_type == 'ekin' and 'tof' in self.spec.mdata.data('fitXdataKey'):
-            peak_values = list(self.spec.ekin(self.spec.mdata.data(fit_par)[:-2:2]))
+        elif plot_type == 'ekin' and 'tof' in self.spec.mdata.data('fitData')[fit_id]['xdataKey']:
+            peak_values = list(self.spec.ekin(self.spec.mdata.data('fitData')[fit_id][fit_par][:-2:2]))
             peakPos_unit = 'eV'
-        elif plot_type == 'tof' and 'tof' in self.spec.mdata.data('fitXdataKey'):
-            peak_values = list(self.spec.mdata.data(fit_par)[:-2:2])
+        elif plot_type == 'tof' and 'tof' in self.spec.mdata.data('fitData')[fit_id]['xdataKey']:
+            peak_values = list(self.spec.mdata.data('fitData')[fit_id][fit_par][:-2:2])
             peakPos_unit = '{}s'.format(time_prefix(time_unit))
         else:
             raise ValueError("Can't add values for this plot combination.")
@@ -1002,80 +1002,87 @@ class ViewWater(ViewPes):
 #                 transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
         fit_values_str = '\n'.join(['{:.2f} {}'.format(p/time_unit, peakPos_unit) for p in peak_values])
         if show_fwhm:
-            fit_values_str += '\n\nfwhm: {:.3f} eV'.format(self.spec._get_peak_width(fit_par))
+            fit_values_str += '\n\nfwhm: {:.3f} eV'.format(self.spec._get_peak_width(fit_par, fit_id))
         ax.text(pos_x, pos_y, fit_values_str,transform = ax.transAxes, fontsize=fontsize, 
                 horizontalalignment=text_pos, verticalalignment='center')
    
    
     
-    def plot_tof_fit(self, ax, xdata_key, ydata_key, fit_par, time_unit, color='blue', color_peaks='DimGray'):
-        if self.spec.mdata.data('fitCutoff') is None:
+    def plot_tof_fit(self, ax, xdata_key, ydata_key, fit_par, fit_id, time_unit, color='blue',
+                     color_peaks='DimGray'):
+        if self.spec.mdata.data('fitData')[fit_id]['cutoff'] is None:
             ax.plot(self.spec.xdata[xdata_key]/time_unit,
-                    self.spec.multi_gl_trans(self.spec.xdata[xdata_key], self.spec.mdata.data(fit_par)),
+                    self.spec.multi_gl_trans(self.spec.xdata[xdata_key],
+                                             self.spec.mdata.data('fitData')[fit_id][fit_par]),
                     color=color)
             cutoff_idx = len(self.spec.xdata[xdata_key])
         else:
-            cutoff_idx = (abs(self.spec.xdata[xdata_key] - self.spec.mdata.data('fitCutoff'))).argmin()            
+            cutoff_idx = (abs(self.spec.xdata[xdata_key] - self.spec.mdata.data('fitData')[fit_id]['cutoff'])).argmin()            
             ax.plot(self.spec.xdata[xdata_key][:cutoff_idx]/time_unit,
-                    self.spec.multi_gl_trans(self.spec.xdata[xdata_key][:cutoff_idx], self.spec.mdata.data(fit_par)),
+                    self.spec.multi_gl_trans(self.spec.xdata[xdata_key][:cutoff_idx],
+                                             self.spec.mdata.data('fitData')[fit_id][fit_par]),
                     color=color)
             ax.plot(self.spec.xdata[xdata_key][cutoff_idx:]/time_unit,
-                    self.spec.multi_gl_trans(self.spec.xdata[xdata_key][cutoff_idx:], self.spec.mdata.data(fit_par)),
+                    self.spec.multi_gl_trans(self.spec.xdata[xdata_key][cutoff_idx:],
+                                             self.spec.mdata.data('fitData')[fit_id][fit_par]),
                     color=color, ls='--')
         ax.relim()
         # plot single peaks, if there are more than one
-        if len(self.spec.mdata.data(fit_par)) > 4:        
-            plist = list(self.spec.mdata.data(fit_par))
+        if len(self.spec.mdata.data('fitData')[fit_id][fit_par]) > 4:        
+            plist = list(self.spec.mdata.data('fitData')[fit_id][fit_par])
             sl = plist.pop()
             sg = plist.pop()
             while len(plist) >= 2:
                 A = plist.pop()
                 xmax = plist.pop()
-                if self.spec.mdata.data('fitCutoff') is None:
+                if self.spec.mdata.data('fitData')[fit_id]['cutoff'] is None:
                     ax.plot(self.spec.xdata[xdata_key]/time_unit,
                             self.spec.multi_gl_trans(self.spec.xdata[xdata_key], [xmax,A,sg,sl]),
                             color=color_peaks)
                 else:
                     ax.plot(self.spec.xdata[xdata_key][:cutoff_idx]/time_unit,
-                            self.spec.multi_gl_trans(self.spec.xdata[xdata_key][:cutoff_idx], [xmax,A,sg,sl]),
+                            self.spec.multi_gl_trans(self.spec.xdata[xdata_key][:cutoff_idx],
+                                                     [xmax,A,sg,sl]),
                             color=color_peaks) 
                     ax.plot(self.spec.xdata[xdata_key][cutoff_idx:]/time_unit,
-                            self.spec.multi_gl_trans(self.spec.xdata[xdata_key][cutoff_idx:], [xmax,A,sg,sl]),
+                            self.spec.multi_gl_trans(self.spec.xdata[xdata_key][cutoff_idx:],
+                                                     [xmax,A,sg,sl]),
                             color=color_peaks, ls='--')
                     
                     
     
-    def plot_energy_fit(self, ax, fit_par, xdata_key, fit_xdata_key, color='blue', color_peaks='DimGray'):
-        if self.spec.mdata.data('fitCutoff') is None:
+    def plot_energy_fit(self, ax, fit_par, fit_id, xdata_key, fit_xdata_key, color='blue',
+                        color_peaks='DimGray'):
+        if self.spec.mdata.data('fitData')[fit_id]['cutoff'] is None:
             ax.plot(self.spec.xdata[xdata_key],
                     self.spec.jtrans(self.spec.multi_gl_trans(self.spec.xdata[fit_xdata_key],
-                                                                  self.spec.mdata.data(fit_par)),
+                                                              self.spec.mdata.data('fitData')[fit_id][fit_par]),
                                      self.spec.xdata[fit_xdata_key]),
                     color=color)
             cutoff_idx = len(self.spec.xdata[xdata_key])
         else:
-            cutoff_idx = (abs(self.spec.xdata[fit_xdata_key] - self.spec.mdata.data('fitCutoff'))).argmin()
+            cutoff_idx = (abs(self.spec.xdata[fit_xdata_key] - self.spec.mdata.data('fitData')[fit_id]['cutoff'])).argmin()
             ax.plot(self.spec.xdata[xdata_key][:cutoff_idx],
                     self.spec.jtrans(self.spec.multi_gl_trans(self.spec.xdata[fit_xdata_key][:cutoff_idx],
-                                                                  self.spec.mdata.data(fit_par)),
+                                                              self.spec.mdata.data('fitData')[fit_id][fit_par]),
                                      self.spec.xdata[fit_xdata_key][:cutoff_idx]),
                     color=color)
             ax.plot(self.spec.xdata[xdata_key][cutoff_idx:],
                     self.spec.jtrans(self.spec.multi_gl_trans(self.spec.xdata[fit_xdata_key][cutoff_idx:],
-                                                                  self.spec.mdata.data(fit_par)),
+                                                              self.spec.mdata.data('fitData')[fit_id][fit_par]),
                                      self.spec.xdata[fit_xdata_key][cutoff_idx:]),
                     color=color, ls='--')
                     
         ax.relim()
         # plot single peaks, if there are more than one
-        if len(self.spec.mdata.data(fit_par)) > 4:
-            plist = list(self.spec.mdata.data(fit_par))
+        if len(self.spec.mdata.data('fitData')[fit_id][fit_par]) > 4:
+            plist = list(self.spec.mdata.data('fitData')[fit_id][fit_par])
             sl = plist.pop()
             sg = plist.pop()
             while len(plist) >= 2:
                 A = plist.pop()
                 xmax = plist.pop()
-                if self.spec.mdata.data('fitCutoff') is None:
+                if self.spec.mdata.data('fitData')[fit_id]['cutoff'] is None:
                     ax.plot(self.spec.xdata[xdata_key],
                             self.spec.jtrans(self.spec.multi_gl_trans(self.spec.xdata[fit_xdata_key],
                                                                 [xmax,A,sg,sl]),
@@ -1134,34 +1141,38 @@ class ViewWater(ViewPes):
 #                            color='DimGray')             
 
 
-    def show_tof_fit(self, fit_par='fitPar', fit_par_pos='right', show_fwhm=True, time_unit=1e-6, 
-                     time_label='Flight Time', xlim=[0, 'auto'], xlim_scale=None, n_xticks=None, 
-                     show_mdata=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12, 
-                     fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None):
+    def show_tof_fit(self, fit_par='par', fit_id='default_fit', fit_par_pos='right', show_fwhm=True,
+                     time_unit=1e-6, time_label='Flight Time', xlim=[0, 'auto'], xlim_scale=None,
+                     n_xticks=None, show_mdata=False, show_ytics=False, fontsize_clusterid=28,
+                     fontsize_label=12, fontsize_ref=6, export=False, show_xlabel=True,
+                     show_ylabel=True, size=None):
         if 'fitted' not in self.spec.mdata.data('systemTags'):
             raise ValueError('Spectrum not yet fitted. Fit first.')            
         self._single_fig_output(size=size)
         # set data keys
-        xdata_key = self.spec.mdata.data('fitXdataKey')
-        ydata_key = self.spec.mdata.data('fitYdataKey')
+        xdata_key = self.spec.mdata.data('fitData')[fit_id]['xdataKey']
+        ydata_key = self.spec.mdata.data('fitData')[fit_id]['ydataKey']
         # plot
         self.plot_tof(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, time_unit=time_unit,
                       xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks, color='black')
         self.plot_tof_fit(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fit_par=fit_par,
-                          time_unit=time_unit)
+                          fit_id=fit_id, time_unit=time_unit)
         # setup axes
         if show_xlabel:
-            self._set_xlabel_time(self.ax, label=time_label, time_unit=time_unit, fontsize=fontsize_label)
+            self._set_xlabel_time(self.ax, label=time_label, time_unit=time_unit,
+                                  fontsize=fontsize_label)
         if show_ylabel:
             self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
         self.ax.tick_params(labelsize=fontsize_label)
         self._addtext_file_id(self.ax, fontsize=fontsize_ref)
-        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fontsize=fontsize_ref)
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
+                                   fontsize=fontsize_ref)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
                                  fontsize=fontsize_clusterid)
         if fit_par_pos in ['left', 'right']:
-            self._addtext_fitvalues(self.ax, plot_type='tof', fit_par=fit_par, time_unit=time_unit,
-                                    fontsize=fontsize_label, text_pos=fit_par_pos, show_fwhm=show_fwhm)
+            self._addtext_fitvalues(self.ax, plot_type='tof', fit_par=fit_par, fit_id=fit_id,
+                                    time_unit=time_unit, fontsize=fontsize_label,
+                                    text_pos=fit_par_pos, show_fwhm=show_fwhm)
         if show_mdata:
             self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_vpos='top',
                                fontsize=fontsize_label)
@@ -1174,7 +1185,7 @@ class ViewWater(ViewPes):
             self.fig.show()      
 
 
-    def _show_energy_fit(self, plot_type, fit_par, xlim, xlim_scale, n_xticks, show_ytics,
+    def _show_energy_fit(self, plot_type, fit_par, fit_id, xlim, xlim_scale, n_xticks, show_ytics,
                          fontsize_label, fontsize_ref, show_ylabel, size=None):
         plot_key_map = {'ekin': {'tof_intensity': [self.plot_ekin, 'ekin', 'jIntensity'],
                                  'tof_intensitySub': [self.plot_ekin, 'ekin', 'jIntensitySub'],
@@ -1187,13 +1198,13 @@ class ViewWater(ViewPes):
                                  'tofGauged_intensitySub': [self.plot_ebin, 'ebinGauged', 'jIntensityGaugedSub'],
                                  }
                         }
-        plot_method, xdata_key, ydata_key = plot_key_map[plot_type]['{}_{}'.format(self.spec.mdata.data('fitXdataKey'),
-                                                                                   self.spec.mdata.data('fitYdataKey'))]
+        plot_method, xdata_key, ydata_key = plot_key_map[plot_type]['{}_{}'.format(self.spec.mdata.data('fitData')[fit_id]['xdataKey'],
+                                                                                   self.spec.mdata.data('fitData')[fit_id]['ydataKey'])]
         self._single_fig_output(size=size)
         plot_method(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim,
                     xlim_scale=xlim_scale, n_xticks=n_xticks)
-        self.plot_energy_fit(self.ax, fit_par=fit_par, xdata_key=xdata_key,
-                             fit_xdata_key=self.spec.mdata.data('fitXdataKey'))
+        self.plot_energy_fit(self.ax, fit_par=fit_par, fit_id=fit_id, xdata_key=xdata_key,
+                             fit_xdata_key=self.spec.mdata.data('fitData')[fit_id]['xdataKey'])
         if show_ylabel:
             self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
         self.ax.tick_params(labelsize=fontsize_label)        
@@ -1206,20 +1217,21 @@ class ViewWater(ViewPes):
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
 
 
-    def show_ekin_fit(self, fit_par='fitPar', fit_par_pos='right', show_fwhm=True, xlim=[0, 'auto'],
-                      xlim_scale=None, n_xticks=None,  show_mdata=False, show_ytics=False,
-                      fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6, export=False,
-                      show_xlabel=True, show_ylabel=True, size=None):
-        self._show_energy_fit(plot_type='ekin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale,
-                              n_xticks=n_xticks, show_ytics=show_ytics, fontsize_label=fontsize_label,
-                              fontsize_ref=fontsize_ref, show_ylabel=show_ylabel, size=size)
+    def show_ekin_fit(self, fit_par='par', fit_id='default_fit', fit_par_pos='right', show_fwhm=True,
+                      xlim=[0, 'auto'],  xlim_scale=None, n_xticks=None,  show_mdata=False,
+                      show_ytics=False, fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6,
+                      export=False, show_xlabel=True, show_ylabel=True, size=None):
+        self._show_energy_fit(plot_type='ekin', fit_par=fit_par, fit_id=fit_id, xlim=xlim,
+                              xlim_scale=xlim_scale, n_xticks=n_xticks, show_ytics=show_ytics, 
+                              fontsize_label=fontsize_label, fontsize_ref=fontsize_ref,
+                              show_ylabel=show_ylabel, size=size)
         if show_xlabel:
             self.ax.set_xlabel(r'E$_{kin}$ (eV)', fontsize=fontsize_label)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
                                  fontsize=fontsize_clusterid) 
         if fit_par_pos in ['left', 'right']:
-            self._addtext_fitvalues(self.ax, plot_type='ekin', fit_par=fit_par, fontsize=fontsize_label,
-                                    text_pos=fit_par_pos, show_fwhm=show_fwhm)
+            self._addtext_fitvalues(self.ax, plot_type='ekin', fit_par=fit_par, fit_id=fit_id,
+                                    fontsize=fontsize_label, text_pos=fit_par_pos, show_fwhm=show_fwhm)
         if show_mdata:
             self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_vpos='top',
                                fontsize=fontsize_label)            
@@ -1227,19 +1239,20 @@ class ViewWater(ViewPes):
             self.fig.show()  
 
 
-    def show_ebin_fit(self, fit_par='fitPar', fit_par_pos='left', show_fwhm=True, xlim=[0, 'auto'],
-                      xlim_scale=None, n_xticks=None, show_mdata=False, show_ytics=False,
-                      fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6, export=False, 
-                      show_xlabel=True, show_ylabel=True, size=None):
-        self._show_energy_fit(plot_type='ebin', fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale,
-                              n_xticks=n_xticks, show_ytics=show_ytics, fontsize_label=fontsize_label,
-                              fontsize_ref=fontsize_ref, show_ylabel=show_ylabel, size=size)
+    def show_ebin_fit(self, fit_par='par', fit_id='default_fit', fit_par_pos='left', show_fwhm=True,
+                      xlim=[0, 'auto'], xlim_scale=None, n_xticks=None, show_mdata=False,
+                      show_ytics=False, fontsize_clusterid=28, fontsize_label=12, fontsize_ref=6,
+                      export=False, show_xlabel=True, show_ylabel=True, size=None):
+        self._show_energy_fit(plot_type='ebin', fit_par=fit_par, fit_id=fit_id, xlim=xlim,
+                              xlim_scale=xlim_scale, n_xticks=n_xticks, show_ytics=show_ytics,
+                              fontsize_label=fontsize_label, fontsize_ref=fontsize_ref,
+                              show_ylabel=show_ylabel, size=size)
         if show_xlabel:
             self.ax.set_xlabel(r'E$_{bin}$ (eV)', fontsize=fontsize_label)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), fontsize=fontsize_clusterid) 
         if fit_par_pos in ['left', 'right']:
-            self._addtext_fitvalues(self.ax, plot_type='ebin', fit_par=fit_par, fontsize=fontsize_label,
-                                    text_pos=fit_par_pos, show_fwhm=show_fwhm)  
+            self._addtext_fitvalues(self.ax, plot_type='ebin', fit_par=fit_par, fit_id=fit_id,
+                                    fontsize=fontsize_label, text_pos=fit_par_pos, show_fwhm=show_fwhm)  
         if show_mdata:
             self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_pos='right',
                                text_vpos='top', fontsize=fontsize_label)          

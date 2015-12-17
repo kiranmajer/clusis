@@ -333,22 +333,23 @@ class ViewWaterFitList(ViewPesList):
         self.speclist = speclist
 
 
-    def _show_tof_fit(self, spec, ax, fit_par='fitPar', time_unit=1e-6, time_label='Flight Time',
+    def _show_tof_fit(self, spec, ax, fit_par, fit_id, time_unit=1e-6, time_label='Flight Time',
                       xlim=[0, 'auto'], xlim_scale=None, n_xticks=None, show_mdata=None):
-        xdata_key = spec.mdata.data('fitXdataKey')
-        ydata_key = spec.mdata.data('fitYdataKey')
+        xdata_key = spec.mdata.data('fitData')[fit_id]['xdataKey']
+        ydata_key = spec.mdata.data('fitData')[fit_id]['ydataKey']
         spec.view.plot_tof(ax, xdata_key=xdata_key, ydata_key=ydata_key, time_unit=time_unit,
                       xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks, color='black')
         spec.view.plot_tof_fit(ax, xdata_key=xdata_key, ydata_key=ydata_key, fit_par=fit_par,
-                          time_unit=time_unit)
+                               fit_id=fit_id, time_unit=time_unit)
         spec.view._addtext_file_id(ax)
         spec.view._addtext_statusmarker(ax, xdata_key=xdata_key, ydata_key=ydata_key, text_pos='left')
         spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), text_pos='right', fontsize=10)
-        spec.view._addtext_fitvalues(ax, plot_type='tof', fit_par=fit_par, time_unit=time_unit, text_pos='right', fontsize=6)
+        spec.view._addtext_fitvalues(ax, plot_type='tof', fit_par=fit_par, fit_id=fit_id,
+                                     time_unit=time_unit, text_pos='right', fontsize=6)
         if show_mdata is not None:
             spec.view._addtext_info(ax, spec.view._pretty_print_info(show_mdata), fontsize=6, text_vpos='top')
 
-    def _show_energy_fit(self, spec, ax, plot_type, fit_par, xlim, xlim_scale, n_xticks):
+    def _show_energy_fit(self, spec, ax, plot_type, fit_par, fit_id, xlim, xlim_scale, n_xticks):
         'TODO: use method from View instead (after minimal modification).'
         plot_key_map = {'ekin': {'tof_intensity': [spec.view.plot_ekin, 'ekin', 'jIntensity'],
                                  'tof_intensitySub': [spec.view.plot_ekin, 'ekin', 'jIntensitySub'],
@@ -361,58 +362,62 @@ class ViewWaterFitList(ViewPesList):
                                  'tofGauged_intensitySub': [spec.view.plot_ebin, 'ebinGauged', 'jIntensityGaugedSub'],
                                  }
                         }
-        plot_method, xdata_key, ydata_key = plot_key_map[plot_type]['{}_{}'.format(spec.view.spec.mdata.data('fitXdataKey'),
-                                                                                   spec.view.spec.mdata.data('fitYdataKey'))]
+        plot_method, xdata_key, ydata_key = plot_key_map[plot_type]['{}_{}'.format(spec.mdata.data('fitData')[fit_id]['xdataKey'],
+                                                                                   spec.mdata.data('fitData')[fit_id]['ydataKey'])]
         plot_method(ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale,
                     n_xticks=n_xticks)
-        spec.view.plot_energy_fit(ax, fit_par=fit_par, xdata_key=xdata_key,
-                                  fit_xdata_key=spec.view.spec.mdata.data('fitXdataKey'))       
+        spec.view.plot_energy_fit(ax, fit_par=fit_par, fit_id=fit_id, xdata_key=xdata_key,
+                                  fit_xdata_key=spec.mdata.data('fitData')[fit_id]['xdataKey'])       
         spec.view._addtext_file_id(ax)
         spec.view._addtext_statusmarker(ax, xdata_key=xdata_key, ydata_key=ydata_key, text_pos='left')
 
 
-    def _show_ekin_fit(self, spec, ax, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None,
-                       n_xticks=None, show_mdata=None):
-        self._show_energy_fit(spec, ax, plot_type='ekin', fit_par=fit_par, xlim=xlim,
+    def _show_ekin_fit(self, spec, ax, fit_par, fit_id, xlim=[0, 'auto'],
+                       xlim_scale=None, n_xticks=None, show_mdata=None):
+        self._show_energy_fit(spec, ax, plot_type='ekin', fit_par=fit_par, fit_id=fit_id, xlim=xlim,
                               xlim_scale=xlim_scale, n_xticks=n_xticks)
         spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), text_pos='right',
                                       fontsize=10) 
-        spec.view._addtext_fitvalues(ax, plot_type='ekin', fit_par=fit_par, text_pos='right',
-                                     fontsize=6)
+        spec.view._addtext_fitvalues(ax, plot_type='ekin', fit_par=fit_par, fit_id=fit_id,
+                                     text_pos='right', fontsize=6)
         if show_mdata is not None:
             spec.view._addtext_info(ax, spec.view._pretty_print_info(show_mdata), fontsize=6,
                                     text_vpos='top')
 
-    def _show_ebin_fit(self, spec, ax, fit_par='fitPar', xlim=[0, 'auto'], xlim_scale=None,
-                       n_xticks=None, show_mdata=None):
-        self._show_energy_fit(spec, ax, plot_type='ebin', fit_par=fit_par, xlim=xlim,
+    def _show_ebin_fit(self, spec, ax, fit_par, fit_id, xlim=[0, 'auto'],
+                       xlim_scale=None, n_xticks=None, show_mdata=None):
+        self._show_energy_fit(spec, ax, plot_type='ebin', fit_par=fit_par, fit_id=fit_id, xlim=xlim,
                               xlim_scale=xlim_scale, n_xticks=n_xticks)
         spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), fontsize=10) 
-        spec.view._addtext_fitvalues(ax, plot_type='ebin', fit_par=fit_par, fontsize=6)
+        spec.view._addtext_fitvalues(ax, plot_type='ebin', fit_par=fit_par, fit_id=fit_id,
+                                     fontsize=6)
         if show_mdata is not None:
             spec.view._addtext_info(ax, spec.view._pretty_print_info(show_mdata), fontsize=6,
                                     text_pos='right', text_vpos='top')
 
 
-    def show_tof_fit(self, layout=[7,3], size=[21,29.7], fit_par='fitPar', time_unit=1e-6,
-                     xlim=[0, 'auto'], xlim_scale=None, n_xticks=None, pdf=True, show_mdata=None,
-                     show_yticks=False):
+    def show_tof_fit(self, layout=[7,3], size=[21,29.7], fit_par='par',
+                     time_unit=1e-6, xlim=[0, 'auto'], xlim_scale=None, n_xticks=None, pdf=True,
+                     show_mdata=None, show_yticks=False):
+        fit_id = self.speclist._eval_fit_id()
         self._show(self._show_tof_fit, xlabel_str=self._format_time_label('Flight Time', time_unit),
-                   layout=layout, pdf=pdf, fit_par=fit_par, time_unit=time_unit, xlim=xlim,
+                   layout=layout, pdf=pdf, fit_par=fit_par, fit_id=fit_id, time_unit=time_unit, xlim=xlim,
                    xlim_scale=xlim_scale, n_xticks=n_xticks, show_mdata=show_mdata,
                    show_yticks=show_yticks)
 
-    def show_ekin_fit(self, layout=[7,3], size=[21,29.7], fit_par='fitPar', xlim=[0, 'auto'],
-                      xlim_scale=None, n_xticks=None, pdf=True, show_mdata=None):
+    def show_ekin_fit(self, layout=[7,3], size=[21,29.7], fit_par='par',
+                      xlim=[0, 'auto'], xlim_scale=None, n_xticks=None, pdf=True, show_mdata=None):
+        fit_id = self.speclist._eval_fit_id()
         self._show(self._show_ekin_fit, xlabel_str='E$_{kin}$ (eV)', layout=layout, size=size,
-                   pdf=pdf, fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks,
-                   show_mdata=show_mdata)
+                   pdf=pdf, fit_par=fit_par, fit_id=fit_id, xlim=xlim, xlim_scale=xlim_scale,
+                   n_xticks=n_xticks, show_mdata=show_mdata)
         
-    def show_ebin_fit(self, layout=[7,3], size=[21,29.7], fit_par='fitPar', xlim=[0, 'auto'],
-                      xlim_scale=None, n_xticks=None, pdf=True, show_mdata=None):
+    def show_ebin_fit(self, layout=[7,3], size=[21,29.7], fit_par='par',
+                      xlim=[0, 'auto'], xlim_scale=None, n_xticks=None, pdf=True, show_mdata=None):
+        fit_id = self.speclist._eval_fit_id()
         self._show(self._show_ebin_fit, xlabel_str='E$_{bin}$ (eV)', layout=layout, size=size,
-                   pdf=pdf, fit_par=fit_par, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks,
-                   show_mdata=show_mdata) 
+                   pdf=pdf, fit_par=fit_par, fit_id=fit_id, xlim=xlim, xlim_scale=xlim_scale,
+                   n_xticks=n_xticks, show_mdata=show_mdata) 
 
 
 

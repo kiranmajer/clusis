@@ -664,9 +664,9 @@ class SpecPeWater(SpecPe):
         else:
             raise ValueError('Cutoff must be int or float')
         
-        fit_values = {'fitPar0': fitPar0, 'fitCutoff': cutoff, 'fitXdataKey': xdata_key, 'fitYdataKey': ydata_key}
+        fit_values = {'par0': fitPar0, 'cutoff': cutoff, 'xdataKey': xdata_key, 'ydataKey': ydata_key}
         try:
-            p, covar, info, mess, ierr = leastsq(self.__err_multi_gl, fit_values['fitPar0'],
+            p, covar, info, mess, ierr = leastsq(self.__err_multi_gl, fit_values['par0'],
                                                  args=(xdata,ydata), full_output=True)
         except:
             return fit_values
@@ -674,7 +674,7 @@ class SpecPeWater(SpecPe):
         else:
             # calculate chi squared
             chisq = sum(info['fvec']*info['fvec'])
-            fit_values.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [chisq, info, mess, ierr]})
+            fit_values.update({'par': p, 'covar': covar, 'info': [chisq, info, mess, ierr]})
             return fit_values
  
  
@@ -695,7 +695,7 @@ class SpecPeWater(SpecPe):
             if fitPar0[-1] > fitPar0[-2] + asym_par:
                 err_func = self.__err_multi_gl_trans_asym
             else:
-                raise ValueError('fitPar0 does not fullfil boundary conditions.')
+                raise ValueError('par0 does not fullfil boundary conditions.')
         else:
             raise ValueError('asym_par must be an integer or float or None')
           
@@ -708,24 +708,27 @@ class SpecPeWater(SpecPe):
         else:
             raise ValueError('Cutoff must be int or float')
         
-        fit_values = {'fitPar0': fitPar0, 'fitCutoff': cutoff, 'fitXdataKey': xdata_key, 'fitYdataKey': ydata_key}
+        fit_values = {'par0': fitPar0, 'cutoff': cutoff, 'xdataKey': xdata_key, 'ydataKey': ydata_key}
         try:
             p, covar, info, mess, ierr = leastsq(err_func,
-                                                 fit_values['fitPar0'],
+                                                 fit_values['par0'],
                                                  args=(xdata,ydata, asym_par),
                                                  full_output=True)
         except:
+            print('Warning: Fit did not converge.')
             return fit_values
+            """TODO: This won't work. Better raise an error and leave handling of the start parameter
+            par0 to the higher fit method."""
             raise
         else:
             # calculate chi squared
             chisq = sum(info['fvec']*info['fvec'])
-            fit_values.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [chisq, info, mess, ierr]})
+            fit_values.update({'par': p, 'covar': covar, 'info': [chisq, info, mess, ierr]})
             return fit_values 
     
     
-    def fit(self, fitPar0, fit_type='time', xdata_key='auto', ydata_key='auto', cutoff=None,
-            asym_par=None):
+    def fit(self, fitPar0, fit_id='default_fit', fit_type='time', xdata_key='auto', ydata_key='auto',
+            cutoff=None, asym_par=None):
         fitPar0 = np.array(fitPar0)
         # choose data_keys if not given
         if fit_type in ['time']:
@@ -742,12 +745,15 @@ class SpecPeWater(SpecPe):
             raise ValueError("fit_type must be one of 'time' or 'energy'.")
         
         print('Fit converged with:')
-        print('   chi squared:', fit_values['fitInfo'][0])
-        print('   reduced chi squared:', fit_values['fitInfo'][0]/(len(self.xdata[xdata_key]) - len(fit_values['fitPar'])))
+        print('   chi squared:', fit_values['info'][0])
+        print('   reduced chi squared:', fit_values['info'][0]/(len(self.xdata[xdata_key]) - len(fit_values['par'])))
         print('Updating mdata...')
-        self.mdata.update(fit_values)
+        self.mdata.update({'fitData': {fit_id: fit_values}})
         self.mdata.add_tag('fitted', tagkey='systemTags')
         
+        
+    def remove_fit(self, fit_id):
+        self.mdata._rm_fit_data(fit_id)
         
     def _ask_for_refit(self, reason, refit=None, commit_after=False):
         if 'fitted' in self.mdata.data('systemTags'):
@@ -757,21 +763,22 @@ class SpecPeWater(SpecPe):
                 q = 'Fit again using previous fit parameters as start parameter [y|n]?: '
                 refit = input(q)
             if refit == 'y':
-                self._refit(commit_after=commit_after)
+                for fid in self.mdata.data('fitData').keys():
+                    self._refit(fit_id=fid, commit_after=commit_after)
                     
                     
-    def _refit(self, fit_par=None, cutoff=None, asym_par=None, commit_after=False):
+    def _refit(self, fit_id, fit_par=None, cutoff=None, asym_par=None, commit_after=False):
         if 'fitted' not in self.mdata.data('systemTags'):
             raise ValueError('This spec was not fitted before.')
-        if 'tof' in self.mdata.data('fitXdataKey'):
+        if 'tof' in self.mdata.data('fitData')[fit_id]['xdataKey']:
             fit_type = 'time'
         else:
             fit_type = 'energy'
         if fit_par is None:
-            fit_par = self.mdata.data('fitPar')
+            fit_par = self.mdata.data('fitData')[fit_id]['par']
             #fit_par[-2:] = [0.2, 0.2]
         if cutoff is None:
-            cutoff = self.mdata.data('fitCutoff')
+            cutoff = self.mdata.data('fitData')[fit_id]['cutoff']
         elif cutoff is 'reset':
             cutoff = None
         self.fit(fitPar0=fit_par,
@@ -781,11 +788,13 @@ class SpecPeWater(SpecPe):
         if commit_after:
             self.commit()
         
-    def _get_peak_width(self, fit_par):
-        #pw = np.sum(self.mdata.data('fitPar')[-2:])
-        #         ________ 
-        # fwhm = V 2*ln(2)*s_g + s_l 
-        fwhm = np.sqrt(2*np.log(2))*np.abs(self.mdata.data(fit_par)[-2]) + np.abs(self.mdata.data(fit_par)[-1])
+    def _get_peak_width(self, fit_par, fit_id):
+        '''
+        Returns the peak width (fwhm) of the given fit parameter set:
+                ________
+        fwhm = V 2*ln(2)*s_g + s_l
+        ''' 
+        fwhm = np.sqrt(2*np.log(2))*np.abs(self.mdata.data('fitData')[fit_id][fit_par][-2]) + np.abs(self.mdata.data('fitData')[fit_id][fit_par][-1])
         return fwhm
     
     def __isomer_binding_energy_limit(self, lpar, inv_size):
@@ -807,11 +816,12 @@ class SpecPeWater(SpecPe):
         return limit
     
     
-    def _assort_fit_peaks(self, fit_par_key='fitPar'):
+    def _assort_fit_peaks(self, fit_id, fit_par_key='par'):
         '''returns a dict containing {'isomer class name': (ebin, intensity), ...}'''
         inv_size = self.mdata.data('clusterBaseUnitNumber')**(-1/3)
         lin_par = self.cfg.water_isomer_limits[self.mdata.data('clusterBaseUnit')]
-        peaks = zip(self.mdata.data(fit_par_key)[:-2:2], self.mdata.data(fit_par_key)[1:-2:2])
+        peaks = zip(self.mdata.data('fitData')[fit_id][fit_par_key][:-2:2],
+                    self.mdata.data('fitData')[fit_id][fit_par_key][1:-2:2])
         isomer_classes = {}
         for peak in peaks:
             # TODO: find corect unit of peak[0] (tof, ebin, etc.)

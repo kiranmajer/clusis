@@ -80,11 +80,12 @@ class Cfg():
         '''
         self.wavelengths = [157.63e-9, 193.35e-9, 248.4e-9, 308e-9, 590e-9, 800e-9] # 157.63e-9, 193.35e-9, 248.4e-9
         'When modified -> increase mdata_version!'
-        self.mdata_version = 0.2
+        self.mdata_version = 0.3
         self.mdata_ref = {'spec': {'datFile': [str, True],
+                                   'evalTags': [list, True],
                                    'info': [str, True],
                                    'machine': [['casi'], True],
-                                   'mdataVersion': [[self.mdata_version], True],
+                                   'mdataVersion': [float, True],
                                    'pickleFile': [str, True],
                                    'recTime': [float, True],
                                    'sha1': [str, True],
@@ -92,7 +93,7 @@ class Cfg():
                                    'specTypeClass': [['spec', 'specMs', 'specPe', 'specPePt', 'specPeIr', 'specPeWater', 'specPf'], True],
                                    'sweeps': [int, False],
                                    'systemTags': [list, True],
-                                   'tags': [list, True], # combined tags of systemTags and userTags (for db)
+                                   'tags': [list, True], # combined tags of *Tags (for db)
                                    'timePerPoint': [float, True],
                                    'triggerOffset': [float, True],
                                    'triggerFrequency': [float, False],
@@ -147,13 +148,20 @@ class Cfg():
                                        'fitXdataKey': [['tof'], False],
                                        'fitYdataKey': [['intensity', 'intensitySub'], False]
                                        },
-                          'specPeWater': {'fitCovar': [np.ndarray, False],
-                                          'fitCutoff': [float, False],
-                                          'fitInfo': [list, False],
-                                          'fitPar': [np.ndarray, False],
-                                          'fitPar0': [np.ndarray, False],
-                                          'fitXdataKey': [['tof', 'tofGauged', 'ebin', 'ebinGauged'], False],
-                                          'fitYdataKey': [['intensity', 'intensitySub', 'jIntensity', 'jIntensitySub'], False]
+                          'specPeWater': {'fitData': [dict, False],
+#                                           fitData dict should have following structure:
+#                                         {'fitId': {'covar': [np.ndarray, False],
+#                                                    'cutoff': [float, False],
+#                                                    'info': [list, False],
+#                                                    'par': [np.ndarray, False],
+#                                                    'par0': [np.ndarray, False],
+#                                                    'xdataKey': [['tof', 'tofGauged', 'ebin',
+#                                                                  'ebinGauged'], False],
+#                                                    'ydataKey': [['intensity', 'intensitySub',
+#                                                                  'jIntensity', 'jIntensitySub'],
+#                                                                 False]
+#                                                    }
+#                                          }
                                           },
                           'specPf': {'cfgFile': [str, False],
                                      'clusterBaseUnit': [str, True],
@@ -372,16 +380,46 @@ class Cfg():
         
 
     def convert_mdata_v0p1_to_v0p2(self, mdata):
-        if mdata['mdataVersion'] == 0.1: 
-            print('Converting mdata from version 0.1 to 0.2 ...')
+        start_version = 0.1
+        target_version = 0.2
+        if mdata['mdataVersion'] == start_version: 
+            print('Converting mdata from version {} to {} ...'.format(start_version, target_version))
             if mdata['specType'] in ['generic']:
-                mdata['mdataVersion'] = 0.2
+                mdata['mdataVersion'] = target_version
             else:
                 mdata['delayState'] = mdata.pop('delayTimings')
-                mdata['mdataVersion'] = 0.2
+                mdata['mdataVersion'] = target_version
         else:
-            raise ValueError('mdata has wrong version: {}, expected 0.1.'.format(mdata['mdataVersion']))
+            raise ValueError('mdata has wrong version: {}, expected {}.'.format(mdata['mdataVersion'],
+                                                                                start_version))
         
         return mdata 
+    
+    def convert_mdata_v0p2_to_v0p3(self, mdata):
+        start_version = 0.2
+        target_version = 0.3
+        if mdata['mdataVersion'] == start_version:
+            print('Converting mdata from version {} to {} ...'.format(start_version, target_version))
+            if mdata['specTypeClass'] in ['specPeWater'] and 'fitPar' in mdata.keys():
+                print('Converting fit data in new dictionary ...')
+                mdata['fitData'] = {'default_fit': {'covar': mdata.pop('fitCovar'),
+                                                    'cutoff': mdata.pop('fitCutoff'),
+                                                    'info': mdata.pop('fitInfo'),
+                                                    'par': mdata.pop('fitPar'),
+                                                    'par0': mdata.pop('fitPar0'),
+                                                    'xdataKey': mdata.pop('fitXdataKey'),
+                                                    'ydataKey': mdata.pop('fitYdataKey'),
+                                                    }
+                                    }
+                mdata['evalTags'] = ['default_fit']
+                mdata['tags'].append('default_fit')
+                mdata['mdataVersion'] = target_version
+            else:
+                mdata['evalTags'] = []
+                mdata['mdataVersion'] = target_version
+        else:
+            raise ValueError('mdata has wrong version: {}, expected {}.'.format(mdata['mdataVersion'],
+                                                                                start_version))
         
+        return mdata
         

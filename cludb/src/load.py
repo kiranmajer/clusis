@@ -197,9 +197,15 @@ def load_pickle(cfg, pickleFile):
     
     # testing for correct mdata version
     mdata_converted = False
-    if mdata['mdataVersion'] == 0.1:
-        print('Old mdata version detected: 0.1.') 
-        mdata = cfg.convert_mdata_v0p1_to_v0p2(mdata)
+    if mdata['mdataVersion'] < cfg.mdata_version:
+        if mdata['mdataVersion'] == 0.1:
+            print('Old mdata version detected: 0.1.') 
+            mdata = cfg.convert_mdata_v0p1_to_v0p2(mdata)
+            
+        if mdata['mdataVersion'] == 0.2:
+            print('Old mdata version detected: 0.2.') 
+            mdata = cfg.convert_mdata_v0p2_to_v0p3(mdata)
+        
         mdata_converted = True
         
     spectrum = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
