@@ -560,6 +560,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         if not self.fit_id:
             raise ValueError('No fit id specified. Create a water fit list with a fit id.')
         else:
+            print('Using fit id: ', self.fit_id)
             return self.fit_id
 
     def list_fit_par(self):

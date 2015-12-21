@@ -782,6 +782,7 @@ class SpecPeWater(SpecPe):
         elif cutoff is 'reset':
             cutoff = None
         self.fit(fitPar0=fit_par,
+                 fit_id=fit_id,
                  fit_type=fit_type,
                  cutoff=cutoff,
                  asym_par=asym_par)
