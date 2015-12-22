@@ -1206,12 +1206,13 @@ class SpecPeWaterFitList(SpecPeWaterList):
             
         
         
-    def refit(self, fit_par=None, cutoff=None):
+    def refit(self, fit_par=None, cutoff=None, asym_par=None):
         '''TODO: inherit from fit or use super()'''
         fit_id = self._eval_fit_id()
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
-            cs._refit(fit_id=fit_id, fit_par=fit_par, cutoff=cutoff, commit_after=True)
+            cs._refit(fit_id=fit_id, fit_par=fit_par, cutoff=cutoff, asym_par=asym_par,
+                      commit_after=True)
             #cs.commit()
             del cs
             

@@ -637,7 +637,6 @@ class SpecPeWater(SpecPe):
         
     def __err_multi_gl_trans_asym(self, par, x, y, asym_par):
         if np.all(par[1:-2:2] > 0) and par[-1] > par[-2]+asym_par: # keep peak maximum positive and sigma_g < sigma_l
-            print(self.multi_gl_trans(x, par)-y)
             return self.multi_gl_trans(x, par)-y
         else:
             print('par reached bounderies.')
