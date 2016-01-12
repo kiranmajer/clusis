@@ -1017,10 +1017,14 @@ class SpecPeWaterFitList(SpecPeWaterList):
                 i += 1
                 if k1 in cic.keys() and k2 in cic.keys():
                     if cn in diff_ref:
-                        diff = diff_ref[cn] - (cic[k1][0] - cic[k2][0])
+                        if diff_id in diff_ref[cn].keys():
+                            diff = diff_ref[cn][diff_id] - (cic[k1][0] - cic[k2][0])
+                        else:
+                            diff = 0
+                            diff_ref[cn][diff_id] = cic[k1][0] - cic[k2][0]
                     else:
                         diff = 0
-                        diff_ref[cn] = cic[k1][0] - cic[k2][0]
+                        diff_ref[cn] = {diff_id: cic[k1][0] - cic[k2][0]}
                     if cn not in diff_dict.keys():
                         diff_dict[cn] = {}
                     if diff_id in diff_dict[cn].keys():
