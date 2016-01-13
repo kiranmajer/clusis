@@ -766,18 +766,21 @@ class SpecPeWater(SpecPe):
                     self._refit(fit_id=fid, commit_after=commit_after)
                     
                     
-    def _refit(self, fit_id, fit_par=None, cutoff=None, asym_par=None, commit_after=False):
+    def _refit(self, fit_id, ref_fit_id=None, fit_par=None, cutoff=None, asym_par=None,
+               commit_after=False):
         if 'fitted' not in self.mdata.data('systemTags'):
             raise ValueError('This spec was not fitted before.')
-        if 'tof' in self.mdata.data('fitData')[fit_id]['xdataKey']:
+        if not ref_fit_id:
+            ref_fit_id = fit_id
+        if 'tof' in self.mdata.data('fitData')[ref_fit_id]['xdataKey']:
             fit_type = 'time'
         else:
             fit_type = 'energy'
         if fit_par is None:
-            fit_par = self.mdata.data('fitData')[fit_id]['par']
+            fit_par = self.mdata.data('fitData')[ref_fit_id]['par']
             #fit_par[-2:] = [0.2, 0.2]
         if cutoff is None:
-            cutoff = self.mdata.data('fitData')[fit_id]['cutoff']
+            cutoff = self.mdata.data('fitData')[ref_fit_id]['cutoff']
         elif cutoff is 'reset':
             cutoff = None
         self.fit(fitPar0=fit_par,
