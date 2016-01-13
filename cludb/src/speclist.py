@@ -927,7 +927,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
             self._export(fname=fname, export_dir=export_dir, size=size, figure=fig)
  
     
-    def plot_temp_peakpos(self, iso_keys=['1a', '1b'], fname_prefix=None,
+    def plot_temp_peakpos(self, iso_keys=['1a', '1b'], xlim=[0, 350], fname_prefix=None,
                           export_dir=os.path.expanduser('~'), size=[20,14],
                           fontsize_clusterid=28, fontsize_label=12, markersize=6):
         
@@ -939,6 +939,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
             ax = fig.add_subplot(3, 1, 1)
             #ax.set_xlabel('Temperature (K)', fontsize=fontsize_label)
             ax.tick_params(labelsize=fontsize_label)
+            ax.set_xlim(xlim)
             ax.set_ylim([-2.6,-1.2])
             ax.grid()
             cluster_id = temp_ebin.pop('id')

@@ -389,7 +389,9 @@ class Db(object):
                 if row['tags'] is None:
                     print('')
                 else:
-                    print('<|>'.join(row['tags']))
+                    tag_list = list(row['tags'])
+                    tag_list.sort()
+                    print('<|>'.join(tag_list))
                 idx += 1
                 
         print_answer(fetch)
