@@ -1316,7 +1316,7 @@ class ViewMs(View):
                                      fontsize=fontsize_clusterid)
         if show_mdata:
             self._addtext_info(self.ax, self._pretty_print_info(show_mdata), fontsize=fontsize_label,
-                                    text_pos='left')
+                                    text_pos='right', text_vpos='top')
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
