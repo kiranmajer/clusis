@@ -972,7 +972,7 @@ class ViewWater(ViewPes):
             prefix = prefix_map[int(abs(log10(time_unit)/3))]
             return prefix
         
-        #peak_width = round(self.spec._get_peak_width(), 3)
+        #peak_width = round(self.spec._get_peakshape_par(), 3)
         
         if plot_type == 'ebin' and 'tof' in self.spec.mdata.data('fitData')[fit_id]['xdataKey']:
             peak_values = list(self.spec.ebin(self.spec.mdata.data('fitData')[fit_id][fit_par][:-2:2]))
@@ -1002,7 +1002,7 @@ class ViewWater(ViewPes):
 #                 transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
         fit_values_str = '\n'.join(['{:.2f} {}'.format(p/time_unit, peakPos_unit) for p in peak_values])
         if show_fwhm:
-            fit_values_str += '\n\nfwhm: {:.3f} eV'.format(self.spec._get_peak_width(fit_par, fit_id))
+            fit_values_str += '\n\nfwhm: {:.3f} eV'.format(self.spec._get_peakshape_par(fit_par, fit_id))
         ax.text(pos_x, pos_y, fit_values_str,transform = ax.transAxes, fontsize=fontsize, 
                 horizontalalignment=text_pos, verticalalignment='center')
    

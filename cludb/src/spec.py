@@ -791,14 +791,21 @@ class SpecPeWater(SpecPe):
         if commit_after:
             self.commit()
         
-    def _get_peak_width(self, fit_par, fit_id):
+    def _get_peakshape_par(self, fit_par, fit_id, width=True, moments=False):
         '''
         Returns the peak width (fwhm) of the given fit parameter set:
                 ________
         fwhm = V 2*ln(2)*s_g + s_l
-        ''' 
-        fwhm = np.sqrt(2*np.log(2))*np.abs(self.mdata.data('fitData')[fit_id][fit_par][-2]) + np.abs(self.mdata.data('fitData')[fit_id][fit_par][-1])
-        return fwhm
+        '''
+        s_g = np.abs(self.mdata.data('fitData')[fit_id][fit_par][-2])
+        s_l = np.abs(self.mdata.data('fitData')[fit_id][fit_par][-1])
+        fwhm = np.sqrt(2*np.log(2))*s_g + s_l
+        if width and moments:
+            return fwhm, [s_g, s_l]
+        elif width:
+            return fwhm
+        elif moments:
+            return [s_g, s_l]
     
     def __isomer_binding_energy_limit(self, lpar, inv_size):
         '''Returns the binding energy limit at inv_size for an isomer class spicified by lpar''' 

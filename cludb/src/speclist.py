@@ -590,7 +590,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     if key == 'par':
                         mdataList[rowCount].append([round(float(cs.ebin(p)),2) for p in cs.mdata.data('fitData')[fit_id][key][:-2:2]])
                         #mdataList[rowCount].append(round(np.sum(cs.mdata.data(key)[-2:]), 3))
-                        mdataList[rowCount].append(round(cs._get_peak_width(key, fit_id), 3))
+                        mdataList[rowCount].append(round(cs._get_peakshape_par(key, fit_id), 3))
                         mdataList[rowCount].append(round(cs.mdata.data('fitData')[fit_id][key][-2], 3))
                         mdataList[rowCount].append(round(cs.mdata.data('fitData')[fit_id][key][-1], 3))
                     elif key in ['info']:
@@ -859,23 +859,32 @@ class SpecPeWaterFitList(SpecPeWaterList):
         fit_id = self._eval_fit_id()
         
         widths = {1: [], 2: [], 3: [], 4: []}
+        moments_s_g = []
+        moments_s_l = []
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
             csize = cs.mdata.data('clusterBaseUnitNumber')
             #width = np.sum(cs.mdata.data('fitPar')[-2:])
-            width = cs._get_peak_width('par', fit_id)
+            width, moments = cs._get_peakshape_par('par', fit_id, width=True, moments=True)
             peak_n = (len(cs.mdata.data('fitData')[fit_id]['par']) -2)/2
-            if 0.1 < width < 1.5:
-                widths[peak_n].append([csize, width])
+            #if 0.01 < width < 1.5:
+            widths[peak_n].append([csize, width])
+            moments_s_g.append([csize, moments[0]])
+            moments_s_l.append([csize, moments[1]])
             del cs
         plot_data = {}
         for k,v in widths.items():
             if len(v) > 0:
                 plot_data[k] = np.transpose(v)
+        plot_data['s_g'] = np.transpose(moments_s_g)
+        plot_data['s_l'] = np.transpose(moments_s_l)
         #xdata = plot_data[0]**(-1/3)
         
         if color is None:
-            color = ['blue', 'grey', 'limegreen', 'red']
+            color = {'s_g': 'grey', 's_l': 'limegreen',
+                     1: 'blue', 2: 'yellow', 3: 'midnightblue', 4: 'red'}
+        labels = {'s_g': '$\sigma_G$', 's_l': '$\sigma_L$',
+                  1: '1 GL', 2: '2 GL', 3: '3 GL', 4: '4 GL'}
         # create plot
         fig = plt.figure()
         # setup lower axis
@@ -898,12 +907,10 @@ class SpecPeWaterFitList(SpecPeWaterList):
         ax2.axis["right"].major_ticklabels.set_visible(False)
         ax2.grid(b=True)
         # plot data
-        color_idx = 0
         for k,v in plot_data.items():
             xdata = v[0]**(-1/3)
-            ax.plot(xdata, v[1], 's', label='{}'.format(k), markersize=markersize,
-                    color=color[color_idx])
-            color_idx += 1
+            ax.plot(xdata, v[1], 's', label=labels[k], markersize=markersize,
+                    color=color[k])
 # linear fits make no sense here, its something asymptotic.
 #             # linear fit
 #             if len(v[0]) > 2 and np.abs(v[0][0] - v[0][-1]) > 20: 
@@ -918,7 +925,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
 #                 xdata_fit = np.arange(0, 1, 0.1)
 #                 lin_fit = np.poly1d(fitpar)
 #                 ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')
-        leg = ax.legend(title='Number of GL functions:', loc=3, fontsize=fontsize_label,
+        leg = ax.legend(loc=0, fontsize=fontsize_label,
                         numpoints=1)
         leg.get_title().set_fontsize(fontsize_label)
         if fname is None:
@@ -1241,7 +1248,19 @@ class SpecPeWaterFitList(SpecPeWaterList):
             else:
                 print('Spec has no gauge reference yet; skipping.')
             
-            del cs    
+            del cs
+            
+            
+    def export_single_plots(self, plot_fct, export_dir='~/test', latex_fname=None, overwrite=True, 
+                            linewidth=.8, layout=[8,4], size='latex', latex=True, firstpage_offset=0,
+                            xlabel_str='Binding energy (eV)', skip_plots=False, **keywords):
+        '''Specialized version using fit_id'''
+        SpecList.export_single_plots(self, plot_fct=plot_fct, export_dir=export_dir,
+                                     latex_fname=latex_fname, overwrite=overwrite,
+                                     linewidth=linewidth, layout=layout, size=size,
+                                     latex=latex, firstpage_offset=firstpage_offset,
+                                     xlabel_str=xlabel_str, skip_plots=skip_plots,
+                                     fit_id=self.fit_id, **keywords)  
 
 
 
