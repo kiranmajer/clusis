@@ -870,7 +870,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
 
     def compare_peak_widths(self, fname=None, export_dir=os.path.expanduser('~'),
                             size=[20,14], fontsize_label=12, markersize=6, xlim=[0,0.42],
-                            ylim=[-4,0], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
+                            ylim=[0,1.2], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
                             color=None):
         
         fit_id = self._eval_fit_id()
@@ -909,19 +909,15 @@ class SpecPeWaterFitList(SpecPeWaterList):
         ax.set_xlabel('n$^{-1/3}$')
         ax.axis['bottom'].label.set_fontsize(fontsize_label)
         ax.set_xlim(xlim[0], xlim[1])
-        #ax.set_xlim(0,0.42)
         ax.set_ylabel('fwhm, moments (eV)')
         ax.axis['left'].label.set_fontsize(fontsize_label)
         ax.axis['bottom'].major_ticklabels.set_fontsize(fontsize_label)
         ax.axis['left'].major_ticklabels.set_fontsize(fontsize_label)
-        #ax.set_ylim(0,1.3)
         ax.set_ylim(ylim[0], ylim[1])
         # setup upper axis
         ax2 = ax.twin()
         ax2.set_xticks(np.array(ax2_ticks)**(-1/3))
         ax2.set_xticklabels([str(t) for t in ax2_ticks])
-#         ax2.set_xticks(np.array([10, 20,40,80,150,350,1000, 5000])**(-1/3))
-#         ax2.set_xticklabels(["10","20","40","80","150","350","1000","5000"])
         ax2.set_xlabel('number of water molecules (n)')
         ax2.axis['top'].label.set_fontsize(fontsize_label)
         ax2.axis['top'].major_ticklabels.set_fontsize(fontsize_label)
@@ -930,8 +926,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         # plot data
         for k,v in plot_data.items():
             xdata = v[0]**(-1/3)
-            ax.plot(xdata, v[1], 's', label=labels[k], markersize=markersize,
-                    color=color[k])
+            ax.plot(xdata, v[1], 's', label=labels[k], markersize=markersize, color=color[k])
 # linear fits make no sense here, its something asymptotic.
 #             # linear fit
 #             if len(v[0]) > 2 and np.abs(v[0][0] - v[0][-1]) > 20: 
@@ -946,8 +941,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
 #                 xdata_fit = np.arange(0, 1, 0.1)
 #                 lin_fit = np.poly1d(fitpar)
 #                 ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')
-        leg = ax.legend(loc=0, fontsize=fontsize_label,
-                        numpoints=1)
+        leg = ax.legend(loc=0, fontsize=fontsize_label, numpoints=1)
         leg.get_title().set_fontsize(fontsize_label)
         if fname is None:
             fig.show()
