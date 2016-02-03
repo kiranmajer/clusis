@@ -105,9 +105,24 @@ class SpecList(object):
         figure.set_size_inches(w,h)
         'TODO: hard coded margins are not a good idea.'
         if twin_axes:
-            figure.subplots_adjust(left=0.09, bottom=0.088, right=0.995, top=0.905)
+            figure.subplots_adjust(left=1.3/size[0], bottom=0.8/size[1],
+                                   right=1-0.15/size[0], top=1-0.85/size[1])
         else:
             figure.subplots_adjust(left=0.08, bottom=0.095, right=0.995, top=0.98)
+#         'TODO: some of these margins are font size related, so they need to be adapted accordingly'
+#         t = 0.2/size[1]
+#         r = 0.3/size[0]
+#         ax = figure.axes.get_xa
+#         if figure.axes.get_xlabel():
+#             b = 0.9/size[1] # 0.9 fits for font size 8
+#         else:
+#             b = 0.4/size[1]
+#         if figure.axes.get_ylabel():
+#             l = 0.4/size[0] # 0.4 dito
+#         else:
+#             l = 0.15/size[0]
+#             r = 0.15/size[0]
+#         figure.subplots_adjust(left=l, bottom=b, right=1-r, top=1-t)
         figure.savefig(f)
         #self.fig.set_size_inches(orig_size)
         
@@ -854,7 +869,9 @@ class SpecPeWaterFitList(SpecPeWaterList):
 
 
     def compare_peak_widths(self, fname=None, export_dir=os.path.expanduser('~'),
-                            size=[20,14], fontsize_label=12, markersize=6, color=None):
+                            size=[20,14], fontsize_label=12, markersize=6, xlim=[0,0.42],
+                            ylim=[-4,0], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
+                            color=None):
         
         fit_id = self._eval_fit_id()
         
@@ -891,16 +908,20 @@ class SpecPeWaterFitList(SpecPeWaterList):
         ax = host_subplot(111, axes_class=AA.Axes)
         ax.set_xlabel('n$^{-1/3}$')
         ax.axis['bottom'].label.set_fontsize(fontsize_label)
-        ax.set_xlim(0,0.42)
-        ax.set_ylabel('fwhm (eV)')
+        ax.set_xlim(xlim[0], xlim[1])
+        #ax.set_xlim(0,0.42)
+        ax.set_ylabel('fwhm, moments (eV)')
         ax.axis['left'].label.set_fontsize(fontsize_label)
         ax.axis['bottom'].major_ticklabels.set_fontsize(fontsize_label)
         ax.axis['left'].major_ticklabels.set_fontsize(fontsize_label)
-        ax.set_ylim(0,1.3)
+        #ax.set_ylim(0,1.3)
+        ax.set_ylim(ylim[0], ylim[1])
         # setup upper axis
         ax2 = ax.twin()
-        ax2.set_xticks(np.array([10, 20,40,80,150,350,1000, 5000])**(-1/3))
-        ax2.set_xticklabels(["10","20","40","80","150","350","1000","5000"])
+        ax2.set_xticks(np.array(ax2_ticks)**(-1/3))
+        ax2.set_xticklabels([str(t) for t in ax2_ticks])
+#         ax2.set_xticks(np.array([10, 20,40,80,150,350,1000, 5000])**(-1/3))
+#         ax2.set_xticklabels(["10","20","40","80","150","350","1000","5000"])
         ax2.set_xlabel('number of water molecules (n)')
         ax2.axis['top'].label.set_fontsize(fontsize_label)
         ax2.axis['top'].major_ticklabels.set_fontsize(fontsize_label)
