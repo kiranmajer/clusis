@@ -856,10 +856,13 @@ class SpecPeWaterFitList(SpecPeWaterList):
 #             slope, intercept, r_value, p_value, std_err = linregress(peak_set[2], peak_set[1])
 #             fit_par.append(np.array([slope, intercept]))
 #             fit_res.append(std_err)            
-            fitpar, cov = np.polyfit(peak_set[2], peak_set[1], 1, cov=True)
-            fit_par.append(fitpar)
-            res=np.sqrt(np.diag(cov))
-            fit_res.append(res)
+            #print('now fitting:')
+            #print(peak_set[2], peak_set[1])
+            if len(peak_set[2]) > 2: # use at least 3 points for linear fit
+                fitpar, cov = np.polyfit(peak_set[2], peak_set[1], 1, cov=True)
+                fit_par.append(fitpar)
+                res=np.sqrt(np.diag(cov))
+                fit_res.append(res)
  
              
         plot_comp(plot_data, fit_par, fit_res, cutoff, fontsize_label=fontsize_label,
