@@ -895,16 +895,16 @@ class SpecPeWaterFitList(SpecPeWaterList):
         plot_data = {}
         for k,v in widths.items():
             if len(v) > 0:
-                plot_data[k] = np.transpose(v)
+                plot_data[str(k)] = np.transpose(v)
         plot_data['s_g'] = np.transpose(width_pars_s_g)
         plot_data['s_l'] = np.transpose(width_pars_s_l)
         #xdata = plot_data[0]**(-1/3)
         
         if color is None:
             color = {'s_g': 'grey', 's_l': 'limegreen',
-                     1: 'blue', 2: 'yellow', 3: 'midnightblue', 4: 'red'}
+                     '1': 'blue', '2': 'yellow', '3': 'midnightblue', '4': 'red'}
         labels = {'s_g': '$\sigma_G$', 's_l': '$\sigma_L$',
-                  1: '1 GL', 2: '2 GL', 3: '3 GL', 4: '4 GL'}
+                  '1': '1 GL', '2': '2 GL', '3': '3 GL', '4': '4 GL'}
         # create plot
         fig = plt.figure()
         # setup lower axis
@@ -912,7 +912,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         ax.set_xlabel('n$^{-1/3}$')
         ax.axis['bottom'].label.set_fontsize(fontsize_label)
         ax.set_xlim(xlim[0], xlim[1])
-        ax.set_ylabel('fwhm, width parameters (eV)')
+        ax.set_ylabel('fwhm, $\sigma_G$, $\sigma_L$ (eV)')
         ax.axis['left'].label.set_fontsize(fontsize_label)
         ax.axis['bottom'].major_ticklabels.set_fontsize(fontsize_label)
         ax.axis['left'].major_ticklabels.set_fontsize(fontsize_label)
@@ -927,7 +927,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         ax2.axis["right"].major_ticklabels.set_visible(False)
         ax2.grid(b=True)
         # plot data
-        for k,v in plot_data.items():
+        for k,v in sorted(plot_data.items()):
             xdata = v[0]**(-1/3)
             ax.plot(xdata, v[1], 's', label=labels[k], markersize=markersize, color=color[k])
 # linear fits make no sense here, its something asymptotic.
