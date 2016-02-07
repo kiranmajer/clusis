@@ -879,25 +879,25 @@ class SpecPeWaterFitList(SpecPeWaterList):
         fit_id = self._eval_fit_id()
         
         widths = {1: [], 2: [], 3: [], 4: []}
-        moments_s_g = []
-        moments_s_l = []
+        width_pars_s_g = []
+        width_pars_s_l = []
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
             csize = cs.mdata.data('clusterBaseUnitNumber')
             #width = np.sum(cs.mdata.data('fitPar')[-2:])
-            width, moments = cs._get_peakshape_par('par', fit_id, width=True, moments=True)
+            width, width_pars = cs._get_peakshape_par('par', fit_id, width=True, width_pars=True)
             peak_n = (len(cs.mdata.data('fitData')[fit_id]['par']) -2)/2
             #if 0.01 < width < 1.5:
             widths[peak_n].append([csize, width])
-            moments_s_g.append([csize, moments[0]])
-            moments_s_l.append([csize, moments[1]])
+            width_pars_s_g.append([csize, width_pars[0]])
+            width_pars_s_l.append([csize, width_pars[1]])
             del cs
         plot_data = {}
         for k,v in widths.items():
             if len(v) > 0:
                 plot_data[k] = np.transpose(v)
-        plot_data['s_g'] = np.transpose(moments_s_g)
-        plot_data['s_l'] = np.transpose(moments_s_l)
+        plot_data['s_g'] = np.transpose(width_pars_s_g)
+        plot_data['s_l'] = np.transpose(width_pars_s_l)
         #xdata = plot_data[0]**(-1/3)
         
         if color is None:
@@ -912,7 +912,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         ax.set_xlabel('n$^{-1/3}$')
         ax.axis['bottom'].label.set_fontsize(fontsize_label)
         ax.set_xlim(xlim[0], xlim[1])
-        ax.set_ylabel('fwhm, moments (eV)')
+        ax.set_ylabel('fwhm, width parameters (eV)')
         ax.axis['left'].label.set_fontsize(fontsize_label)
         ax.axis['bottom'].major_ticklabels.set_fontsize(fontsize_label)
         ax.axis['left'].major_ticklabels.set_fontsize(fontsize_label)
