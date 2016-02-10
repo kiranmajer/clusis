@@ -1000,6 +1000,7 @@ class ViewWater(ViewPes):
 #             pos_y-=0.05
 #         ax.text(pos_x, pos_y-0.025, 'fwhm: %.3f eV'%(peak_width),
 #                 transform = ax.transAxes, fontsize=fontsize, horizontalalignment=text_pos)
+        peak_values.sort()
         fit_values_str = '\n'.join(['{:.2f} {}'.format(p/time_unit, peakPos_unit) for p in peak_values])
         if show_fwhm:
             fit_values_str += '\n\nfwhm: {:.3f} eV'.format(self.spec._get_peakshape_par(fit_par, fit_id))
