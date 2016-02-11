@@ -1173,7 +1173,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
             if len(d2o_p1)==1 and len(d2o_p2)==1:
                 d2o_dE = np.abs(d2o_p1[0][1] - d2o_p2[0][1])
                 # add h20 ref
-                comp_list = SpecPeWaterFitList(self.cfg, clusterBaseUnitNumber=cn)
+                comp_list = SpecPeWaterFitList(self.cfg, clusterBaseUnitNumber=cn, fit_id=ref_fit_id)
                 for rs in comp_list.dbanswer:
                     h2o_isomers = {'2': [], '1a': [], '1b': [], 'vib': []}
                     crs = load_pickle(self.cfg,rs[str('pickleFile')])
