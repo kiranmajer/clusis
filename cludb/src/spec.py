@@ -630,13 +630,17 @@ class SpecPeWater(SpecPe):
         return self.multi_gl(x, par)-y
     
     def __err_multi_gl_trans(self, par, x, y, asym_par):
-        if np.all(par[1:-2:2] > 0): # keep peak maximum positive
+        #if np.all(par[1:-2:2] > 0): # keep peak maximum positive
+        if np.all(par > 0): # keep all par values positive
             return self.multi_gl_trans(x, par)-y
         else:
             return 1e6
         
     def __err_multi_gl_trans_asym(self, par, x, y, asym_par):
-        if np.all(par[1:-2:2] > 0) and par[-1] > par[-2]+asym_par: # keep peak maximum positive and sigma_g < sigma_l
+        """                                  ________                                
+        keep all par positive and sigma_l >= V 2*ln(2)*sigma_g + asym_par
+        """
+        if np.all(par > 0) and par[-1] >= np.sqrt(2*np.log(2))*par[-2] + asym_par:
             return self.multi_gl_trans(x, par)-y
         else:
             print('par reached bounderies.')
@@ -778,6 +782,7 @@ class SpecPeWater(SpecPe):
             fit_type = 'energy'
         if fit_par is None:
             fit_par = self.mdata.data('fitData')[ref_fit_id]['par']
+            fit_par = np.abs(fit_par) # needed for fit_par fitted without check for positive values
             #fit_par[-2:] = [0.2, 0.2]
         if cutoff is None:
             cutoff = self.mdata.data('fitData')[ref_fit_id]['cutoff']

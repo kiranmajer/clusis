@@ -136,6 +136,7 @@ class Mdata(object):
         
             
     def _rm_fit_data(self, fit_id):
+        "TODO: how do we handle 'default_fit'"
         if len(self.__mdata['fitData']) > 1:
             del self.__mdata['fitData'][fit_id]
         else:
