@@ -46,6 +46,9 @@ class View(object):
             self.fig = plt.figure() #figsize=size)
             #print 'Figure created.'
             self.ax = self.fig.add_subplot(1,1,1)
+        # actually show figure
+        self.fig.show()
+        'TODO: is this still needed since It is now in init?'
         self.comp_spec_data = {}
         
         
@@ -312,7 +315,7 @@ class View(object):
             self.ax.yaxis.set_major_locator(plt.NullLocator())
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
         if not export:          
-            self.fig.show()
+            self.fig.canvas.draw()
 
 
     def show_tof(self, xdata_key='auto', ydata_key='auto', time_label='Time',
@@ -344,7 +347,7 @@ class View(object):
             self.ax.yaxis.set_major_locator(plt.NullLocator())
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
         if not export:          
-            self.fig.show()
+            self.fig.canvas.draw()
         
         
     def add_plot(self, ax, xdata, ydata, color='blue', linestyle='-', linewidth=.5, file_id=None):
@@ -500,7 +503,7 @@ class ViewPes(View):
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
                                  fontsize=fontsize_clusterid)
         if not export:          
-            self.fig.show()
+            self.fig.canvas.draw()
 
         
     def show_tof(self, xdata_key='auto', ydata_key='auto', time_label='Flight Time',
@@ -515,7 +518,7 @@ class ViewPes(View):
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
                                  fontsize=fontsize_clusterid)        
         if not export:          
-            self.fig.show()
+            self.fig.canvas.draw()
         
 
     def show_ekin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None,
@@ -549,7 +552,7 @@ class ViewPes(View):
             self.ax.yaxis.set_major_locator(plt.NullLocator())  
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')    
         if not export:          
-            self.fig.show()
+            self.fig.canvas.draw()
 
 
     def show_ebin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None,
@@ -581,7 +584,7 @@ class ViewPes(View):
             self.ax.yaxis.set_major_locator(plt.NullLocator()) 
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
         if not export:          
-            self.fig.show()
+            self.fig.canvas.draw()
         
         
     def show_gaugeref(self):
@@ -903,7 +906,7 @@ class ViewPt(ViewPes):
         else:
             self.ax.yaxis.set_major_locator(plt.NullLocator()) 
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')     
-        self.fig.show()
+        self.fig.canvas.draw()
         
         
     def _show_energy_fit(self, xdata_key, fit_par, xlim, xlim_scale, n_xticks, single_peaks, show_ytics,
@@ -941,7 +944,7 @@ class ViewPt(ViewPes):
                                  fontsize=fontsize_clusterid) 
         self._addtext_gauge_par(self.ax, fit_par=fit_par, fontsize=fontsize_label, text_pos='right')            
         if not export:          
-            self.fig.show()    
+            self.fig.canvas.draw()    
         
         
     def show_ebin_fit(self, fit_par='fitPar', xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None,
@@ -954,7 +957,7 @@ class ViewPt(ViewPes):
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), fontsize=fontsize_clusterid) 
         self._addtext_gauge_par(self.ax, fit_par=fit_par, fontsize=fontsize_label)            
         if not export:          
-            self.fig.show()    
+            self.fig.canvas.draw()    
 
         
         
@@ -1183,7 +1186,7 @@ class ViewWater(ViewPes):
             self.ax.yaxis.set_major_locator(plt.NullLocator())
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
         if not export:          
-            self.fig.show()      
+            self.fig.canvas.draw()      
 
 
     def _show_energy_fit(self, plot_type, fit_par, fit_id, xlim, xlim_scale, n_xticks, show_ytics,
@@ -1237,7 +1240,7 @@ class ViewWater(ViewPes):
             self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_vpos='top',
                                fontsize=fontsize_label)            
         if not export:          
-            self.fig.show()  
+            self.fig.canvas.draw()  
 
 
     def show_ebin_fit(self, fit_par='par', fit_id='default_fit', fit_par_pos='left', show_fwhm=True,
@@ -1258,7 +1261,7 @@ class ViewWater(ViewPes):
             self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_pos='right',
                                text_vpos='top', fontsize=fontsize_label)          
         if not export:          
-            self.fig.show()  
+            self.fig.canvas.draw()  
 
 
 
@@ -1324,7 +1327,7 @@ class ViewMs(View):
             self.ax.yaxis.set_major_locator(plt.NullLocator())
         self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
         if not export:          
-            self.fig.show()
+            self.fig.canvas.draw()
         
         
         
