@@ -702,13 +702,16 @@ class SpecPeWaterFitList(SpecPeWaterList):
                            color=None, color_comp_data=None, show_own_data_legend=False):
         
         fit_id = self._eval_fit_id()
-        
+        # get linear parameters depending on water type
         if self.heavy_water:
-#             linpar = self.cfg.d2o_isoborder_linpar
             linpar = self.cfg.water_isomer_limits['D2O']
         else:
-#             linpar = self.cfg.h2o_isoborder_linpar
             linpar = self.cfg.water_isomer_limits['H2O']
+        # get linpar adopted for a certain fit_id, if any
+        if fit_id in linpar:
+            linpar = linpar[fit_id]
+        else:
+            linpar = linpar['default_fit']
         
          
         if color is None:
