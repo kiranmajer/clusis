@@ -524,10 +524,12 @@ class SpecPeWaterList(SpecPeList):
             
             del cs
         
-    def fit(self, fit_par, fit_id='default_fit', cutoff=None):
+    def fit(self, fit_par, fit_id='default_fit', cutoff=None, asym_par=None,
+            use_boundaries=True):
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
-            cs.fit(fitPar0=fit_par, fit_id=fit_id, cutoff=cutoff)
+            cs.fit(fitPar0=fit_par, fit_id=fit_id, cutoff=cutoff, asym_par=asym_par,
+                   use_boundaries=use_boundaries)
             cs.commit()
             del cs
 
@@ -1222,7 +1224,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
         ax.axhline(np.sqrt(2), color='black', lw=.4)
         # plot data
         if show_single_points:
-            ax.plot(plot_data[0], plot_data[1], 's', color='limegreen', markersize=markersize)
+            ax.plot(plot_data[0], plot_data[1], 's', color='limegreen',
+                    markersize=markersize)
         ax.plot(plot_data_mean[0], plot_data_mean[1], color='grey')
         ax.errorbar(plot_data_mean[0], plot_data_mean[1], plot_data_mean[2], fmt='s',
                     color=color, markersize=markersize, capsize=markersize/2)
@@ -1238,15 +1241,17 @@ class SpecPeWaterFitList(SpecPeWaterList):
             
         
         
-    def refit(self, new_fit_id=None, fit_par=None, cutoff=None, asym_par=None):
+    def refit(self, new_fit_id=None, fit_par=None, cutoff=None, asym_par=None,
+              use_boundaries=True):
         '''TODO: inherit from fit or use super()'''
         ref_fit_id = self._eval_fit_id()
         if not new_fit_id:
             new_fit_id = ref_fit_id
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
-            cs._refit(fit_id=new_fit_id, ref_fit_id=ref_fit_id, fit_par=fit_par, cutoff=cutoff,
-                      asym_par=asym_par, commit_after=True)
+            cs._refit(fit_id=new_fit_id, ref_fit_id=ref_fit_id, fit_par=fit_par,
+                      cutoff=cutoff, asym_par=asym_par, use_boundaries=use_boundaries,
+                      commit_after=True)
             #cs.commit()
             del cs
             
@@ -1262,18 +1267,22 @@ class SpecPeWaterFitList(SpecPeWaterList):
         for s in self.dbanswer:
             cs = load_pickle(self.cfg, s['pickleFile'])
             if gauge_ref is not None:
-                cs.gauge(gauge_ref, refit=refit, commit_after=commit_after, ignore_wavelength=ignore_wavelength)
+                cs.gauge(gauge_ref, refit=refit, commit_after=commit_after,
+                         ignore_wavelength=ignore_wavelength)
             elif 'gaugeRef' in cs.mdata.data().keys():
-                cs.gauge(cs.mdata.data('gaugeRef'), refit=refit, commit_after=commit_after, ignore_wavelength=ignore_wavelength)
+                cs.gauge(cs.mdata.data('gaugeRef'), refit=refit,
+                         commit_after=commit_after, ignore_wavelength=ignore_wavelength)
             else:
                 print('Spec has no gauge reference yet; skipping.')
             
             del cs
             
             
-    def export_single_plots(self, plot_fct, export_dir='~/test', latex_fname=None, overwrite=True, 
-                            linewidth=.8, layout=[8,4], size='latex', latex=True, firstpage_offset=0,
-                            xlabel_str='Binding energy (eV)', skip_plots=False, **keywords):
+    def export_single_plots(self, plot_fct, export_dir='~/test', latex_fname=None,
+                            overwrite=True, linewidth=.8, layout=[8,4], size='latex',
+                            latex=True, firstpage_offset=0,
+                            xlabel_str='Binding energy (eV)', skip_plots=False,
+                            **keywords):
         '''Specialized version using fit_id'''
         SpecList.export_single_plots(self, plot_fct=plot_fct, export_dir=export_dir,
                                      latex_fname=latex_fname, overwrite=overwrite,

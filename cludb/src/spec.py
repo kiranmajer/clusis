@@ -629,11 +629,15 @@ class SpecPeWater(SpecPe):
     def __err_multi_gl(self, par, x, y):
         return self.multi_gl(x, par)-y
     
+    def __err_multi_gl_trans_nb(self, par, x, y, asym_par):
+        return self.multi_gl_trans(x, par)-y 
+    
     def __err_multi_gl_trans(self, par, x, y, asym_par):
         #if np.all(par[1:-2:2] > 0): # keep peak maximum positive
         if np.all(par > 0): # keep all par values positive
             return self.multi_gl_trans(x, par)-y
         else:
+            print('par reached bounderies.')
             return 1e6
         
     def __err_multi_gl_trans_asym(self, par, x, y, asym_par):
@@ -681,7 +685,8 @@ class SpecPeWater(SpecPe):
             return fit_values
  
  
-    def __fit_gl_trans(self, xdata_key, ydata_key, fitPar0, cutoff, asym_par=None):
+    def __fit_gl_trans(self, xdata_key, ydata_key, fitPar0, cutoff, asym_par=None,
+                       use_boundaries=True):
         'TODO: merge with __fit_gl.'
 #        if gauged:
 #            tof_key = 'tofGauged'
@@ -692,15 +697,18 @@ class SpecPeWater(SpecPe):
 #            int_key = 'intensitySub'
 #        else:
 #            int_key = 'intensity'
-        if asym_par is None:
-            err_func = self.__err_multi_gl_trans
-        elif type(asym_par) in [int, float]:
-            if fitPar0[-1] > fitPar0[-2] + asym_par:
-                err_func = self.__err_multi_gl_trans_asym
+        if use_boundaries:
+            if asym_par is None:
+                err_func = self.__err_multi_gl_trans
+            elif type(asym_par) in [int, float]:
+                if fitPar0[-1] > fitPar0[-2] + asym_par:
+                    err_func = self.__err_multi_gl_trans_asym
+                else:
+                    raise ValueError('par0 does not fullfil boundary conditions.')
             else:
-                raise ValueError('par0 does not fullfil boundary conditions.')
+                raise ValueError('asym_par must be an integer or float or None')
         else:
-            raise ValueError('asym_par must be an integer or float or None')
+            err_func = self.__err_multi_gl_trans_nb
           
         if type(cutoff) in [int,float]:
             xdata = self.xdata[xdata_key][self.xdata[xdata_key]<cutoff]
@@ -711,17 +719,18 @@ class SpecPeWater(SpecPe):
         else:
             raise ValueError('Cutoff must be int or float')
         
-        fit_values = {'par0': fitPar0, 'cutoff': cutoff, 'xdataKey': xdata_key, 'ydataKey': ydata_key}
+        fit_values = {'par0': fitPar0, 'cutoff': cutoff, 'xdataKey': xdata_key,
+                      'ydataKey': ydata_key}
         try:
             p, covar, info, mess, ierr = leastsq(err_func,
                                                  fit_values['par0'],
-                                                 args=(xdata,ydata, asym_par),
+                                                 args=(xdata, ydata, asym_par),
                                                  full_output=True)
         except:
             print('Warning: Fit did not converge.')
             return fit_values
-            """TODO: This won't work. Better raise an error and leave handling of the start parameter
-            par0 to the higher fit method."""
+            """TODO: This won't work. Better raise an error and leave handling of
+            the start parameter par0 to the higher fit method."""
             raise
         else:
             # calculate chi squared
@@ -730,19 +739,26 @@ class SpecPeWater(SpecPe):
             return fit_values 
     
     
-    def fit(self, fitPar0, fit_id='default_fit', fit_type='time', xdata_key='auto', ydata_key='auto',
-            cutoff=None, asym_par=None):
+    def fit(self, fitPar0, fit_id='default_fit', fit_type='time', xdata_key='auto',
+            ydata_key='auto', cutoff=None, asym_par=None, use_boundaries=True):
         fitPar0 = np.array(fitPar0)
         # choose data_keys if not given
         if fit_type in ['time']:
-            key_deps = {'tof': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'],
-                        'tofGauged': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']}
-            xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key, key_deps=key_deps)
-            fit_values = self.__fit_gl_trans(xdata_key, ydata_key, fitPar0, cutoff, asym_par)
+            key_deps = {'tof': ['intensity', 'intensitySub', 'rawIntensity',
+                                'intensitySubRaw'],
+                        'tofGauged': ['intensity', 'intensitySub', 'rawIntensity',
+                                      'intensitySubRaw']}
+            xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key,
+                                                            ydata_key=ydata_key,
+                                                            key_deps=key_deps)
+            fit_values = self.__fit_gl_trans(xdata_key, ydata_key, fitPar0, cutoff,
+                                             asym_par, use_boundaries)
         elif fit_type in ['energy']:
             key_deps = {'ebin': ['jIntensity', 'jIntensitySub'],
                         'ebinGauged': ['jIntensityGauged', 'jIntensityGaugedSub']}
-            xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key, key_deps=key_deps)
+            xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key,
+                                                            ydata_key=ydata_key,
+                                                            key_deps=key_deps)
             fit_values = self.__fit_gl(xdata_key, ydata_key, fitPar0, cutoff)
         else:
             raise ValueError("fit_type must be one of 'time' or 'energy'.")
@@ -771,7 +787,7 @@ class SpecPeWater(SpecPe):
                     
                     
     def _refit(self, fit_id, ref_fit_id=None, fit_par=None, cutoff=None, asym_par=None,
-               commit_after=False):
+               use_boundaries=True, commit_after=False):
         if 'fitted' not in self.mdata.data('systemTags'):
             raise ValueError('This spec was not fitted before.')
         if not ref_fit_id:
@@ -792,7 +808,8 @@ class SpecPeWater(SpecPe):
                  fit_id=fit_id,
                  fit_type=fit_type,
                  cutoff=cutoff,
-                 asym_par=asym_par)
+                 asym_par=asym_par,
+                 use_boundaries=use_boundaries)
         if commit_after:
             self.commit()
         
