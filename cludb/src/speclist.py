@@ -695,10 +695,11 @@ class SpecPeWaterFitList(SpecPeWaterList):
 
 
     def compare_water_fits(self, plot_iso_borders=False, comp_data=None, cutoff=None,
-                           mark_iso=True, fname=None, export_dir=os.path.expanduser('~'),
-                           size=[20,14], fontsize_label=12, markersize=6, xlim=[0,0.42],
-                           ylim=[-4,0], ax2_ticks=[10, 20,40,80,150,350,1000, 5000], color=None,
-                           color_comp_data=None, show_own_data_legend=False):
+                           fit_must_include_size=1000, mark_iso=True, fname=None,
+                           export_dir=os.path.expanduser('~'), size=[20,14],
+                           fontsize_label=12, markersize=6, xlim=[0,0.42],
+                           ylim=[-4,0], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
+                           color=None, color_comp_data=None, show_own_data_legend=False):
         
         fit_id = self._eval_fit_id()
         
@@ -860,7 +861,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
 #             fit_res.append(std_err)            
             #print('now fitting:')
             #print(peak_set[2], peak_set[1])
-            if len(peak_set[2]) > 2: # use at least 3 points for linear fit
+            if len(peak_set[2]) > 2 and fit_must_include_size in peak_set[0]: # use at least 3 points for linear fit
                 fitpar, cov = np.polyfit(peak_set[2], peak_set[1], 1, cov=True)
                 fit_par.append(fitpar)
                 res=np.sqrt(np.diag(cov))
