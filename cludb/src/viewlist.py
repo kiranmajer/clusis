@@ -1,5 +1,5 @@
 import matplotlib as mpl
-import matplotlib.backends.backend_pdf as Pdf
+from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import scipy.constants as constants
 #import load
@@ -51,7 +51,7 @@ class ViewList(object):
               show_yticks=False, **keywords):
         if pdf:
             fname = os.path.join(os.path.expanduser('~'), 'export.pdf')
-            pdf_file = Pdf.PdfPages(fname)        
+            pdf_file = PdfPages(fname)        
         print('keywords:', keywords)
         # calc margins and padding
         hspace = 0.028*layout[0]
@@ -68,7 +68,8 @@ class ViewList(object):
         while plotcount < total_plots:
             # create page
             print('Plotting page', figidx -100)
-            fig = plt.figure(figidx, figsize=(size[0]/2.54, size[1]/2.54))
+            #fig = plt.figure(figidx, figsize=(size[0]/2.54, size[1]/2.54))
+            fig = plt.figure(figsize=(size[0]/2.54, size[1]/2.54))
             plt.subplots_adjust(left  = margin, right = 1-margin, bottom = margin+0.01, top = 1-margin,
                                 wspace = wspace, hspace = hspace)
             plotidx = 0
@@ -87,6 +88,8 @@ class ViewList(object):
                 fig.savefig(pdf_file, dpi=None, facecolor='w', edgecolor='w',
                             orientation='portrait', format='pdf') #papertype='a4', format='pdf')
                 plt.close(fig) # may produce some console noise (which can be ignored)
+            else:
+                fig.show()
             figidx += 1
         if pdf:    
             pdf_file.close()
