@@ -677,7 +677,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
          
         return border
 
-    
+    'TODO: replace with assort_fit_peaks from SpecPeWater'
     def _sort_peaks(self, size, linpar, peak_list, p_2, p_1a, p_1b, p_vib):
         for p in peak_list:
             if -1*p > self.__iso_border(linpar['2'], size**(-1/3)):
@@ -721,7 +721,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
         else:
             leg_label = ['Single GL Fit']
         if color_comp_data is None:
-            color_comp_data = ['lightblue', 'whitesmoke', 'black', 'yellow', 'violet', 'grey', 'navy']
+            color_comp_data = ['lightblue', 'whitesmoke', 'black', 'yellow', 'violet',
+                               'grey', 'navy']
                          
         def plot_comp(plot_data, fit_par, fit_res, cutoff, fontsize_label, markersize,
                       xlim, ylim, ax2_ticks, comp_data=None):
@@ -760,21 +761,22 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     ex_str += '\n{:.2f}$\pm${:.2f}eV'.format(par_set[1], res_set[1])
                 bbox_props = {'boxstyle': 'square', 'facecolor': 'white'} 
                 # TODO: text position relative to axis?
-                ax.text(0.015, -0.2 + ylim[1], ex_str, verticalalignment='top', fontsize=fontsize_label,
-                        bbox=bbox_props)
+                ax.text(0.015, -0.2 + ylim[1], ex_str, verticalalignment='top',
+                        fontsize=fontsize_label,bbox=bbox_props)
             # plot data
             idx = 0
             own_data = []
             for peak_set in plot_data:
                 # mind the ',' after ods, because plot returns a list
-                ods, = ax.plot(peak_set[2], peak_set[1], 's', markersize=markersize, color=color[idx],
-                        label=leg_label[idx])
+                ods, = ax.plot(peak_set[2], peak_set[1], 's', markersize=markersize,
+                               color=color[idx], label=leg_label[idx])
                 own_data.append(ods)
                 idx += 1
             # optionally add legend for our data points
             if show_own_data_legend and not comp_data:
                 # handles argument requires matplotlib >= 1.4(.2)
-                own_legend = plt.legend(handles=own_data, loc=4, fontsize=fontsize_label, numpoints=1)
+                own_legend = plt.legend(handles=own_data, loc=4, fontsize=fontsize_label,
+                                        numpoints=1)
                 ax.add_artist(own_legend)
             # plot comparison data
             if comp_data is not None:
@@ -794,8 +796,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
                              'neumark_iso3': 'Isomer III (Neumark)',
                              'water_jets': 'Water jets (several)'
                              }
-                    eds, = ax.plot(peak_set[0], -1*peak_set[1], 'o', label=label[key], markersize=markersize,
-                            color=color_comp_data[idx])
+                    eds, = ax.plot(peak_set[0], -1*peak_set[1], 'o', label=label[key],
+                                   markersize=markersize, color=color_comp_data[idx])
                     ext_data.append(eds)
                     idx += 1
                 ax.legend(handles=ext_data, loc=4, fontsize=fontsize_label, numpoints=1)
@@ -828,12 +830,16 @@ class SpecPeWaterFitList(SpecPeWaterList):
         p_vib = []
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
-            peak_list = [cs.ebin(p) for p in cs.mdata.data('fitData')[fit_id]['par'][:-2:2]]
+            #peak_list = [cs.ebin(p) for p in cs.mdata.data('fitData')[fit_id]['par'][:-2:2]]
+            peak_list = [cs.ebin(peak[0]) for peak in cs._get_fit_peaks(fit_par_type='par',
+                                                                        fit_id=fit_id)]
             if mark_iso:
-                self._sort_peaks(cs.mdata.data('clusterBaseUnitNumber'), linpar, peak_list, p_2, p_1a, p_1b, p_vib)
+                self._sort_peaks(cs.mdata.data('clusterBaseUnitNumber'), linpar,
+                                 peak_list, p_2, p_1a, p_1b, p_vib)
             else:
                 for p in peak_list:
                     p_1b.append([cs.mdata.data('clusterBaseUnitNumber'), p])
+            
             del cs
          
         #print('p_* are:', p_2, p_1a, p_1b, p_vib)
@@ -891,7 +897,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
             cs = load_pickle(self.cfg,s[str('pickleFile')])
             csize = cs.mdata.data('clusterBaseUnitNumber')
             #width = np.sum(cs.mdata.data('fitPar')[-2:])
-            width, width_pars = cs._get_peakshape_par('par', fit_id, width=True, width_pars=True)
+            width, width_pars = cs._get_peakshape_par('par', fit_id, width=True,
+                                                      width_pars=True)
             peak_n = (len(cs.mdata.data('fitData')[fit_id]['par']) -2)/2
             #if 0.01 < width < 1.5:
             widths[peak_n].append([csize, width])
@@ -1169,9 +1176,12 @@ class SpecPeWaterFitList(SpecPeWaterList):
             d2o_isomers = {'2': [], '1a': [], '1b': [], 'vib': []} 
             cs = load_pickle(self.cfg, s[str('pickleFile')])
             cn = cs.mdata.data('clusterBaseUnitNumber')
-            peak_list = [cs.ebin(p) for p in cs.mdata.data('fitData')[fit_id]['par'][:-2:2]]
+            #peak_list = [cs.ebin(p) for p in cs.mdata.data('fitData')[fit_id]['par'][:-2:2]]
+            peak_list = [cs.ebin(peak[0]) for peak in cs._get_fit_peaks(fit_par_type='par',
+                                                                        fit_id=fit_id)]
             # sort d2o isomers
-            self._sort_peaks(cn, self.cfg.water_isomer_limits['D2O'], peak_list,
+            d2o_lin_par = cs._get_isomer_limits_linpar(fit_id)
+            self._sort_peaks(cn, d2o_lin_par, peak_list,
                              d2o_isomers['2'], d2o_isomers['1a'], d2o_isomers['1b'],
                              d2o_isomers['vib'])
             d2o_p1 = d2o_isomers[offset_peaks[0]]
@@ -1179,12 +1189,17 @@ class SpecPeWaterFitList(SpecPeWaterList):
             if len(d2o_p1)==1 and len(d2o_p2)==1:
                 d2o_dE = np.abs(d2o_p1[0][1] - d2o_p2[0][1])
                 # add h20 ref
-                comp_list = SpecPeWaterFitList(self.cfg, clusterBaseUnitNumber=cn, fit_id=ref_fit_id)
+                comp_list = SpecPeWaterFitList(self.cfg, clusterBaseUnitNumber=cn,
+                                               fit_id=ref_fit_id)
                 for rs in comp_list.dbanswer:
                     h2o_isomers = {'2': [], '1a': [], '1b': [], 'vib': []}
                     crs = load_pickle(self.cfg,rs[str('pickleFile')])
-                    ref_peak_list = [crs.ebin(p) for p in crs.mdata.data('fitData')[ref_fit_id]['par'][:-2:2]]
-                    self._sort_peaks(cn, self.cfg.water_isomer_limits['H2O'], ref_peak_list,
+                    #ref_peak_list = [crs.ebin(p) for p in crs.mdata.data('fitData')[ref_fit_id]['par'][:-2:2]]
+                    ref_peak_list = [crs.ebin(peak[0]) for peak in 
+                                     crs._get_fit_peaks(fit_par_type='par',
+                                                        fit_id=ref_fit_id)]
+                    h2o_lin_par = cs._get_isomer_limits_linpar(fit_id)
+                    self._sort_peaks(cn, h2o_lin_par, ref_peak_list,
                                      h2o_isomers['2'], h2o_isomers['1a'], h2o_isomers['1b'],
                                      h2o_isomers['vib'])
                     h2o_p1 = h2o_isomers[offset_peaks[0]]

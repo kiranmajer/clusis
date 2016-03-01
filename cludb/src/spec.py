@@ -812,6 +812,13 @@ class SpecPeWater(SpecPe):
                  use_boundaries=use_boundaries)
         if commit_after:
             self.commit()
+            
+    def _get_fit_peaks(self, fit_par_type, fit_id):
+        """
+        Returns fit peaks as zipped tupels (peak_pos, peak_height).
+        """ 
+        return zip(self.mdata.data('fitData')[fit_id][fit_par_type][:-2:2],
+                   self.mdata.data('fitData')[fit_id][fit_par_type][1:-2:2])
         
     def _get_peakshape_par(self, fit_par, fit_id, width=True, width_pars=False):
         '''
@@ -830,7 +837,9 @@ class SpecPeWater(SpecPe):
             return [s_g, s_l]
     
     def __isomer_binding_energy_limit(self, lpar, inv_size):
-        '''Returns the binding energy limit at inv_size for an isomer class spicified by lpar''' 
+        """
+        Returns the binding energy limit at inv_size for an isomer class spicified by lpar
+        """ 
         limit = None
         i = 1
         while i < len(lpar) and inv_size:
@@ -848,12 +857,23 @@ class SpecPeWater(SpecPe):
         return limit
     
     
-    def _assort_fit_peaks(self, fit_id, fit_par_key='par'):
-        '''returns a dict containing {'isomer class name': (ebin, intensity), ...}'''
-        inv_size = self.mdata.data('clusterBaseUnitNumber')**(-1/3)
+    def _get_isomer_limits_linpar(self, fit_id):
         lin_par = self.cfg.water_isomer_limits[self.mdata.data('clusterBaseUnit')]
-        peaks = zip(self.mdata.data('fitData')[fit_id][fit_par_key][:-2:2],
-                    self.mdata.data('fitData')[fit_id][fit_par_key][1:-2:2])
+        if fit_id in lin_par:
+            lin_par = lin_par[fit_id]
+        else:
+            lin_par = lin_par['default_fit']
+            
+        return lin_par
+    
+    
+    def _assort_fit_peaks(self, fit_id, fit_par_type='par'):
+        """
+        Returns a dict containing {'isomer class name': (ebin, intensity), ...}
+        """
+        inv_size = self.mdata.data('clusterBaseUnitNumber')**(-1/3)
+        lin_par = self._get_isomer_limits_linpar(fit_id)
+        peaks = self._get_fit_peaks(fit_par_type=fit_par_type, fit_id=fit_id)
         isomer_classes = {}
         for peak in peaks:
             # TODO: find corect unit of peak[0] (tof, ebin, etc.)
