@@ -734,7 +734,10 @@ class SpecPeWater(SpecPe):
             raise
         else:
             # calculate chi squared
-            chisq = sum(info['fvec']*info['fvec'])
+            #chisq = sum(info['fvec']*info['fvec'])
+            ss_err=(info['fvec']**2).sum()
+            ss_tot=((ydata-ydata.mean())**2).sum()
+            chisq=1-(ss_err/ss_tot)
             fit_values.update({'par': p, 'covar': covar, 'info': [chisq, info, mess, ierr]})
             return fit_values 
     
@@ -764,11 +767,17 @@ class SpecPeWater(SpecPe):
             raise ValueError("fit_type must be one of 'time' or 'energy'.")
         
         print('Fit converged with:')
-        print('   chi squared:', fit_values['info'][0])
-        print('   reduced chi squared:', fit_values['info'][0]/(len(self.xdata[xdata_key]) - len(fit_values['par'])))
+        print('   R squared:', fit_values['info'][0])
+        #print('   reduced chi squared:', fit_values['info'][0]/(len(self.xdata[xdata_key]) - len(fit_values['par'])))
         print('Updating mdata...')
         self.mdata.update({'fitData': {fit_id: fit_values}})
         self.mdata.add_tag('fitted', tagkey='systemTags')
+        # test asymmetry
+        s_g, s_l = self._get_peakshape_par(fit_par='par', fit_id=fit_id, width=False,
+                                           width_pars=True)
+        if np.sqrt(2*np.log(2))*s_g > s_l:
+            print('Warning: Peak shape has reversed asymmetry!')
+            print('sqrt(2*ln2)*s_g > s_l: ', np.sqrt(2*np.log(2))*s_g, s_l)
         
         
     def remove_fit(self, fit_id):
