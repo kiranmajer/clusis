@@ -196,7 +196,11 @@ class Db(object):
             else:
                 tags.append(inTags)
             for t in tags:
-                tagsQuery+='tags GLOB "*%s*" AND '%(t,)
+                # tuples are treated as non-truncated tag queries
+                if isinstance(t, tuple):
+                    tagsQuery+='tags GLOB "*<|>{}<|>*" AND '.format(t[0])
+                else:
+                    tagsQuery+='tags GLOB "*{}*" AND '.format(t)
             return tagsQuery
                 
         def sqlformat_NotInTags(notInTags, key):
@@ -207,7 +211,11 @@ class Db(object):
             else:
                 tags.append(notInTags)
             for t in tags:
-                tagsQuery+='tags NOT GLOB "*%s*" AND '%(t,)
+                # tuples are treated as non-truncated tag queries
+                if isinstance(t, tuple):
+                    tagsQuery+='tags NOT GLOB "*<|>{}<|>*" AND '.format(t[0])
+                else:
+                    tagsQuery+='tags NOT GLOB "*{}*" AND '.format(t)
             return tagsQuery
             
         def sqlformat_DatFileName(datFileName, key):

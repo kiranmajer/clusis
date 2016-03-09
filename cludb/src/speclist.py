@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
-from scipy.stats import linregress
+#from scipy.stats import linregress
 from itertools import combinations
 
 
@@ -555,7 +555,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         if not 'fitted' in inTags_list:
             inTags_list.append('fitted')
         if self.fit_id and self.fit_id not in inTags_list:
-            inTags_list.append(self.fit_id)  
+            inTags_list.append((self.fit_id,))  
         notInTags_list = []
         if notInTags is not None:
             if type(notInTags) is str:
