@@ -97,8 +97,8 @@ class Mdata(object):
         if current_tags.count(tag) == 0:
             current_tags.append(tag)
             self.__update_tags()
-        else:
-            print('Tag already exists.')
+#         else:
+#             print('Tag already exists.')
     
     def rename_tag(self, parents, tag, newTag, tagkey='userTags'):
         'TODO: better parent handling.'
@@ -127,7 +127,7 @@ class Mdata(object):
                 
     def __add_fit_data(self, fdata_dict):
         mdata = self.__mdata
-        print('Got fit data.')
+        #print('Got fit data.')
         if 'fitData' not in mdata:
             mdata['fitData'] = {}
         mdata['fitData'].update(fdata_dict)

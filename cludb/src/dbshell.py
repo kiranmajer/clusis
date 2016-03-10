@@ -7,7 +7,7 @@ import time
 
 class Db(object):
     def __init__(self, dbName, cfg):
-        print('__init__: Init Db instance.')
+        #print('__init__: Init Db instance.')
         self.__dbName = dbName
         dbFileName = '%s.db' % dbName
         self.__cfg = cfg
@@ -17,20 +17,20 @@ class Db(object):
 #        sqlite3.register_adapter(time.struct_time, self.__timeAdapter)
 #        sqlite3.register_converter(str('TIME'), self.__timeConverter)               
         self.__db = sqlite3.connect(self.__dbFile, detect_types=sqlite3.PARSE_DECLTYPES)
-        print('Db connection open')
+        #print('Db connection open')
         self.__db.row_factory = sqlite3.Row
         
     def __del__(self):
         self.__db.close()
-        print('__del__: Db connection closed.')
+        #print('__del__: Db connection closed.')
         
     def __enter__(self):
-        print('__enter__: Entering Db instance.')
+        #print('__enter__: Entering Db instance.')
         return self
     
     def __exit__(self, exc_type, exc_value, traceback):
         self.__db.close()
-        print('__exit__: Db connection closed.')        
+        #print('__exit__: Db connection closed.')        
         
     
 #    def __timeAdapter(self, stime):

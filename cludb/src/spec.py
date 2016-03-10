@@ -765,11 +765,11 @@ class SpecPeWater(SpecPe):
             fit_values = self.__fit_gl(xdata_key, ydata_key, fitPar0, cutoff)
         else:
             raise ValueError("fit_type must be one of 'time' or 'energy'.")
-        
+        print('### Fitting {} ...'.format(self.mdata.data('datFileName')))
         print('Fit converged with:')
         print('   R squared:', fit_values['info'][0])
         #print('   reduced chi squared:', fit_values['info'][0]/(len(self.xdata[xdata_key]) - len(fit_values['par'])))
-        print('Updating mdata...')
+        #print('Updating mdata...')
         self.mdata.update({'fitData': {fit_id: fit_values}})
         self.mdata.add_tag('fitted', tagkey='systemTags')
         # test asymmetry
