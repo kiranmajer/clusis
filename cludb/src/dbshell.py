@@ -198,7 +198,7 @@ class Db(object):
             for t in tags:
                 # tuples are treated as non-truncated tag queries
                 if isinstance(t, tuple):
-                    tagsQuery+='tags GLOB "*<|>{}<|>*" AND '.format(t[0])
+                    tagsQuery+='tags GLOB "*|>{}<|*" AND '.format(t[0])
                 else:
                     tagsQuery+='tags GLOB "*{}*" AND '.format(t)
             return tagsQuery
@@ -213,7 +213,7 @@ class Db(object):
             for t in tags:
                 # tuples are treated as non-truncated tag queries
                 if isinstance(t, tuple):
-                    tagsQuery+='tags NOT GLOB "*<|>{}<|>*" AND '.format(t[0])
+                    tagsQuery+='tags NOT GLOB "*|>{}<|*" AND '.format(t[0])
                 else:
                     tagsQuery+='tags NOT GLOB "*{}*" AND '.format(t)
             return tagsQuery
@@ -397,6 +397,7 @@ class Db(object):
                 if row['tags'] is None:
                     print('')
                 else:
+                    #print("row['tags']: ", row['tags'])
                     tag_list = list(row['tags'])
                     tag_list.sort()
                     print('<|>'.join(tag_list))

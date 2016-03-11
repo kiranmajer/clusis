@@ -14,12 +14,15 @@ def ensure_path(p):
         
 
 def list_adapter(l):
-    return '<|>'.join(l)
+    list_to_text = '<||>'.join(l)
+    list_to_text = '|>' + list_to_text + '<|'
+    return list_to_text
 
 def list_converter(s):
     '''Not sure why we get byte out while put str in.'''
-    s = s.decode('utf-8')
-    return s.split('<|>')
+    text_to_list = s.decode('utf-8')
+    text_to_list = text_to_list.lstrip('|>').rstrip('<|').split('<||>')
+    return text_to_list
 
 def setup_sqlite3():
     sqlite3.register_adapter(list, list_adapter)
