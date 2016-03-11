@@ -701,7 +701,7 @@ class SpecPeWater(SpecPe):
             if asym_par is None:
                 err_func = self.__err_multi_gl_trans
             elif type(asym_par) in [int, float]:
-                if fitPar0[-1] > fitPar0[-2] + asym_par:
+                if fitPar0[-1] >= np.sqrt(2*np.log(2))*fitPar0[-2] + asym_par:
                     err_func = self.__err_multi_gl_trans_asym
                 else:
                     raise ValueError('par0 does not fullfil boundary conditions.')
