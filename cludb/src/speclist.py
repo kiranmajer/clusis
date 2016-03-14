@@ -883,7 +883,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
         return fit_par, fit_res
 
 
-    def compare_peak_widths(self, fname=None, export_dir=os.path.expanduser('~'),
+    def compare_peak_widths(self, comp_data=None, color_comp_data=None, fname=None,
+                            export_dir=os.path.expanduser('~'),
                             size=[20,14], fontsize_label=12, markersize=6, xlim=[0,0.42],
                             ylim=[0,1.2], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
                             color=None):
@@ -918,6 +919,9 @@ class SpecPeWaterFitList(SpecPeWaterList):
                      '1': 'blue', '2': 'yellow', '3': 'midnightblue', '4': 'red'}
         labels = {'s_g': '$\sigma_G$', 's_l': '$\sigma_L$',
                   '1': '1 GL', '2': '2 GL', '3': '3 GL', '4': '4 GL'}
+        if color_comp_data is None:
+            color_comp_data = ['red', 'black', 'yellow', 'violet',
+                               'grey', 'navy']
         # create plot
         fig = plt.figure()
         # setup lower axis
@@ -957,8 +961,31 @@ class SpecPeWaterFitList(SpecPeWaterList):
 #                 xdata_fit = np.arange(0, 1, 0.1)
 #                 lin_fit = np.poly1d(fitpar)
 #                 ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')
-        leg = ax.legend(loc=0, fontsize=fontsize_label, numpoints=1)
-        leg.get_title().set_fontsize(fontsize_label)
+        if not comp_data:
+            leg = ax.legend(loc=0, fontsize=fontsize_label, numpoints=1)
+            leg.get_title().set_fontsize(fontsize_label)
+        # plot comparison data
+        if comp_data is not None:
+            idx = 0
+            ext_data = []
+            for key, width_set in sorted(comp_data.items()):
+#                     if idx < 4:
+#                         marker ='o'
+#                     else:
+#                         marker='D'
+                # TODO: this is shoulden't be hard coded
+                label = {'bowen_iso1_sg_1fit': '$\sigma_g$ (Bowen)',
+                         'bowen_iso1_sl_1fit': '$\sigma_l$ (Bowen)',
+                         'bowen_iso1_fwhm_1fit': '1 GL (Bowen)',
+                         'bowen_iso1_sg_2fit': '$\sigma_g$ 2 fits (Bowen)',
+                         'bowen_iso1_sl_2fit': '$\sigma_l$ 2 fits (Bowen)',
+                         'bowen_iso1_fwhm_2fit': '2 fits (Bowen)',
+                         }
+                eds, = ax.plot(width_set[0], width_set[1], 'o', label=label[key],
+                               markersize=markersize, color=color_comp_data[idx])
+                ext_data.append(eds)
+                idx += 1
+            ax.legend(handles=ext_data, loc=0, fontsize=fontsize_label, numpoints=1)
         if fname is None:
             fig.show()
         else:
