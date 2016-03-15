@@ -980,6 +980,12 @@ class SpecPeWaterFitList(SpecPeWaterList):
                          'bowen_iso1_sg_2fit': '$\sigma_g$ 2 fits (Bowen)',
                          'bowen_iso1_sl_2fit': '$\sigma_l$ 2 fits (Bowen)',
                          'bowen_iso1_fwhm_2fit': '2 fits (Bowen)',
+                         'bowen_d2o_sg_1fit': '$\sigma_g$ (Bowen)',
+                         'bowen_d2o_sl_1fit': '$\sigma_l$ (Bowen)',
+                         'bowen_d2o_fwhm_1fit': '1 GL (Bowen)',
+                         'bowen_d2o_sg_2fit': '$\sigma_g$ 2 fits (Bowen)',
+                         'bowen_d2o_sl_2fit': '$\sigma_l$ 2 fits (Bowen)',
+                         'bowen_d2o_fwhm_2fit': '2 fits (Bowen)',
                          }
                 eds, = ax.plot(width_set[0], width_set[1], 'o', label=label[key],
                                markersize=markersize, color=color_comp_data[idx])
