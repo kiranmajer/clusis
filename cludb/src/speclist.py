@@ -712,7 +712,16 @@ class SpecPeWaterFitList(SpecPeWaterList):
             linpar = linpar[fit_id]
         else:
             linpar = linpar['default_fit']
+            
+        # disable marking isomer classes for single fit
+        # TODO: Again, hard coded values are bad!
+        if fit_id == 'single_gl':
+            mark_iso = False
+            color = ['blue']
         
+        # show own legend if no comp data
+        if not comp_data:
+            show_own_data_legend = True
          
         if color is None:
             color = ['indigo', 'limegreen', 'blue', 'red']
@@ -788,13 +797,16 @@ class SpecPeWaterFitList(SpecPeWaterList):
 #                     else:
 #                         marker='D'
                     # TODO: this is shoulden't be hard coded
-                    label = {'bowen_iso1_table': 'Isomer I (Bowen)',
+                    label = {'bowen_iso1_origin': 'Isomer I (Bowen)',
                              'bowen_iso1_stretch': 'Vibrational (Bowen)',
                              'neumark_iso1': 'Isomer I (Neumark)',
                              'neumark_iso1_high_press': 'Isomer I [Ne] (Neumark)',
                              'neumark_iso2': 'Isomer II (Neumark)',
                              'neumark_iso3': 'Isomer III (Neumark)',
-                             'water_jets': 'Water jets (several)'
+                             'water_jets': 'Water jets (several)',
+                             'bowen_d2o_origin_1fit': 'Isomer I [1 fit] (Bowen)',
+                             'bowen_d2o_origin_2fit': 'Isomer I [2 fit] (Bowen)',
+                             'bowen_d2o_stretch': 'Vibrational (Bowen)',
                              }
                     eds, = ax.plot(peak_set[0], -1*peak_set[1], 'o', label=label[key],
                                    markersize=markersize, color=color_comp_data[idx])
