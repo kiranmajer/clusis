@@ -93,6 +93,7 @@ class SpecList(object):
         'TODO: presets are mere personal. For a general approach probably not suitable.'
         presets = {'p1': [14, 14*3/7],
                    'p1h': [14, 9],
+                   'p1s': [11,7],
                    'p2': [7, 7*5/7],
                    'p3': [4.8, 4.8*5/6]}
         if isinstance(size, str) and size in presets.keys():
@@ -699,7 +700,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
                            export_dir=os.path.expanduser('~'), size=[20,14],
                            fontsize_label=12, markersize=6, xlim=[0,0.42],
                            ylim=[-4,0], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
-                           color=None, color_comp_data=None, show_own_data_legend=False):
+                           color=None, color_comp_data=None, show_own_data_legend=False,
+                           show_sigma=False):
         
         fit_id = self._eval_fit_id()
         # get linear parameters depending on water type
@@ -718,6 +720,9 @@ class SpecPeWaterFitList(SpecPeWaterList):
         if fit_id == 'single_gl':
             mark_iso = False
             color = ['blue']
+            
+        if show_sigma:
+            color.extend(['limegreen', 'grey'])
         
         # show own legend if no comp data
         if not comp_data:
@@ -729,6 +734,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
             leg_label = ['Isomer II', 'Isomer Ia', 'Isomer Ib', 'Vibrational']
         else:
             leg_label = ['Single GL Fit']
+        if show_sigma:
+            leg_label = ['-VDE', '-VDE$+\sqrt{2\ln(2)}\sigma_G$', '-VDE$-\sigma_L$']
         if color_comp_data is None:
             color_comp_data = ['lightblue', 'whitesmoke', 'black', 'yellow', 'violet',
                                'grey', 'navy']
@@ -741,7 +748,10 @@ class SpecPeWaterFitList(SpecPeWaterList):
             ax.set_xlabel('n$^{-1/3}$')
             ax.axis['bottom'].label.set_fontsize(fontsize_label)
             ax.set_xlim(xlim[0], xlim[1])
-            ax.set_ylabel('-VDE (eV)')
+            if show_sigma:
+                ax.set_ylabel('location of special curve points (eV)')
+            else:
+                ax.set_ylabel('-VDE (eV)')
             ax.axis['left'].label.set_fontsize(fontsize_label)
             ax.axis['bottom'].major_ticklabels.set_fontsize(fontsize_label)
             ax.axis['left'].major_ticklabels.set_fontsize(fontsize_label)
@@ -757,6 +767,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
             ax2.grid(b=True)
             # write fit values
             if len(fit_par) > 0:
+                fit_par.sort(key=lambda fp: fp[-1], reverse=True)
                 if cutoff is None:
                     ex_str = 'Extrapolation to bulk:'
                 else:
@@ -840,11 +851,20 @@ class SpecPeWaterFitList(SpecPeWaterList):
         p_1a = []
         p_1b = []
         p_vib = []
+        p_sg = []
+        p_sl = []
         for s in self.dbanswer:
             cs = load_pickle(self.cfg,s[str('pickleFile')])
             #peak_list = [cs.ebin(p) for p in cs.mdata.data('fitData')[fit_id]['par'][:-2:2]]
             peak_list = [cs.ebin(peak[0]) for peak in cs._get_fit_peaks(fit_par_type='par',
                                                                         fit_id=fit_id)]
+            shape_par = cs._get_peakshape_par(fit_par='par', fit_id=fit_id, width=False,
+                                              width_pars=True)
+            sg, sl = shape_par[0], shape_par[1]
+            for p in peak_list:
+                    p_sg.append([cs.mdata.data('clusterBaseUnitNumber'),
+                                 p - np.sqrt(2*np.log(2))*sg])
+                    p_sl.append([cs.mdata.data('clusterBaseUnitNumber'), p + sl])
             if mark_iso:
                 self._sort_peaks(cs.mdata.data('clusterBaseUnitNumber'), linpar,
                                  peak_list, p_2, p_1a, p_1b, p_vib)
@@ -855,7 +875,9 @@ class SpecPeWaterFitList(SpecPeWaterList):
             del cs
          
         #print('p_* are:', p_2, p_1a, p_1b, p_vib)
-        plot_data = [ps for ps in [p_2, p_1a, p_1b, p_vib] if len(ps) > 0]
+        if not show_sigma:
+            p_sg, p_sl = [], []
+        plot_data = [ps for ps in [p_2, p_1a, p_1b, p_vib, p_sg, p_sl] if len(ps) > 0]
         plot_data = [np.array(ps).transpose() for ps in plot_data]
         plot_data = [np.vstack((ps, ps[0]**(-1/3))) for ps in plot_data]
         for ps in plot_data:
