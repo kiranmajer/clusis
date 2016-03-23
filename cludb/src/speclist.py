@@ -108,6 +108,9 @@ class SpecList(object):
         if twin_axes:
             figure.subplots_adjust(left=1.3/size[0], bottom=0.8/size[1],
                                    right=1-0.15/size[0], top=1-0.85/size[1])
+        elif size == presets['p1s']:
+            figure.subplots_adjust(left=1.2/size[0], bottom=0.9/size[1],
+                                   right=1-0.15/size[0], top=1-0.15/size[1])
         else:
             figure.subplots_adjust(left=0.08, bottom=0.095, right=0.995, top=0.98)
 #         'TODO: some of these margins are font size related, so they need to be adapted accordingly'
