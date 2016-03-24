@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
+import matplotlib.ticker as ticker
 #from scipy.stats import linregress
 from itertools import combinations
 
@@ -924,7 +925,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                             export_dir=os.path.expanduser('~'),
                             size=[20,14], fontsize_label=12, markersize=6, xlim=[0,0.42],
                             ylim=[0,1.2], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
-                            color=None):
+                            color=None, show_legend=True, n_xticks=None):
         
         fit_id = self._eval_fit_id()
         
@@ -971,6 +972,11 @@ class SpecPeWaterFitList(SpecPeWaterList):
         ax.axis['bottom'].major_ticklabels.set_fontsize(fontsize_label)
         ax.axis['left'].major_ticklabels.set_fontsize(fontsize_label)
         ax.set_ylim(ylim[0], ylim[1])
+        if n_xticks:
+            #xticks = ax.get_xticks()
+            ax.xaxis.set_major_locator(ticker.MaxNLocator(n_xticks))
+        else:
+            ax.xaxis.set_major_locator(ticker.AutoLocator())
         # setup upper axis
         ax2 = ax.twin()
         ax2.set_xticks(np.array(ax2_ticks)**(-1/3))
@@ -998,12 +1004,12 @@ class SpecPeWaterFitList(SpecPeWaterList):
 #                 xdata_fit = np.arange(0, 1, 0.1)
 #                 lin_fit = np.poly1d(fitpar)
 #                 ax.plot(xdata_fit, lin_fit(xdata_fit), '--', color='grey')
-        if not comp_data:
+        if not comp_data and show_legend:
             leg = ax.legend(loc=0, fontsize=fontsize_label, numpoints=1)
             leg.get_title().set_fontsize(fontsize_label)
         # plot comparison data
         if comp_data is not None:
-            idx = 0
+            idx = 0 and show_legend
             ext_data = []
             for key, width_set in sorted(comp_data.items()):
 #                     if idx < 4:
