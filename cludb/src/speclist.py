@@ -705,7 +705,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                            fontsize_label=12, markersize=6, xlim=[0,0.42],
                            ylim=[-4,0], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
                            color=None, color_comp_data=None, show_own_data_legend=False,
-                           show_sigma=False):
+                           show_sigma=False, generic_legend_labels=False):
         
         fit_id = self._eval_fit_id()
         # get linear parameters depending on water type
@@ -735,7 +735,10 @@ class SpecPeWaterFitList(SpecPeWaterList):
         if color is None:
             color = ['indigo', 'limegreen', 'blue', 'red']
         if mark_iso:
-            leg_label = ['Isomer II', 'Isomer Ia', 'Isomer Ib', 'Vibrational']
+            if generic_legend_labels:
+                leg_label = ['Peak II', 'Peak Ia', 'Peak Ib', 'Peak HE']
+            else:
+                leg_label = ['Isomer II', 'Isomer Ia', 'Isomer Ib', 'Vibrational']
         else:
             leg_label = ['Single GL Fit']
         if show_sigma:
