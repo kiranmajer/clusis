@@ -87,7 +87,7 @@ class SpecList(object):
             del cs
             
     def _export(self, fname='export.pdf', export_dir=os.path.expanduser('~'), size='p1h',
-                figure=None, twin_axes=True):
+                figure=None, twin_axes=True, xy_labels=False):
         if export_dir.startswith('~'):
             export_dir = os.path.expanduser(export_dir)
         f = os.path.join(export_dir, fname)
@@ -109,7 +109,7 @@ class SpecList(object):
         if twin_axes:
             figure.subplots_adjust(left=1.3/size[0], bottom=0.8/size[1],
                                    right=1-0.15/size[0], top=1-0.85/size[1])
-        elif size == presets['p1s']:
+        elif xy_labels: # size == presets['p2']:
             figure.subplots_adjust(left=1.2/size[0], bottom=0.9/size[1],
                                    right=1-0.15/size[0], top=1-0.15/size[1])
         else:
@@ -1247,7 +1247,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                                  show_single_points=False, fname=None,
                                  export_dir=os.path.expanduser('~'), size=[20,14],
                                  fontsize_label=12, markersize=6, color='blue', xlim=None,
-                                 ylim=None):
+                                 ylim=None, error_lw=1):
         # this only makes sense for heavy water
         if not self.heavy_water:
             raise ValueError('Only applicable for heavy water.')
@@ -1334,12 +1334,12 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     markersize=markersize)
         ax.plot(plot_data_mean[0], plot_data_mean[1], color='grey')
         ax.errorbar(plot_data_mean[0], plot_data_mean[1], plot_data_mean[2], fmt='s',
-                    color=color, markersize=markersize, capsize=markersize/2)
+                    color=color, markersize=markersize, capsize=markersize/2, lw=error_lw)
         if fname is None:
             fig.show()
         else:
             self._export(fname=fname, export_dir=export_dir, size=size, figure=fig,
-                         twin_axes=False)
+                         twin_axes=False, xy_labels=True)
          
         return peak_stats, energy_ratio_by_size
             
