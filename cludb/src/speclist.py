@@ -704,7 +704,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                            export_dir=os.path.expanduser('~'), size=[20,14],
                            fontsize_label=12, markersize=6, xlim=[0,0.42],
                            ylim=[-4,0], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
-                           color=None, color_comp_data=None, show_own_data_legend=False,
+                           color=None, color_comp_data=None, show_own_data_legend=True,
                            show_sigma=False, generic_legend_labels=False):
         
         fit_id = self._eval_fit_id()
@@ -728,9 +728,9 @@ class SpecPeWaterFitList(SpecPeWaterList):
         if show_sigma:
             color.extend(['limegreen', 'grey'])
         
-        # show own legend if no comp data
-        if not comp_data:
-            show_own_data_legend = True
+#         # show own legend if no comp data
+#         if not comp_data:
+#             show_own_data_legend = True
          
         if color is None:
             color = ['indigo', 'limegreen', 'blue', 'red']
