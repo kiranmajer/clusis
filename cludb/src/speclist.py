@@ -1075,7 +1075,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                 ax.plot(v['T'], -1*np.array(v['ebin']), 's', markersize=markersize,
                         color=self.cfg.water_isomer_color_map[iso], label=iso)
             
-            leg = ax.legend(title='Isomer Classes:', loc=1, fontsize=fontsize_label,
+            leg = ax.legend(title='Peaks:', loc=1, fontsize=fontsize_label,
                             numpoints=1)
             leg.get_title().set_fontsize(fontsize_label)
             # setup diff(T) plot
@@ -1195,49 +1195,67 @@ class SpecPeWaterFitList(SpecPeWaterList):
                 self._export(fname=fname, export_dir=export_dir, size=size, figure=fig)
             
             
-#     def plot_temp_peakheight_ratio(self, ratio_keys=['1a', '1b'], fontsize_clusterid=28,
-#                                    fontsize_label=12, markersize=6, xlim=[0,300], ylim=[0,2]):
-#         
-#         def plot_single_size(temp, ratios, cluster_id):
-#             fig = plt.figure()
-#             # setup lower axis
-#             ax = fig.add_subplot(1, 1, 1)
-#             ax.set_xlabel('Temperature (K)', fontsize=fontsize_label)
-#             ax.tick_params(labelsize=fontsize_label)
-#             ax.plot(temp, ratios, 's', markersize=markersize)
-#             ax.plot(temp, ratios, color='grey')
-#             ax.set_xlim(xlim)
-#             ax.set_ylim(ylim)
-#             ax.axhline(1, color='black', lw=.4)
-#             ax.text(0.05, 0.9, cluster_id, transform = ax.transAxes, fontsize=fontsize_clusterid,
-#                     horizontalalignment='left', verticalalignment='top')
-# #             leg = ax.legend(title='Isomer Classes:', loc=0, fontsize=fontsize_label,
-# #                             numpoints=1)
-# #             leg.get_title().set_fontsize(fontsize_label)    
-#             fig.show()
-#         
-#         ratio_dict = {}    
-#         for s in self.dbanswer:
-#             cs = load_pickle(self.cfg, s[str('pickleFile')])
-#             cn = cs.mdata.data('clusterBaseUnitNumber')
-#             ct = cs.mdata.data('trapTemp')
-#             cic = cs._assort_fit_peaks()
-#             for c in combinations(ratio_keys):
-#                 if c[0] in cic.keys() and c[1] in cic.keys():
-#                     ratio_str = '{}/{}'.format(c[0], c[1])
-#                     ratio =cic[c[0]][1]/cic[c[1]][1]
-#                     if cn not in ratio_dict.keys():
-#                         ratio_dict[cn] = {'id': cs.view._pretty_format_clusterid(),
-#                                           ratio_str: {'T': [], 'ratio': []}
-#                                           }
-#                     if ratio_str in ratio_dict[cn].keys():
-#                         ratio_dict[cn][ratio_str]['T'].append(ct)
-#                         ratio_dict[cn][ratio_str]['ratio'].append(ratio)
-#                     else:
-#                         ratio_dict[cn][ratio_str] = {'T': [], 'ratio': []}
-#                 
-#         for s,v in ratio_dict.items():
-#             plot_single_size(v['T'], v['ratio'], v['id'])
+    def plot_temp_lineshape(self, fit_ids=['2_gl', 'multi_gl'], fontsize_clusterid=28,
+                            fontsize_label=12, markersize=6, xlim=[0,300], ylim=None):
+         
+        def plot_single_size(ls_par):
+            cluster_id = ls_par.pop('id')
+            colors = {'fwhm': {'2_gl': 'yellow', 'multi_gl': 'midnightblue'},
+                      'sg': {'2_gl': 'grey', 'multi_gl': 'darkgrey'},
+                      'sl': {'2_gl': 'limegreen', 'multi_gl': 'green'},
+                      }
+            
+            fig = plt.figure()
+            # setup lower axis
+            ax = fig.add_subplot(1, 1, 1)
+            ax.set_xlabel('Temperature (K)', fontsize=fontsize_label)
+            ax.tick_params(labelsize=fontsize_label)
+            for fit_id, t_par in ls_par.items():
+                ax.plot(t_par['T'], t_par['fwhm'], 's', markersize=markersize,
+                        label='fwhm ({})'.format(fit_id), color=colors['fwhm'][fit_id])
+                ax.plot(t_par['T'], t_par['sg'], 's', markersize=markersize,
+                        label='$\sigma_G$ ({})'.format(fit_id), color=colors['sg'][fit_id])
+                ax.plot(t_par['T'], t_par['sl'], 's', markersize=markersize,
+                        label='$\sigma_L$ ({})'.format(fit_id), color=colors['sl'][fit_id])
+                ax.plot(t_par['T'], t_par['fwhm'], color='grey')
+                ax.plot(t_par['T'], t_par['sg'], color='grey')
+                ax.plot(t_par['T'], t_par['sl'], color='grey')
+            ax.set_xlim(xlim)
+            if ylim:
+                ax.set_ylim(ylim)
+            #ax.axhline(1, color='black', lw=.4)
+            ax.text(0.05, 0.9, cluster_id, transform = ax.transAxes, fontsize=fontsize_clusterid,
+                    horizontalalignment='left', verticalalignment='top')
+            leg = ax.legend(title='Peak shape parameter:', loc=0, fontsize=fontsize_label,
+                            numpoints=1)
+            leg.get_title().set_fontsize(fontsize_label)    
+            fig.show()
+         
+        ls_par_dict = {}    
+        for s in self.dbanswer:
+            cs = load_pickle(self.cfg, s[str('pickleFile')])
+            cn = cs.mdata.data('clusterBaseUnitNumber')
+            ct = cs.mdata.data('trapTemp')
+            
+            
+            # create cluster size key
+            if cn not in ls_par_dict:
+                ls_par_dict[cn] = {}
+                # add cluster id
+                ls_par_dict[cn]['id'] = cs.view._pretty_format_clusterid()
+            
+            for fid in fit_ids:
+                if fid not in ls_par_dict[cn]:
+                    ls_par_dict[cn][fid] = {'T': [], 'fwhm': [], 'sg': [], 'sl': []}
+                cfwhm, csigmas = cs._get_peakshape_par('par', fid, width=True, width_pars=True)
+                ls_par_dict[cn][fid]['T'].append(ct)
+                ls_par_dict[cn][fid]['fwhm'].append(cfwhm)
+                ls_par_dict[cn][fid]['sg'].append(csigmas[0])
+                ls_par_dict[cn][fid]['sl'].append(csigmas[1])
+
+                 
+        for v in ls_par_dict.values():
+            plot_single_size(v)
             
                 
             
