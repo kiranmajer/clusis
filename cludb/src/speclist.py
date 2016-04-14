@@ -1192,44 +1192,68 @@ class SpecPeWaterFitList(SpecPeWaterList):
                 fig.show()
             else:
                 fname = '{}_w{}.pdf'.format(fname_prefix, n)
-                self._export(fname=fname, export_dir=export_dir, size=size, figure=fig)
+                self._export(fname=fname, export_dir=export_dir, size=size, figure=fig,
+                             twin_axes=False, xy_labels=True)
             
             
-    def plot_temp_lineshape(self, fit_ids=['2_gl', 'multi_gl'], fontsize_clusterid=28,
-                            fontsize_label=12, markersize=6, xlim=[0,300], ylim=None):
+    def plot_temp_lineshape(self, fit_ids=['2_gl', 'multi_gl'], fname_prefix=None,
+                            export_dir=os.path.expanduser('~'), size=[20,14],
+                            fontsize_clusterid=28, fontsize_label=12, markersize=6,
+                            xlim=[0,425], ylim=None, id_pos='right', show_legend=True):
          
-        def plot_single_size(ls_par):
+        def plot_single_size(ls_par, n, id_pos, show_legend):
             cluster_id = ls_par.pop('id')
             colors = {'fwhm': {'2_gl': 'yellow', 'multi_gl': 'midnightblue'},
-                      'sg': {'2_gl': 'grey', 'multi_gl': 'darkgrey'},
+                      'sg': {'2_gl': 'grey', 'multi_gl': 'black'},
                       'sl': {'2_gl': 'limegreen', 'multi_gl': 'green'},
                       }
+            fid_labels = {'2_gl': '2 GL', 'multi_gl': '3 GL'}
             
             fig = plt.figure()
             # setup lower axis
             ax = fig.add_subplot(1, 1, 1)
             ax.set_xlabel('Temperature (K)', fontsize=fontsize_label)
             ax.tick_params(labelsize=fontsize_label)
+            ax.set_ylabel('fwhm, $\sigma_G$, $\sigma_L$ (eV)', fontsize=fontsize_label)
+            ax.grid()
             for fit_id, t_par in ls_par.items():
-                ax.plot(t_par['T'], t_par['fwhm'], 's', markersize=markersize,
-                        label='fwhm ({})'.format(fit_id), color=colors['fwhm'][fit_id])
-                ax.plot(t_par['T'], t_par['sg'], 's', markersize=markersize,
-                        label='$\sigma_G$ ({})'.format(fit_id), color=colors['sg'][fit_id])
-                ax.plot(t_par['T'], t_par['sl'], 's', markersize=markersize,
-                        label='$\sigma_L$ ({})'.format(fit_id), color=colors['sl'][fit_id])
-                ax.plot(t_par['T'], t_par['fwhm'], color='grey')
-                ax.plot(t_par['T'], t_par['sg'], color='grey')
-                ax.plot(t_par['T'], t_par['sl'], color='grey')
+                temp = []
+                fwhm =[]
+                sg = []
+                sl = []
+                for t, pars in sorted(t_par.items()):
+                    temp.append(t)
+                    fwhm.append(np.mean(pars['fwhm']))
+                    sg.append(np.mean(pars['sg']))
+                    sl.append(np.mean(pars['sl']))
+                ax.plot(temp, fwhm, color='grey')
+                ax.plot(temp, sg, color='grey')
+                ax.plot(temp, sl, color='grey')
+                ax.plot(temp, fwhm, 's', markersize=markersize,
+                        label='fwhm ({})'.format(fid_labels[fit_id]),
+                        color=colors['fwhm'][fit_id])
+                ax.plot(temp, sg, 's', markersize=markersize,
+                        label='$\sigma_G$ ({})'.format(fid_labels[fit_id]),
+                        color=colors['sg'][fit_id])
+                ax.plot(temp, sl, 's', markersize=markersize,
+                        label='$\sigma_L$ ({})'.format(fid_labels[fit_id]),
+                        color=colors['sl'][fit_id])
             ax.set_xlim(xlim)
             if ylim:
                 ax.set_ylim(ylim)
             #ax.axhline(1, color='black', lw=.4)
-            ax.text(0.05, 0.9, cluster_id, transform = ax.transAxes, fontsize=fontsize_clusterid,
-                    horizontalalignment='left', verticalalignment='top')
-            leg = ax.legend(title='Peak shape parameter:', loc=0, fontsize=fontsize_label,
-                            numpoints=1)
-            leg.get_title().set_fontsize(fontsize_label)    
-            fig.show()
+            ax.text(0.98, 0.93, cluster_id, transform = ax.transAxes, fontsize=fontsize_clusterid,
+                    horizontalalignment='right', verticalalignment='top')
+            if show_legend:
+                leg = ax.legend(title='Peak shape parameter:', loc=4, fontsize=fontsize_label,
+                                numpoints=1)
+                leg.get_title().set_fontsize(fontsize_label)    
+            if fname_prefix is None:
+                fig.show()
+            else:
+                fname = '{}_w{}.pdf'.format(fname_prefix, n)
+                self._export(fname=fname, export_dir=export_dir, size=size, figure=fig,
+                             twin_axes=False, xy_labels=True)
          
         ls_par_dict = {}    
         for s in self.dbanswer:
@@ -1246,16 +1270,18 @@ class SpecPeWaterFitList(SpecPeWaterList):
             
             for fid in fit_ids:
                 if fid not in ls_par_dict[cn]:
-                    ls_par_dict[cn][fid] = {'T': [], 'fwhm': [], 'sg': [], 'sl': []}
+                    ls_par_dict[cn][fid] = {} #'T': [], 'fwhm': [], 'sg': [], 'sl': []}
+                if ct not in ls_par_dict[cn][fid]:
+                    ls_par_dict[cn][fid][ct] = {'fwhm': [], 'sg': [], 'sl': []}
                 cfwhm, csigmas = cs._get_peakshape_par('par', fid, width=True, width_pars=True)
-                ls_par_dict[cn][fid]['T'].append(ct)
-                ls_par_dict[cn][fid]['fwhm'].append(cfwhm)
-                ls_par_dict[cn][fid]['sg'].append(csigmas[0])
-                ls_par_dict[cn][fid]['sl'].append(csigmas[1])
+                #ls_par_dict[cn][fid]['T'].append(ct)
+                ls_par_dict[cn][fid][ct]['fwhm'].append(cfwhm)
+                ls_par_dict[cn][fid][ct]['sg'].append(csigmas[0])
+                ls_par_dict[cn][fid][ct]['sl'].append(csigmas[1])
 
                  
-        for v in ls_par_dict.values():
-            plot_single_size(v)
+        for n, v in ls_par_dict.items():
+            plot_single_size(v, n, id_pos=id_pos, show_legend=show_legend)
             
                 
             
