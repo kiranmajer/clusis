@@ -110,7 +110,7 @@ class SpecList(object):
             figure.subplots_adjust(left=1.3/size[0], bottom=0.8/size[1],
                                    right=1-0.15/size[0], top=1-0.85/size[1])
         elif xy_labels: # size == presets['p2']:
-            figure.subplots_adjust(left=1.2/size[0], bottom=0.9/size[1],
+            figure.subplots_adjust(left=1.25/size[0], bottom=0.9/size[1],
                                    right=1-0.15/size[0], top=1-0.15/size[1])
         else:
             figure.subplots_adjust(left=0.08, bottom=0.095, right=0.995, top=0.98)
@@ -1052,20 +1052,24 @@ class SpecPeWaterFitList(SpecPeWaterList):
             self._export(fname=fname, export_dir=export_dir, size=size, figure=fig)
  
     
-    def plot_temp_peakpos(self, iso_keys=['1a', '1b'], xlim=[0, 350], fname_prefix=None,
+    def plot_temp_peakpos(self, iso_keys=['1a', '1b'], xlim=[0, 425], fname_prefix=None,
                           export_dir=os.path.expanduser('~'), size=[20,14],
-                          fontsize_clusterid=28, fontsize_label=12, markersize=6):
+                          fontsize_clusterid=28, fontsize_label=12, markersize=6,
+                          ylim_pp=[-2.2,-1.2], ylim_ph=[20,80]):
         
         fit_id = self._eval_fit_id()
                        
-        def plot_single_size(temp_ebin, temp_diff, temp_ratio):
+        def plot_single_size(temp_ebin, temp_diff, temp_ratio, ylim_pp, ylim_ph):
+            iso_names ={'2': 'II', '1a': 'Ia', '1b': 'Ib', 'vib': 'HE'}
             fig = plt.figure()
             # setup ebin(T) plot
             ax = fig.add_subplot(3, 1, 1)
+            fig.subplots_adjust(hspace=0.15)
             #ax.set_xlabel('Temperature (K)', fontsize=fontsize_label)
             ax.tick_params(labelsize=fontsize_label)
             ax.set_xlim(xlim)
-            ax.set_ylim([-2.6,-1.2])
+            ax.set_ylim(ylim_pp)
+            ax.set_ylabel('-VDE (eV)', fontsize=fontsize_label)
             ax.grid()
             cluster_id = temp_ebin.pop('id')
             ax.text(0.05, 0.9, cluster_id, transform = ax.transAxes, fontsize=fontsize_clusterid,
@@ -1073,41 +1077,54 @@ class SpecPeWaterFitList(SpecPeWaterList):
             for iso, v in temp_ebin.items():
                 ax.plot(v['T'], -1*np.array(v['ebin']), color='grey')
                 ax.plot(v['T'], -1*np.array(v['ebin']), 's', markersize=markersize,
-                        color=self.cfg.water_isomer_color_map[iso], label=iso)
+                        color=self.cfg.water_isomer_color_map[iso], label=iso_names[iso])
             
             leg = ax.legend(title='Peaks:', loc=1, fontsize=fontsize_label,
                             numpoints=1)
             leg.get_title().set_fontsize(fontsize_label)
             # setup diff(T) plot
             if temp_diff:
+                ax.set_xticklabels([])
                 ax_diff = fig.add_subplot(3, 1, 2)
                 #ax_diff.set_xlabel('Temperature (K)', fontsize=fontsize_label)
                 ax_diff.tick_params(labelsize=fontsize_label)
                 ax_diff.axhline(0, color='black', lw=.4)
                 ax_diff.set_xlim(ax.get_xlim())
-                ax_diff.set_ylim([-.15, .15])
+                ax_diff.set_ylim([-15, 15])
+                ax_diff.set_ylabel('$\Delta E_{T} - \Delta E_{10K}$ (10 meV)',
+                                   fontsize=fontsize_label)
                 ax_diff.grid()
                 for diff, v in temp_diff.items():
-                    ax_diff.plot(v['T'], v['diff'], color='grey')
-                    ax_diff.plot(v['T'], v['diff'], 's', markersize=markersize,
-                                 label=diff)
+                    p1, p2 = diff.split('_')[1], diff.split('_')[2]
+                    ax_diff.plot(v['T'], np.array(v['diff'])*100, color='grey')
+                    ax_diff.plot(v['T'], np.array(v['diff'])*100, 's', markersize=markersize,
+                                 label='VDE({})-VDE({})'.format(iso_names[p2],iso_names[p1]))
                 leg_diff = ax_diff.legend(title='Differences:', loc=1, fontsize=fontsize_label,
                                           numpoints=1)
                 leg_diff.get_title().set_fontsize(fontsize_label)
             # setup ratio(T) plot
             if temp_ratio:
+                ax_diff.set_xticklabels([])
                 ax_ratio = fig.add_subplot(3, 1, 3)
                 ax_ratio.set_xlabel('Temperature (K)', fontsize=fontsize_label)
                 ax_ratio.tick_params(labelsize=fontsize_label)
-                ax_ratio.axhline(.5, color='black', lw=.4)
+                ax_ratio.axhline(50, color='black', lw=.4)
                 ax_ratio.set_xlim(ax.get_xlim())
-                ax_ratio.set_ylim([0, 1])
+                ax_ratio.set_ylim(ylim_ph)
+                ax_ratio.set_ylabel('prop. int. (%)', fontsize=fontsize_label)
                 ax_ratio.grid()
                 for ratio, v in temp_ratio.items():
-                    ax_ratio.plot(v['T'], v['ratio'], color='grey')
-                    ax_ratio.plot(v['T'], v['ratio'], 's', markersize=markersize,
-                                  label=ratio)
-                leg_ratio = ax_ratio.legend(title='Ratios:', loc=1, fontsize=fontsize_label,
+                    ax_ratio.plot(v['T'], np.array(v['ratio'])*100, color='grey')
+                    ax_ratio.plot(v['T'], (1-np.array(v['ratio']))*100, color='grey')
+                    iso1 = ratio.split('/')[0]
+                    ax_ratio.plot(v['T'], np.array(v['ratio'])*100, 's', markersize=markersize,
+                                  color=self.cfg.water_isomer_color_map[iso1],
+                                  label=iso_names[iso1])
+                    iso2 = ratio.split('/')[1]
+                    ax_ratio.plot(v['T'], (1-np.array(v['ratio']))*100, 's', markersize=markersize,
+                                  color=self.cfg.water_isomer_color_map[iso2],
+                                  label=iso_names[iso2])
+                leg_ratio = ax_ratio.legend(title='Peaks:', loc=1, fontsize=fontsize_label,
                                             numpoints=1)
                 leg_ratio.get_title().set_fontsize(fontsize_label)
             
@@ -1186,7 +1203,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
             else:
                 rd = None
                 
-            fig = plot_single_size(e, dd, rd)
+            fig = plot_single_size(e, dd, rd, ylim_pp=ylim_pp, ylim_ph=ylim_ph)
                 
             if fname_prefix is None:
                 fig.show()
