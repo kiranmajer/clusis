@@ -1220,7 +1220,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
          
         def plot_single_size(ls_par, n, id_pos, show_legend):
             cluster_id = ls_par.pop('id')
-            colors = {'fwhm': {'2_gl': 'yellow', 'multi_gl': 'midnightblue'},
+            colors = {'fwhm': {'2_gl': 'blue', 'multi_gl': 'midnightblue'},
                       'sg': {'2_gl': 'grey', 'multi_gl': 'black'},
                       'sl': {'2_gl': 'limegreen', 'multi_gl': 'green'},
                       }
@@ -1236,25 +1236,34 @@ class SpecPeWaterFitList(SpecPeWaterList):
             for fit_id, t_par in ls_par.items():
                 temp = []
                 fwhm =[]
+                fwhm_dev = []
                 sg = []
+                sg_dev = []
                 sl = []
+                sl_dev = []
                 for t, pars in sorted(t_par.items()):
                     temp.append(t)
                     fwhm.append(np.mean(pars['fwhm']))
+                    fwhm_dev.append(np.std(pars['fwhm']))
                     sg.append(np.mean(pars['sg']))
+                    sg_dev.append(np.std(pars['sg']))
                     sl.append(np.mean(pars['sl']))
+                    sl_dev.append(np.std(pars['sl']))
                 ax.plot(temp, fwhm, color='grey')
                 ax.plot(temp, sg, color='grey')
                 ax.plot(temp, sl, color='grey')
-                ax.plot(temp, fwhm, 's', markersize=markersize,
-                        label='fwhm ({})'.format(fid_labels[fit_id]),
-                        color=colors['fwhm'][fit_id])
-                ax.plot(temp, sg, 's', markersize=markersize,
-                        label='$\sigma_G$ ({})'.format(fid_labels[fit_id]),
-                        color=colors['sg'][fit_id])
-                ax.plot(temp, sl, 's', markersize=markersize,
-                        label='$\sigma_L$ ({})'.format(fid_labels[fit_id]),
-                        color=colors['sl'][fit_id])
+                #ax.plot(temp, fwhm, 's', markersize=markersize,
+                #        label='fwhm ({})'.format(fid_labels[fit_id]),
+                #        color=colors['fwhm'][fit_id])
+                ax.errorbar(temp, fwhm, fwhm_dev, fmt='s', markersize=markersize,
+                            label='fwhm ({})'.format(fid_labels[fit_id]),
+                            color=colors['fwhm'][fit_id], capsize=markersize/2)
+                ax.errorbar(temp, sg, sg_dev, fmt='s', markersize=markersize,
+                            label='$\sigma_G$ ({})'.format(fid_labels[fit_id]),
+                            color=colors['sg'][fit_id], capsize=markersize/2)
+                ax.errorbar(temp, sl, sl_dev, fmt='s', markersize=markersize,
+                            label='$\sigma_L$ ({})'.format(fid_labels[fit_id]),
+                            color=colors['sl'][fit_id], capsize=markersize/2)
             ax.set_xlim(xlim)
             if ylim:
                 ax.set_ylim(ylim)
