@@ -1125,16 +1125,36 @@ class SpecPeWaterFitList(SpecPeWaterList):
                 ax_ratio.set_ylabel('prop. int. (%)', fontsize=fontsize_label)
                 ax_ratio.grid()
                 for ratio, v in temp_ratio.items():
-                    ax_ratio.plot(v['T'], np.array(v['ratio'])*100, color='grey')
-                    ax_ratio.plot(v['T'], (1-np.array(v['ratio']))*100, color='grey')
+                    temp_mean = []
+                    ratio_mean = []
+                    ratio_dev = []
+                    for t, ratios in sorted(v['mean'].items()):
+                        temp_mean.append(t)
+                        ratio_mean.append(np.mean(ratios))
+                        ratio_dev.append(np.std(ratios))
+                    # plot grey guides
+                    ax_ratio.plot(temp_mean, np.array(ratio_mean)*100, color='grey')
+                    ax_ratio.plot(temp_mean, (1-np.array(ratio_mean))*100, color='grey')
                     iso1 = ratio.split('/')[0]
-                    ax_ratio.plot(v['T'], np.array(v['ratio'])*100, 's', markersize=markersize,
-                                  color=self.cfg.water_isomer_color_map[iso1],
-                                  label=iso_names[iso1])
                     iso2 = ratio.split('/')[1]
-                    ax_ratio.plot(v['T'], (1-np.array(v['ratio']))*100, 's', markersize=markersize,
-                                  color=self.cfg.water_isomer_color_map[iso2],
-                                  label=iso_names[iso2])
+                    if plot_mean:
+                        ax_ratio.errorbar(temp_mean, np.array(ratio_mean)*100,
+                                          np.array(ratio_dev)*100,
+                                          fmt='s', markersize=markersize,
+                                          color=self.cfg.water_isomer_color_map[iso1],
+                                          label=iso_names[iso1])
+                        ax_ratio.errorbar(temp_mean, (1-np.array(ratio_mean))*100,
+                                          np.array(ratio_dev)*100,
+                                          fmt='s', markersize=markersize,
+                                          color=self.cfg.water_isomer_color_map[iso2],
+                                          label=iso_names[iso2])
+                    else:
+                        ax_ratio.plot(v['T'], np.array(v['ratio'])*100, 's', markersize=markersize,
+                                      color=self.cfg.water_isomer_color_map[iso1],
+                                      label=iso_names[iso1])
+                        ax_ratio.plot(v['T'], (1-np.array(v['ratio']))*100, 's', markersize=markersize,
+                                      color=self.cfg.water_isomer_color_map[iso2],
+                                      label=iso_names[iso2])
                 leg_ratio = ax_ratio.legend(title='Peaks:', loc=1, fontsize=fontsize_label,
                                             numpoints=1)
                 leg_ratio.get_title().set_fontsize(fontsize_label)
@@ -1203,8 +1223,13 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     if ratio_str in ratio_dict[cn].keys():
                         ratio_dict[cn][ratio_str]['T'].append(ct)
                         ratio_dict[cn][ratio_str]['ratio'].append(ratio)
+                        if ct in ratio_dict[cn][ratio_str]['mean']:
+                            ratio_dict[cn][ratio_str]['mean'][ct].append(ratio)
+                        else:
+                            ratio_dict[cn][ratio_str]['mean'][ct] = [ratio]
                     else:
-                        ratio_dict[cn][ratio_str] = {'T': [ct], 'ratio': [ratio]}
+                        ratio_dict[cn][ratio_str] = {'T': [ct], 'ratio': [ratio],
+                                                     'mean': {ct: [ratio]}}
                         
         for n, e in ebin_dict.items():
 #             if n in diff_dict.keys():
