@@ -1055,11 +1055,11 @@ class SpecPeWaterFitList(SpecPeWaterList):
     def plot_temp_peakpos(self, iso_keys=['1a', '1b'], xlim=[0, 425], fname_prefix=None,
                           export_dir=os.path.expanduser('~'), size=[20,14],
                           fontsize_clusterid=28, fontsize_label=12, markersize=6,
-                          ylim_pp=[-2.2,-1.2], ylim_ph=[20,80]):
+                          ylim_pp=[-2.2,-1.2], ylim_ph=[20,80], plot_mean=True):
         
         fit_id = self._eval_fit_id()
                        
-        def plot_single_size(temp_ebin, temp_diff, temp_ratio, ylim_pp, ylim_ph):
+        def plot_single_size(temp_ebin, temp_diff, temp_ratio, ylim_pp, ylim_ph, plot_mean):
             iso_names ={'2': 'II', '1a': 'Ia', '1b': 'Ib', 'vib': 'HE'}
             fig = plt.figure()
             # setup ebin(T) plot
@@ -1075,9 +1075,20 @@ class SpecPeWaterFitList(SpecPeWaterList):
             ax.text(0.05, 0.9, cluster_id, transform = ax.transAxes, fontsize=fontsize_clusterid,
                     horizontalalignment='left', verticalalignment='top')
             for iso, v in temp_ebin.items():
-                ax.plot(v['T'], -1*np.array(v['ebin']), color='grey')
-                ax.plot(v['T'], -1*np.array(v['ebin']), 's', markersize=markersize,
-                        color=self.cfg.water_isomer_color_map[iso], label=iso_names[iso])
+                temp_mean = []
+                vde_mean = []
+                vde_dev = []
+                for t, vdes in sorted(v['mean'].items()):
+                    temp_mean.append(t)
+                    vde_mean.append(np.mean(vdes))
+                    vde_dev.append(np.std(vdes))
+                ax.plot(temp_mean, -1*np.array(vde_mean), color='grey')
+                if plot_mean:
+                    ax.errorbar(temp_mean, -1*np.array(vde_mean), vde_dev, fmt='s', markersize=markersize,
+                                 color=self.cfg.water_isomer_color_map[iso], label=iso_names[iso])
+                else:
+                    ax.plot(v['T'], -1*np.array(v['ebin']), 's', markersize=markersize,
+                            color=self.cfg.water_isomer_color_map[iso], label=iso_names[iso])
             
             leg = ax.legend(title='Peaks:', loc=1, fontsize=fontsize_label,
                             numpoints=1)
@@ -1144,13 +1155,19 @@ class SpecPeWaterFitList(SpecPeWaterList):
                 if iso in cic.keys():
                     if cn not in ebin_dict.keys():
                         ebin_dict[cn] = {'id': cs.view._pretty_format_clusterid(),
-                                         iso: {'T': [ct], 'ebin': [cic[iso][0]]}
+                                         iso: {'T': [ct], 'ebin': [cic[iso][0]],
+                                               'mean': {ct: [cic[iso][0]]}}
                                          }
                     if iso in ebin_dict[cn].keys():
                         ebin_dict[cn][iso]['T'].append(ct)
                         ebin_dict[cn][iso]['ebin'].append(cic[iso][0])
+                        if ct in ebin_dict[cn][iso]['mean']:
+                            ebin_dict[cn][iso]['mean'][ct].append(cic[iso][0])
+                        else:
+                            ebin_dict[cn][iso]['mean'][ct] = [cic[iso][0]]
                     else:
-                        ebin_dict[cn][iso] = {'T': [ct], 'ebin': [cic[iso][0]]}
+                        ebin_dict[cn][iso] = {'T': [ct], 'ebin': [cic[iso][0]],
+                                              'mean': {ct: [cic[iso][0]]}}
                         
             # populate diff_dict
             i = 0
@@ -1203,7 +1220,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
             else:
                 rd = None
                 
-            fig = plot_single_size(e, dd, rd, ylim_pp=ylim_pp, ylim_ph=ylim_ph)
+            fig = plot_single_size(e, dd, rd, ylim_pp=ylim_pp, ylim_ph=ylim_ph,
+                                   plot_mean=plot_mean)
                 
             if fname_prefix is None:
                 fig.show()
@@ -1251,11 +1269,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     for i in range(len(pars['fwhm'])):
                         temp.append(t)
                         fwhm.append(pars['fwhm'][i])
-#                     for spsg in pars['sg']:
-#                         temp.append(t)
                         sg.append(pars['sg'][i])
-#                     for spsl in pars['sl']:
-#                         temp.append(t)
                         sl.append(pars['sl'][i])
                     temp_mean.append(t)
                     fwhm_mean.append(np.mean(pars['fwhm']))
