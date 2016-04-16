@@ -1216,9 +1216,10 @@ class SpecPeWaterFitList(SpecPeWaterList):
     def plot_temp_lineshape(self, fit_ids=['2_gl'], fname_prefix=None,
                             export_dir=os.path.expanduser('~'), size=[20,14],
                             fontsize_clusterid=28, fontsize_label=12, markersize=6,
-                            xlim=[0,425], ylim=None, id_pos='right', show_legend=True):
+                            xlim=[0,425], ylim=None, id_pos='right', show_legend=True,
+                            plot_mean=True):
          
-        def plot_single_size(ls_par, n, id_pos, show_legend):
+        def plot_single_size(ls_par, n, id_pos, show_legend, plot_mean):
             cluster_id = ls_par.pop('id')
             colors = {'fwhm': {'2_gl': 'blue', '2_gl_alt': 'blue', 'multi_gl': 'midnightblue'},
                       'sg': {'2_gl': 'grey', '2_gl_alt': 'grey', 'multi_gl': 'black'},
@@ -1235,35 +1236,60 @@ class SpecPeWaterFitList(SpecPeWaterList):
             ax.grid()
             for fit_id, t_par in ls_par.items():
                 temp = []
-                fwhm =[]
+                temp_mean = []
+                fwhm = []
+                fwhm_mean = []
                 fwhm_dev = []
                 sg = []
+                sg_mean = []
                 sg_dev = []
                 sl = []
+                sl_mean = []
                 sl_dev = []
                 for t, pars in sorted(t_par.items()):
-                    temp.append(t)
-                    fwhm.append(np.mean(pars['fwhm']))
+                    # populate single point data lists
+                    for i in range(len(pars['fwhm'])):
+                        temp.append(t)
+                        fwhm.append(pars['fwhm'][i])
+#                     for spsg in pars['sg']:
+#                         temp.append(t)
+                        sg.append(pars['sg'][i])
+#                     for spsl in pars['sl']:
+#                         temp.append(t)
+                        sl.append(pars['sl'][i])
+                    temp_mean.append(t)
+                    fwhm_mean.append(np.mean(pars['fwhm']))
                     fwhm_dev.append(np.std(pars['fwhm']))
-                    sg.append(np.mean(pars['sg']))
+                    sg_mean.append(np.mean(pars['sg']))
                     sg_dev.append(np.std(pars['sg']))
-                    sl.append(np.mean(pars['sl']))
+                    sl_mean.append(np.mean(pars['sl']))
                     sl_dev.append(np.std(pars['sl']))
-                ax.plot(temp, fwhm, color='grey')
-                ax.plot(temp, sg, color='grey')
-                ax.plot(temp, sl, color='grey')
-                #ax.plot(temp, fwhm, 's', markersize=markersize,
-                #        label='fwhm ({})'.format(fid_labels[fit_id]),
-                #        color=colors['fwhm'][fit_id])
-                ax.errorbar(temp, fwhm, fwhm_dev, fmt='s', markersize=markersize,
+                # plot grey lines
+                ax.plot(temp_mean, fwhm_mean, color='grey')
+                ax.plot(temp_mean, sg_mean, color='grey')
+                ax.plot(temp_mean, sl_mean, color='grey')
+                # data points
+                if plot_mean:
+                    ax.errorbar(temp_mean, fwhm_mean, fwhm_dev, fmt='s', markersize=markersize,
+                                label='fwhm ({})'.format(fid_labels[fit_id]),
+                                color=colors['fwhm'][fit_id], capsize=markersize/2)
+                    ax.errorbar(temp_mean, sg_mean, sg_dev, fmt='s', markersize=markersize,
+                                label='$\sigma_G$ ({})'.format(fid_labels[fit_id]),
+                                color=colors['sg'][fit_id], capsize=markersize/2)
+                    ax.errorbar(temp_mean, sl_mean, sl_dev, fmt='s', markersize=markersize,
+                                label='$\sigma_L$ ({})'.format(fid_labels[fit_id]),
+                                color=colors['sl'][fit_id], capsize=markersize/2)
+                else:
+                    ax.plot(temp, fwhm, 's', markersize=markersize,
                             label='fwhm ({})'.format(fid_labels[fit_id]),
-                            color=colors['fwhm'][fit_id], capsize=markersize/2)
-                ax.errorbar(temp, sg, sg_dev, fmt='s', markersize=markersize,
+                            color=colors['fwhm'][fit_id])
+                    ax.plot(temp, sg, 's', markersize=markersize,
                             label='$\sigma_G$ ({})'.format(fid_labels[fit_id]),
-                            color=colors['sg'][fit_id], capsize=markersize/2)
-                ax.errorbar(temp, sl, sl_dev, fmt='s', markersize=markersize,
+                            color=colors['sg'][fit_id])
+                    ax.plot(temp, sl, 's', markersize=markersize,
                             label='$\sigma_L$ ({})'.format(fid_labels[fit_id]),
-                            color=colors['sl'][fit_id], capsize=markersize/2)
+                            color=colors['sl'][fit_id])
+
             ax.set_xlim(xlim)
             if ylim:
                 ax.set_ylim(ylim)
@@ -1310,7 +1336,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
 
                  
         for n, v in ls_par_dict.items():
-            plot_single_size(v, n, id_pos=id_pos, show_legend=show_legend)
+            plot_single_size(v, n, id_pos=id_pos, show_legend=show_legend, plot_mean=plot_mean)
             
                 
             
