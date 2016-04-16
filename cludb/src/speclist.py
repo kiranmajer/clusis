@@ -1106,10 +1106,25 @@ class SpecPeWaterFitList(SpecPeWaterList):
                                    fontsize=fontsize_label)
                 ax_diff.grid()
                 for diff, v in temp_diff.items():
+                    temp_mean = []
+                    diff_mean = []
+                    diff_dev = []
+                    for t, diffs in sorted(v['mean'].items()):
+                        temp_mean.append(t)
+                        diff_mean.append(np.mean(diffs))
+                        diff_dev.append(np.std(diffs))
+                    # plot grey guides
+                    ax_diff.plot(temp_mean, np.array(diff_mean)*100, color='grey')
+                    # get label names
                     p1, p2 = diff.split('_')[1], diff.split('_')[2]
-                    ax_diff.plot(v['T'], np.array(v['diff'])*100, color='grey')
-                    ax_diff.plot(v['T'], np.array(v['diff'])*100, 's', markersize=markersize,
-                                 label='VDE({})-VDE({})'.format(iso_names[p2],iso_names[p1]))
+                    if plot_mean:
+                        ax_diff.errorbar(temp_mean, np.array(diff_mean)*100,
+                                         np.array(diff_dev)*100, fmt='s', markersize=markersize,
+                                         label='VDE({})-VDE({})'.format(iso_names[p2],
+                                                                        iso_names[p1]))                        
+                    else:
+                        ax_diff.plot(v['T'], np.array(v['diff'])*100, 's', markersize=markersize,
+                                     label='VDE({})-VDE({})'.format(iso_names[p2],iso_names[p1]))
                 leg_diff = ax_diff.legend(title='Differences:', loc=1, fontsize=fontsize_label,
                                           numpoints=1)
                 leg_diff.get_title().set_fontsize(fontsize_label)
@@ -1135,6 +1150,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     # plot grey guides
                     ax_ratio.plot(temp_mean, np.array(ratio_mean)*100, color='grey')
                     ax_ratio.plot(temp_mean, (1-np.array(ratio_mean))*100, color='grey')
+                    # get label names
                     iso1 = ratio.split('/')[0]
                     iso2 = ratio.split('/')[1]
                     if plot_mean:
@@ -1210,8 +1226,13 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     if diff_id in diff_dict[cn].keys():
                         diff_dict[cn][diff_id]['T'].append(ct)
                         diff_dict[cn][diff_id]['diff'].append(diff)
+                        if ct in diff_dict[cn][diff_id]['mean']:
+                            diff_dict[cn][diff_id]['mean'][ct].append(diff)
+                        else:
+                            diff_dict[cn][diff_id]['mean'][ct] = [diff]
                     else:
-                        diff_dict[cn][diff_id] = {'T': [ct], 'diff': [diff]}
+                        diff_dict[cn][diff_id] = {'T': [ct], 'diff': [diff],
+                                                  'mean': {ct: [diff]}}
                         
             # populate ratio_dict
             for c in combinations(iso_keys, 2):
