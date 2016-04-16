@@ -1213,18 +1213,18 @@ class SpecPeWaterFitList(SpecPeWaterList):
                              twin_axes=False, xy_labels=True)
             
             
-    def plot_temp_lineshape(self, fit_ids=['2_gl', 'multi_gl'], fname_prefix=None,
+    def plot_temp_lineshape(self, fit_ids=['2_gl'], fname_prefix=None,
                             export_dir=os.path.expanduser('~'), size=[20,14],
                             fontsize_clusterid=28, fontsize_label=12, markersize=6,
                             xlim=[0,425], ylim=None, id_pos='right', show_legend=True):
          
         def plot_single_size(ls_par, n, id_pos, show_legend):
             cluster_id = ls_par.pop('id')
-            colors = {'fwhm': {'2_gl': 'blue', 'multi_gl': 'midnightblue'},
-                      'sg': {'2_gl': 'grey', 'multi_gl': 'black'},
-                      'sl': {'2_gl': 'limegreen', 'multi_gl': 'green'},
+            colors = {'fwhm': {'2_gl': 'blue', '2_gl_alt': 'blue', 'multi_gl': 'midnightblue'},
+                      'sg': {'2_gl': 'grey', '2_gl_alt': 'grey', 'multi_gl': 'black'},
+                      'sl': {'2_gl': 'limegreen', '2_gl_alt': 'limegreen', 'multi_gl': 'green'},
                       }
-            fid_labels = {'2_gl': '2 GL', 'multi_gl': '3 GL'}
+            fid_labels = {'2_gl': '2 GL', '2_gl_alt': '2 GL', 'multi_gl': '3 GL'}
             
             fig = plt.figure()
             # setup lower axis
@@ -1294,16 +1294,19 @@ class SpecPeWaterFitList(SpecPeWaterList):
                 # add cluster id
                 ls_par_dict[cn]['id'] = cs.view._pretty_format_clusterid()
             
+            if self.fit_id not in fit_ids:
+                fit_ids.append(self.fit_id)
             for fid in fit_ids:
-                if fid not in ls_par_dict[cn]:
-                    ls_par_dict[cn][fid] = {} #'T': [], 'fwhm': [], 'sg': [], 'sl': []}
-                if ct not in ls_par_dict[cn][fid]:
-                    ls_par_dict[cn][fid][ct] = {'fwhm': [], 'sg': [], 'sl': []}
-                cfwhm, csigmas = cs._get_peakshape_par('par', fid, width=True, width_pars=True)
-                #ls_par_dict[cn][fid]['T'].append(ct)
-                ls_par_dict[cn][fid][ct]['fwhm'].append(cfwhm)
-                ls_par_dict[cn][fid][ct]['sg'].append(csigmas[0])
-                ls_par_dict[cn][fid][ct]['sl'].append(csigmas[1])
+                if fid in cs.mdata.data('fitData').keys():
+                    if fid not in ls_par_dict[cn]:
+                        ls_par_dict[cn][fid] = {} #'T': [], 'fwhm': [], 'sg': [], 'sl': []}
+                    if ct not in ls_par_dict[cn][fid]:
+                        ls_par_dict[cn][fid][ct] = {'fwhm': [], 'sg': [], 'sl': []}
+                    cfwhm, csigmas = cs._get_peakshape_par('par', fid, width=True, width_pars=True)
+                    #ls_par_dict[cn][fid]['T'].append(ct)
+                    ls_par_dict[cn][fid][ct]['fwhm'].append(cfwhm)
+                    ls_par_dict[cn][fid][ct]['sg'].append(csigmas[0])
+                    ls_par_dict[cn][fid][ct]['sl'].append(csigmas[1])
 
                  
         for n, v in ls_par_dict.items():
