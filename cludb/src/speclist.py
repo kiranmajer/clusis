@@ -1055,12 +1055,15 @@ class SpecPeWaterFitList(SpecPeWaterList):
     def plot_temp_peakpos(self, iso_keys=['1a', '1b'], xlim=[0, 425], fname_prefix=None,
                           export_dir=os.path.expanduser('~'), size=[20,14],
                           fontsize_clusterid=28, fontsize_label=12, markersize=6,
-                          ylim_pp=[-2.2,-1.2], ylim_ph=[20,80], plot_mean=True):
-        
-        fit_id = self._eval_fit_id()
+                          ylim_pp=[-2.2,-1.2], ylim_ph=[20,80], plot_mean=True,
+                          fit_ids=['2_gl']):
                        
         def plot_single_size(temp_ebin, temp_diff, temp_ratio, ylim_pp, ylim_ph, plot_mean):
             iso_names ={'2': 'II', '1a': 'Ia', '1b': 'Ib', 'vib': 'HE'}
+            colors = {'1b': {'2_gl': 'blue', '2_gl_alt': 'blue', 'multi_gl': 'midnightblue'},
+                      'ratio': {'2_gl': 'grey', '2_gl_alt': 'grey', 'multi_gl': 'black'},
+                      '1a': {'2_gl': 'limegreen', '2_gl_alt': 'limegreen', 'multi_gl': 'green'},
+                      }
             fid_labels = {'2_gl': '2 GL', '2_gl_alt': '2 GL', 'multi_gl': '3 GL'}
             fig = plt.figure()
             # setup ebin(T) plot
@@ -1073,24 +1076,26 @@ class SpecPeWaterFitList(SpecPeWaterList):
             ax.set_ylabel('-VDE (eV)', fontsize=fontsize_label)
             ax.grid()
             cluster_id = temp_ebin.pop('id')
-            ax.text(0.05, 0.9, cluster_id, transform = ax.transAxes, fontsize=fontsize_clusterid,
-                    horizontalalignment='left', verticalalignment='top')
-            for iso, v in temp_ebin.items():
-                temp_mean = []
-                vde_mean = []
-                vde_dev = []
-                for t, vdes in sorted(v['mean'].items()):
-                    temp_mean.append(t)
-                    vde_mean.append(np.mean(vdes))
-                    vde_dev.append(np.std(vdes))
-                ax.plot(temp_mean, -1*np.array(vde_mean), color='grey')
-                if plot_mean:
-                    ax.errorbar(temp_mean, -1*np.array(vde_mean), vde_dev, fmt='s', markersize=markersize,
-                                 color=self.cfg.water_isomer_color_map[iso],
-                                 label='{} ({})'.format(iso_names[iso], fid_labels[self.fit_id]))
-                else:
-                    ax.plot(v['T'], -1*np.array(v['ebin']), 's', markersize=markersize,
-                            color=self.cfg.water_isomer_color_map[iso], label=iso_names[iso])
+            ax.text(0.8, 0.9, cluster_id, transform = ax.transAxes, fontsize=fontsize_clusterid,
+                    horizontalalignment='right', verticalalignment='top')
+            for fit_id, ebin in temp_ebin.items():
+                for iso, v in ebin.items():
+                    temp_mean = []
+                    vde_mean = []
+                    vde_dev = []
+                    for t, vdes in sorted(v['mean'].items()):
+                        temp_mean.append(t)
+                        vde_mean.append(np.mean(vdes))
+                        vde_dev.append(np.std(vdes))
+                    ax.plot(temp_mean, -1*np.array(vde_mean), color='grey')
+                    if plot_mean:
+                        ax.errorbar(temp_mean, -1*np.array(vde_mean), vde_dev, fmt='s', markersize=markersize,
+                                     color=colors[iso][fit_id],
+                                     label='{} ({})'.format(iso_names[iso], fid_labels[fit_id]))
+                    else:
+                        ax.plot(v['T'], -1*np.array(v['ebin']), 's', markersize=markersize,
+                                color=colors[iso][fit_id],
+                                label='{} ({})'.format(iso_names[iso], fid_labels[fit_id]))
             
             leg = ax.legend(title='Peaks:', loc=1, fontsize=fontsize_label,
                             numpoints=1)
@@ -1107,27 +1112,34 @@ class SpecPeWaterFitList(SpecPeWaterList):
                 ax_diff.set_ylabel('$\Delta E_{T} - \Delta E_{10K}$ (10 meV)',
                                    fontsize=fontsize_label)
                 ax_diff.grid()
-                for diff, v in temp_diff.items():
-                    temp_mean = []
-                    diff_mean = []
-                    diff_dev = []
-                    for t, diffs in sorted(v['mean'].items()):
-                        temp_mean.append(t)
-                        diff_mean.append(np.mean(diffs))
-                        diff_dev.append(np.std(diffs))
-                    # plot grey guides
-                    ax_diff.plot(temp_mean, np.array(diff_mean)*100, color='grey')
-                    # get label names
-                    p1, p2 = diff.split('_')[1], diff.split('_')[2]
-                    if plot_mean:
-                        ax_diff.errorbar(temp_mean, np.array(diff_mean)*100,
-                                         np.array(diff_dev)*100, fmt='s', markersize=markersize,
-                                         label='VDE({})-VDE({})'.format(iso_names[p2],
-                                                                        iso_names[p1]))                        
-                    else:
-                        ax_diff.plot(v['T'], np.array(v['diff'])*100, 's', markersize=markersize,
-                                     label='VDE({})-VDE({})'.format(iso_names[p2],iso_names[p1]))
-                leg_diff = ax_diff.legend(title='Differences:', loc=1, fontsize=fontsize_label,
+                for fit_id, diff in temp_diff.items():
+                    for diff, v in diff.items():
+                        temp_mean = []
+                        diff_mean = []
+                        diff_dev = []
+                        for t, diffs in sorted(v['mean'].items()):
+                            temp_mean.append(t)
+                            diff_mean.append(np.mean(diffs))
+                            diff_dev.append(np.std(diffs))
+                        # plot grey guides
+                        ax_diff.plot(temp_mean, np.array(diff_mean)*100, color='grey')
+                        # get label names
+                        p1, p2 = diff.split('_')[1], diff.split('_')[2]
+                        #plot_label = '$E_{' + iso_names[p2] + '}-E_{' + iso_names[p1] + '}$ (' + fid_labels[fit_id] + ')'
+                        if plot_mean:
+                            ax_diff.errorbar(temp_mean, np.array(diff_mean)*100,
+                                             np.array(diff_dev)*100, fmt='s', markersize=markersize,
+                                             color=colors['ratio'][fit_id],
+                                             label='{}, {} ({})'.format(iso_names[p1],
+                                                                       iso_names[p2],
+                                                                       fid_labels[fit_id]))                  
+                        else:
+                            ax_diff.plot(v['T'], np.array(v['diff'])*100, 's', markersize=markersize,
+                                         color=colors['ratio'][fit_id],
+                                         label='{}, {} ({})'.format(iso_names[p1],
+                                                                   iso_names[p2],
+                                                                   fid_labels[fit_id]))
+                leg_diff = ax_diff.legend(title='Peaks:', loc=1, fontsize=fontsize_label,
                                           numpoints=1)
                 leg_diff.get_title().set_fontsize(fontsize_label)
             # setup ratio(T) plot
@@ -1141,46 +1153,54 @@ class SpecPeWaterFitList(SpecPeWaterList):
                 ax_ratio.set_ylim(ylim_ph)
                 ax_ratio.set_ylabel('prop. int. (%)', fontsize=fontsize_label)
                 ax_ratio.grid()
-                for ratio, v in temp_ratio.items():
-                    temp_mean = []
-                    ratio_mean = []
-                    ratio_dev = []
-                    for t, ratios in sorted(v['mean'].items()):
-                        temp_mean.append(t)
-                        ratio_mean.append(np.mean(ratios))
-                        ratio_dev.append(np.std(ratios))
-                    # plot grey guides
-                    ax_ratio.plot(temp_mean, np.array(ratio_mean)*100, color='grey')
-                    ax_ratio.plot(temp_mean, (1-np.array(ratio_mean))*100, color='grey')
-                    # get label names
-                    iso1 = ratio.split('/')[0]
-                    iso2 = ratio.split('/')[1]
-                    if plot_mean:
-                        ax_ratio.errorbar(temp_mean, np.array(ratio_mean)*100,
-                                          np.array(ratio_dev)*100,
-                                          fmt='s', markersize=markersize,
+                for fit_id, ratio in temp_ratio.items():
+                    for ratio, v in ratio.items():
+                        temp_mean = []
+                        ratio_mean = []
+                        ratio_dev = []
+                        for t, ratios in sorted(v['mean'].items()):
+                            temp_mean.append(t)
+                            ratio_mean.append(np.mean(ratios))
+                            ratio_dev.append(np.std(ratios))
+                        # plot grey guides
+                        ax_ratio.plot(temp_mean, np.array(ratio_mean)*100, color='grey')
+                        ax_ratio.plot(temp_mean, (1-np.array(ratio_mean))*100, color='grey')
+                        # get label names
+                        iso1 = ratio.split('/')[0]
+                        iso2 = ratio.split('/')[1]
+                        if plot_mean:
+                            ax_ratio.errorbar(temp_mean, np.array(ratio_mean)*100,
+                                              np.array(ratio_dev)*100,
+                                              fmt='s', markersize=markersize,
+                                              color=colors[iso1][fit_id],
+                                              label='{} ({})'.format(iso_names[iso1],
+                                                                     fid_labels[fit_id]))
+                            ax_ratio.errorbar(temp_mean, (1-np.array(ratio_mean))*100,
+                                              np.array(ratio_dev)*100,
+                                              fmt='s', markersize=markersize,
+                                              color=colors[iso2][fit_id],
+                                              label='{} ({})'.format(iso_names[iso2],
+                                                                     fid_labels[fit_id]))
+                        else:
+                            ax_ratio.plot(v['T'], np.array(v['ratio'])*100, 's',
+                                          markersize=markersize,
                                           color=self.cfg.water_isomer_color_map[iso1],
                                           label='{} ({})'.format(iso_names[iso1],
-                                                                 fid_labels[self.fit_id]))
-                        ax_ratio.errorbar(temp_mean, (1-np.array(ratio_mean))*100,
-                                          np.array(ratio_dev)*100,
-                                          fmt='s', markersize=markersize,
+                                                                 fid_labels[fit_id]))
+                            ax_ratio.plot(v['T'], (1-np.array(v['ratio']))*100, 's',
+                                          markersize=markersize,
                                           color=self.cfg.water_isomer_color_map[iso2],
                                           label='{} ({})'.format(iso_names[iso2],
-                                                                 fid_labels[self.fit_id]))
-                    else:
-                        ax_ratio.plot(v['T'], np.array(v['ratio'])*100, 's', markersize=markersize,
-                                      color=self.cfg.water_isomer_color_map[iso1],
-                                      label=iso_names[iso1])
-                        ax_ratio.plot(v['T'], (1-np.array(v['ratio']))*100, 's', markersize=markersize,
-                                      color=self.cfg.water_isomer_color_map[iso2],
-                                      label=iso_names[iso2])
+                                                                 fid_labels[fit_id]))
                 leg_ratio = ax_ratio.legend(title='Peaks:', loc=1, fontsize=fontsize_label,
                                             numpoints=1)
                 leg_ratio.get_title().set_fontsize(fontsize_label)
             
             return fig
-            
+        
+        # get data for plots
+        if self.fit_id not in fit_ids:
+            fit_ids.append(self.fit_id)
         ebin_dict = {}
         diff_dict = {} 
         diff_ref = {}
@@ -1189,72 +1209,84 @@ class SpecPeWaterFitList(SpecPeWaterList):
             cs = load_pickle(self.cfg, s[str('pickleFile')])
             cn = cs.mdata.data('clusterBaseUnitNumber')
             ct = cs.mdata.data('trapTemp')
-            cic = cs._assort_fit_peaks(fit_id)
-            # populate ebin_dict
-            for iso in iso_keys:
-                if iso in cic.keys():
-                    if cn not in ebin_dict.keys():
-                        ebin_dict[cn] = {'id': cs.view._pretty_format_clusterid(),
-                                         iso: {'T': [ct], 'ebin': [cic[iso][0]],
-                                               'mean': {ct: [cic[iso][0]]}}
-                                         }
-                    if iso in ebin_dict[cn].keys():
-                        ebin_dict[cn][iso]['T'].append(ct)
-                        ebin_dict[cn][iso]['ebin'].append(cic[iso][0])
-                        if ct in ebin_dict[cn][iso]['mean']:
-                            ebin_dict[cn][iso]['mean'][ct].append(cic[iso][0])
+            for fit_id in fit_ids:
+                cic = cs._assort_fit_peaks(fit_id)
+                # populate ebin_dict
+                for iso in iso_keys:
+                    if iso in cic.keys():
+                        if cn not in ebin_dict.keys():
+                            ebin_dict[cn] = {'id': cs.view._pretty_format_clusterid(),
+                                             fit_id: {iso: {'T': [ct], 'ebin': [cic[iso][0]],
+                                                            'mean': {ct: [cic[iso][0]]}
+                                                            }
+                                                      }
+                                             }
+                        if fit_id not in ebin_dict[cn]:
+                            ebin_dict[cn][fit_id] = {iso: {'T': [ct], 'ebin': [cic[iso][0]],
+                                                            'mean': {ct: [cic[iso][0]]}
+                                                            }
+                                                     }
+                        if iso in ebin_dict[cn][fit_id].keys():
+                            ebin_dict[cn][fit_id][iso]['T'].append(ct)
+                            ebin_dict[cn][fit_id][iso]['ebin'].append(cic[iso][0])
+                            if ct in ebin_dict[cn][fit_id][iso]['mean']:
+                                ebin_dict[cn][fit_id][iso]['mean'][ct].append(cic[iso][0])
+                            else:
+                                ebin_dict[cn][fit_id][iso]['mean'][ct] = [cic[iso][0]]
                         else:
-                            ebin_dict[cn][iso]['mean'][ct] = [cic[iso][0]]
-                    else:
-                        ebin_dict[cn][iso] = {'T': [ct], 'ebin': [cic[iso][0]],
-                                              'mean': {ct: [cic[iso][0]]}}
-                        
-            # populate diff_dict
-            i = 0
-            while i+1 < len(iso_keys):
-                k1, k2 = iso_keys[i], iso_keys[i+1]
-                diff_id = 'd_{}_{}'.format(k1, k2)
-                i += 1
-                if k1 in cic.keys() and k2 in cic.keys():
-                    if cn in diff_ref:
-                        if diff_id in diff_ref[cn].keys():
-                            diff = diff_ref[cn][diff_id] - (cic[k1][0] - cic[k2][0])
+                            ebin_dict[cn][fit_id][iso] = {'T': [ct], 'ebin': [cic[iso][0]],
+                                                  'mean': {ct: [cic[iso][0]]}}
+                            
+                # populate diff_dict
+                i = 0
+                while i+1 < len(iso_keys):
+                    k1, k2 = iso_keys[i], iso_keys[i+1]
+                    diff_id = 'd_{}_{}'.format(k1, k2)
+                    i += 1
+                    if k1 in cic.keys() and k2 in cic.keys():
+                        if cn in diff_ref:
+                            if diff_id in diff_ref[cn].keys():
+                                diff = diff_ref[cn][diff_id] - (cic[k1][0] - cic[k2][0])
+                            else:
+                                diff = 0
+                                diff_ref[cn][diff_id] = cic[k1][0] - cic[k2][0]
                         else:
                             diff = 0
-                            diff_ref[cn][diff_id] = cic[k1][0] - cic[k2][0]
-                    else:
-                        diff = 0
-                        diff_ref[cn] = {diff_id: cic[k1][0] - cic[k2][0]}
-                    if cn not in diff_dict.keys():
-                        diff_dict[cn] = {}
-                    if diff_id in diff_dict[cn].keys():
-                        diff_dict[cn][diff_id]['T'].append(ct)
-                        diff_dict[cn][diff_id]['diff'].append(diff)
-                        if ct in diff_dict[cn][diff_id]['mean']:
-                            diff_dict[cn][diff_id]['mean'][ct].append(diff)
+                            diff_ref[cn] = {diff_id: cic[k1][0] - cic[k2][0]}
+                        if cn not in diff_dict.keys():
+                            diff_dict[cn] = {}
+                        if fit_id not in diff_dict[cn]:
+                            diff_dict[cn][fit_id] = {}
+                        if diff_id in diff_dict[cn][fit_id].keys():
+                            diff_dict[cn][fit_id][diff_id]['T'].append(ct)
+                            diff_dict[cn][fit_id][diff_id]['diff'].append(diff)
+                            if ct in diff_dict[cn][fit_id][diff_id]['mean']:
+                                diff_dict[cn][fit_id][diff_id]['mean'][ct].append(diff)
+                            else:
+                                diff_dict[cn][fit_id][diff_id]['mean'][ct] = [diff]
                         else:
-                            diff_dict[cn][diff_id]['mean'][ct] = [diff]
-                    else:
-                        diff_dict[cn][diff_id] = {'T': [ct], 'diff': [diff],
-                                                  'mean': {ct: [diff]}}
-                        
-            # populate ratio_dict
-            for c in combinations(iso_keys, 2):
-                if c[0] in cic.keys() and c[1] in cic.keys():
-                    ratio_str = '{}/{}'.format(c[0], c[1])
-                    ratio =cic[c[0]][1]/(cic[c[0]][1] + cic[c[1]][1])
-                    if cn not in ratio_dict.keys():
-                        ratio_dict[cn] = {}
-                    if ratio_str in ratio_dict[cn].keys():
-                        ratio_dict[cn][ratio_str]['T'].append(ct)
-                        ratio_dict[cn][ratio_str]['ratio'].append(ratio)
-                        if ct in ratio_dict[cn][ratio_str]['mean']:
-                            ratio_dict[cn][ratio_str]['mean'][ct].append(ratio)
+                            diff_dict[cn][fit_id][diff_id] = {'T': [ct], 'diff': [diff],
+                                                              'mean': {ct: [diff]}}
+                            
+                # populate ratio_dict
+                for c in combinations(iso_keys, 2):
+                    if c[0] in cic.keys() and c[1] in cic.keys():
+                        ratio_str = '{}/{}'.format(c[0], c[1])
+                        ratio =cic[c[0]][1]/(cic[c[0]][1] + cic[c[1]][1])
+                        if cn not in ratio_dict:
+                            ratio_dict[cn] = {}
+                        if fit_id not in ratio_dict[cn]:
+                            ratio_dict[cn][fit_id] = {}
+                        if ratio_str in ratio_dict[cn][fit_id].keys():
+                            ratio_dict[cn][fit_id][ratio_str]['T'].append(ct)
+                            ratio_dict[cn][fit_id][ratio_str]['ratio'].append(ratio)
+                            if ct in ratio_dict[cn][fit_id][ratio_str]['mean']:
+                                ratio_dict[cn][fit_id][ratio_str]['mean'][ct].append(ratio)
+                            else:
+                                ratio_dict[cn][fit_id][ratio_str]['mean'][ct] = [ratio]
                         else:
-                            ratio_dict[cn][ratio_str]['mean'][ct] = [ratio]
-                    else:
-                        ratio_dict[cn][ratio_str] = {'T': [ct], 'ratio': [ratio],
-                                                     'mean': {ct: [ratio]}}
+                            ratio_dict[cn][fit_id][ratio_str] = {'T': [ct], 'ratio': [ratio],
+                                                                 'mean': {ct: [ratio]}}
                         
         for n, e in ebin_dict.items():
 #             if n in diff_dict.keys():
