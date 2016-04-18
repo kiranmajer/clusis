@@ -1061,6 +1061,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                        
         def plot_single_size(temp_ebin, temp_diff, temp_ratio, ylim_pp, ylim_ph, plot_mean):
             iso_names ={'2': 'II', '1a': 'Ia', '1b': 'Ib', 'vib': 'HE'}
+            fid_labels = {'2_gl': '2 GL', '2_gl_alt': '2 GL', 'multi_gl': '3 GL'}
             fig = plt.figure()
             # setup ebin(T) plot
             ax = fig.add_subplot(3, 1, 1)
@@ -1085,7 +1086,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
                 ax.plot(temp_mean, -1*np.array(vde_mean), color='grey')
                 if plot_mean:
                     ax.errorbar(temp_mean, -1*np.array(vde_mean), vde_dev, fmt='s', markersize=markersize,
-                                 color=self.cfg.water_isomer_color_map[iso], label=iso_names[iso])
+                                 color=self.cfg.water_isomer_color_map[iso],
+                                 label='{} ({})'.format(iso_names[iso], fid_labels[self.fit_id]))
                 else:
                     ax.plot(v['T'], -1*np.array(v['ebin']), 's', markersize=markersize,
                             color=self.cfg.water_isomer_color_map[iso], label=iso_names[iso])
@@ -1158,12 +1160,14 @@ class SpecPeWaterFitList(SpecPeWaterList):
                                           np.array(ratio_dev)*100,
                                           fmt='s', markersize=markersize,
                                           color=self.cfg.water_isomer_color_map[iso1],
-                                          label=iso_names[iso1])
+                                          label='{} ({})'.format(iso_names[iso1],
+                                                                 fid_labels[self.fit_id]))
                         ax_ratio.errorbar(temp_mean, (1-np.array(ratio_mean))*100,
                                           np.array(ratio_dev)*100,
                                           fmt='s', markersize=markersize,
                                           color=self.cfg.water_isomer_color_map[iso2],
-                                          label=iso_names[iso2])
+                                          label='{} ({})'.format(iso_names[iso2],
+                                                                 fid_labels[self.fit_id]))
                     else:
                         ax_ratio.plot(v['T'], np.array(v['ratio'])*100, 's', markersize=markersize,
                                       color=self.cfg.water_isomer_color_map[iso1],
