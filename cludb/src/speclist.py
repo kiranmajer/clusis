@@ -800,6 +800,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
                         fontsize=fontsize_label,bbox=bbox_props)
             # plot data
             idx = 0
+            '''TODO: name peak groups! With idx label get wrong names, if range is plotted, which 
+            does not coantain peak II.'''
             own_data = []
             for peak_set in plot_data:
                 # mind the ',' after ods, because plot returns a list
@@ -1199,8 +1201,9 @@ class SpecPeWaterFitList(SpecPeWaterList):
             return fig
         
         # get data for plots
-        if self.fit_id not in fit_ids:
-            fit_ids.append(self.fit_id)
+        add_fit_ids = list(fit_ids) # somwhow we need to make a copy here (?)
+        if self.fit_id not in add_fit_ids:
+            add_fit_ids.append(self.fit_id)
         ebin_dict = {}
         diff_dict = {} 
         diff_ref = {}
@@ -1209,7 +1212,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
             cs = load_pickle(self.cfg, s[str('pickleFile')])
             cn = cs.mdata.data('clusterBaseUnitNumber')
             ct = cs.mdata.data('trapTemp')
-            for fit_id in fit_ids:
+            for fit_id in add_fit_ids:
                 cic = cs._assort_fit_peaks(fit_id)
                 # populate ebin_dict
                 for iso in iso_keys:
