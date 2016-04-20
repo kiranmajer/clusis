@@ -1065,6 +1065,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
             colors = {'1b': {'2_gl': 'blue', '2_gl_alt': 'blue', 'multi_gl': 'midnightblue'},
                       'ratio': {'2_gl': 'grey', '2_gl_alt': 'grey', 'multi_gl': 'black'},
                       '1a': {'2_gl': 'limegreen', '2_gl_alt': 'limegreen', 'multi_gl': 'green'},
+                      'vib': {'2_gl': 'red', '2_gl_alt': 'red', 'multi_gl': 'darkred'},
+                      '2': {'2_gl': 'indigo', '2_gl_alt': 'indigo', 'multi_gl': 'indigo'},
                       }
             fid_labels = {'2_gl': '2 GL', '2_gl_alt': '2 GL', 'multi_gl': '3 GL'}
             fig = plt.figure()
