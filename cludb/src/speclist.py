@@ -1447,7 +1447,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                                  show_single_points=False, fname=None,
                                  export_dir=os.path.expanduser('~'), size=[20,14],
                                  fontsize_label=12, markersize=6, color='blue', xlim=None,
-                                 ylim=None, error_lw=1):
+                                 ylim=None, error_lw=1, ref_temp_range=None):
         # this only makes sense for heavy water
         if not self.heavy_water:
             raise ValueError('Only applicable for heavy water.')
@@ -1477,7 +1477,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                 d2o_dE = np.abs(d2o_p1[0][1] - d2o_p2[0][1])
                 # add h20 ref
                 comp_list = SpecPeWaterFitList(self.cfg, clusterBaseUnitNumber=cn,
-                                               fit_id=ref_fit_id)
+                                               fit_id=ref_fit_id, trapTempRange=ref_temp_range)
                 for rs in comp_list.dbanswer:
                     h2o_isomers = {'2': [], '1a': [], '1b': [], 'vib': []}
                     crs = load_pickle(self.cfg,rs[str('pickleFile')])
