@@ -1188,12 +1188,12 @@ class SpecPeWaterFitList(SpecPeWaterList):
                         else:
                             ax_ratio.plot(v['T'], np.array(v['ratio'])*100, 's',
                                           markersize=markersize,
-                                          color=self.cfg.water_isomer_color_map[iso1],
+                                          color=colors[iso1][fit_id],
                                           label='{} ({})'.format(iso_names[iso1],
                                                                  fid_labels[fit_id]))
                             ax_ratio.plot(v['T'], (1-np.array(v['ratio']))*100, 's',
                                           markersize=markersize,
-                                          color=self.cfg.water_isomer_color_map[iso2],
+                                          color=colors[iso2][fit_id],
                                           label='{} ({})'.format(iso_names[iso2],
                                                                  fid_labels[fit_id]))
                 leg_ratio = ax_ratio.legend(title='Peaks:', loc=1, fontsize=fontsize_label,
