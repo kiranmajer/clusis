@@ -938,7 +938,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                             export_dir=os.path.expanduser('~'),
                             size=[20,14], fontsize_label=12, markersize=6, xlim=[0,0.42],
                             ylim=[0,1.2], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
-                            color=None, show_legend=True, n_xticks=None):
+                            color=None, show_legend=True, n_xticks=None, sfactor=1):
         
         fit_id = self._eval_fit_id()
         
@@ -1002,7 +1002,12 @@ class SpecPeWaterFitList(SpecPeWaterList):
         # plot data
         for k,v in sorted(plot_data.items()):
             xdata = v[0]**(-1/3)
-            ax.plot(xdata, v[1], 's', label=labels[k], markersize=markersize, color=color[k])
+            "TODO: remove scale factor later."
+            if k == 's_l':
+                ax.plot(xdata, v[1]*sfactor, 's', label=labels[k], markersize=markersize,
+                        color=color[k])
+            else:
+                ax.plot(xdata, v[1], 's', label=labels[k], markersize=markersize, color=color[k])
 # linear fits make no sense here, its something asymptotic.
 #             # linear fit
 #             if len(v[0]) > 2 and np.abs(v[0][0] - v[0][-1]) > 20: 
@@ -1249,6 +1254,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     diff_id = 'd_{}_{}'.format(k1, k2)
                     i += 1
                     if k1 in cic.keys() and k2 in cic.keys():
+                        'TODO: use mean of diff_ref if plot_mean.'
                         if cn in diff_ref:
                             if diff_id in diff_ref[cn].keys():
                                 diff = diff_ref[cn][diff_id] - (cic[k1][0] - cic[k2][0])
