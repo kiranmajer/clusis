@@ -712,7 +712,9 @@ class SpecPeWaterFitList(SpecPeWaterList):
                            export_dir=os.path.expanduser('~'), size=[20,14],
                            fontsize_label=12, markersize=6, xlim=[0,0.42],
                            ylim=[-4,0], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
-                           color=None, color_comp_data=None, show_own_data_legend=True,
+                           color=None, alpha=1.0, markeredgecolor='black',
+                           markertype_comp_data=None, fade_color=False,
+                           color_comp_data=None, show_own_data_legend=True,
                            show_sigma=False, generic_legend_labels=False):
         
         fit_id = self._eval_fit_id()
@@ -729,9 +731,16 @@ class SpecPeWaterFitList(SpecPeWaterList):
             
         # disable marking isomer classes for single fit
         # TODO: Again, hard coded values are bad!
+        color_faded = {'indigo': '#746282',
+                       'limegreen': '#9acd9a',
+                       'blue': '#bfbfff',
+                       'red': '#ffbfbf'}
         if fit_id == 'single_gl':
             mark_iso = False
-            color = ['blue']
+            if fade_color:
+                color = [color_faded['blue']]
+            else:
+                color = ['blue']
             
         if show_sigma:
             color.extend(['limegreen', 'grey'])
@@ -741,7 +750,11 @@ class SpecPeWaterFitList(SpecPeWaterList):
 #             show_own_data_legend = True
          
         if color is None:
-            color = ['indigo', 'limegreen', 'blue', 'red']
+            if fade_color:
+                color = [color_faded['indigo'], color_faded['limegreen'],
+                         color_faded['blue'], color_faded['red']]
+            else:
+                color = ['indigo', 'limegreen', 'blue', 'red']
         if mark_iso:
             if generic_legend_labels:
                 leg_label = ['Peak II', 'Peak Ia', 'Peak Ib', 'Peak HE']
@@ -754,9 +767,19 @@ class SpecPeWaterFitList(SpecPeWaterList):
         if color_comp_data is None:
             color_comp_data = ['lightblue', 'whitesmoke', 'black', 'yellow', 'violet',
                                'grey', 'navy']
+        if color_comp_data == 'theo':
+            color_comp_data = ['indigo', 'red', 'limegreen', 'blue', 'red','orange',
+                               'yellow', 'pink', 'blue', 'green', 'yellow']
+        if markertype_comp_data == 'theo':
+            markertype_comp_data = ['D','D','D','o','o','o','o','<','<','<','<']
+            
+        if markeredgecolor == 'same':
+            markeredgecolor = color
+        else:
+            markeredgecolor = [markeredgecolor]*4
                          
         def plot_comp(plot_data, fit_par, fit_res, cutoff, fontsize_label, markersize,
-                      xlim, ylim, ax2_ticks, comp_data=None):
+                      xlim, ylim, ax2_ticks, markertype_comp_data, comp_data=None):
             fig = plt.figure()
             # setup lower axis
             ax = host_subplot(111, axes_class=AA.Axes)
@@ -806,7 +829,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
             for peak_set in plot_data:
                 # mind the ',' after ods, because plot returns a list
                 ods, = ax.plot(peak_set[2], peak_set[1], 's', markersize=markersize,
-                               color=color[idx], label=leg_label[idx])
+                               color=color[idx], label=leg_label[idx], alpha=alpha,
+                               markeredgecolor=markeredgecolor[idx])
                 own_data.append(ods)
                 idx += 1
             # optionally add legend for our data points
@@ -819,6 +843,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
             if comp_data is not None:
                 idx = 0
                 ext_data = []
+                if markertype_comp_data is None:
+                    markertype_comp_data = ['o']*len(comp_data)
                 for key, peak_set in sorted(comp_data.items()):
 #                     if idx < 4:
 #                         marker ='o'
@@ -835,12 +861,24 @@ class SpecPeWaterFitList(SpecPeWaterList):
                              'bowen_d2o_origin_1fit': 'Isomer I [1 fit] (Bowen)',
                              'bowen_d2o_origin_2fit': 'Isomer I [2 fit] (Bowen)',
                              'bowen_d2o_stretch': 'Vibrational (Bowen)',
+                             'herbert_surface': 'surface (Herbert)',
+                             'herbert_partial': 'part. embeded (Herbert)',
+                             'herbert_cavity': 'Cavity (Herbert)',
+                             'herbert_cavity_aneal': 'Cavity aneal. (Herbert)',
+                             'turi_tb_surface': 'TB surface (Turi)',
+                             'turi_tb_interior': 'TB interior (Turi)',
+                             'turi_lgs_surface': 'LGS surface (Turi)',
+                             'turi_lgs_interior': 'LGS interior (Turi)',
+                             'barnett_surface': 'surface (Landman)',
+                             'barnett_interior': 'interior (Landman)',
+                             'barnett_diffuse': 'diffuse (Landman)',
                              }
-                    eds, = ax.plot(peak_set[0], -1*peak_set[1], 'o', label=label[key],
+                    eds, = ax.plot(peak_set[0], -1*peak_set[1], markertype_comp_data[idx],
+                                   label=label[key],
                                    markersize=markersize, color=color_comp_data[idx])
                     ext_data.append(eds)
                     idx += 1
-                ax.legend(handles=ext_data, loc=4, fontsize=fontsize_label, numpoints=1)
+                ax.legend(handles=ext_data, loc=0, fontsize=fontsize_label, numpoints=1)
             # plot fits
             c = 0.5
             if cutoff is not None:
@@ -930,6 +968,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
              
         plot_comp(plot_data, fit_par, fit_res, cutoff, fontsize_label=fontsize_label,
                   markersize=markersize, xlim=xlim, ylim=ylim, ax2_ticks=ax2_ticks,
+                  markertype_comp_data=markertype_comp_data,
                   comp_data=comp_data)
         return fit_par, fit_res
 
