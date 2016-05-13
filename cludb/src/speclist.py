@@ -974,12 +974,18 @@ class SpecPeWaterFitList(SpecPeWaterList):
 
 
     def compare_peak_widths(self, comp_data=None, color_comp_data=None, fname=None,
-                            export_dir=os.path.expanduser('~'),
+                            export_dir=os.path.expanduser('~'), fade_color=False,
+                            markeredgecolor='black', add_own_data_legend=False,
                             size=[20,14], fontsize_label=12, markersize=6, xlim=[0,0.42],
                             ylim=[0,1.2], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
                             color=None, show_legend=True, n_xticks=None, sfactor=1):
         
         fit_id = self._eval_fit_id()
+        # TODO: hard coded == bad idea
+        color_faded = {'indigo': '#746282',
+                       'limegreen': '#9acd9a',
+                       'blue': '#bfbfff',
+                       'red': '#ffbfbf'}
         
         widths = {1: [], 2: [], 3: [], 4: []}
         width_pars_s_g = []
@@ -1005,13 +1011,25 @@ class SpecPeWaterFitList(SpecPeWaterList):
         #xdata = plot_data[0]**(-1/3)
         
         if color is None:
-            color = {'s_g': 'grey', 's_l': 'limegreen',
-                     '1': 'blue', '2': 'yellow', '3': 'midnightblue', '4': 'red'}
+            if fade_color:
+                color = {'s_g': 'lightgrey', 's_l': color_faded['limegreen'],
+                         '1': color_faded['blue'], '4': color_faded['red']}
+            else:
+                color = {'s_g': 'grey', 's_l': 'limegreen',
+                         '1': 'blue', '2': 'yellow', '3': 'midnightblue', '4': 'red'}
+        
+        if markeredgecolor == 'same':
+            markeredgecolor_dict = dict(color)
+        else:
+            markeredgecolor_dict = {}
+            for k in color.keys():
+                markeredgecolor_dict[k] = markeredgecolor
+        
         labels = {'s_g': '$\sigma_G$', 's_l': '$\sigma_L$',
                   '1': '1 GL', '2': '2 GL', '3': '3 GL', '4': '4 GL'}
         if color_comp_data is None:
-            color_comp_data = ['red', 'black', 'yellow', 'violet',
-                               'grey', 'navy']
+            color_comp_data = ['red', 'black', 'limegreen', 'grey',
+                               'yellow', 'navy']
         # create plot
         fig = plt.figure()
         # setup lower axis
@@ -1039,14 +1057,18 @@ class SpecPeWaterFitList(SpecPeWaterList):
         ax2.axis["right"].major_ticklabels.set_visible(False)
         ax2.grid(b=True)
         # plot data
+        own_data = []
         for k,v in sorted(plot_data.items()):
             xdata = v[0]**(-1/3)
             "TODO: remove scale factor later."
             if k == 's_l':
-                ax.plot(xdata, v[1]*sfactor, 's', label=labels[k], markersize=markersize,
-                        color=color[k])
+                ods, = ax.plot(xdata, v[1]*sfactor, 's', label=labels[k], markersize=markersize,
+                               color=color[k], markeredgecolor=markeredgecolor_dict[k])
             else:
-                ax.plot(xdata, v[1], 's', label=labels[k], markersize=markersize, color=color[k])
+                ods, = ax.plot(xdata, v[1], 's', label=labels[k], markersize=markersize,
+                               color=color[k], markeredgecolor=markeredgecolor_dict[k])
+            
+            own_data.append(ods)
 # linear fits make no sense here, its something asymptotic.
 #             # linear fit
 #             if len(v[0]) > 2 and np.abs(v[0][0] - v[0][-1]) > 20: 
@@ -1066,7 +1088,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
             leg.get_title().set_fontsize(fontsize_label)
         # plot comparison data
         if comp_data is not None:
-            idx = 0 and show_legend
+            idx = 0
             ext_data = []
             for key, width_set in sorted(comp_data.items()):
 #                     if idx < 4:
@@ -1074,24 +1096,27 @@ class SpecPeWaterFitList(SpecPeWaterList):
 #                     else:
 #                         marker='D'
                 # TODO: this is shoulden't be hard coded
-                label = {'bowen_iso1_sg_1fit': '$\sigma_g$ (Bowen)',
-                         'bowen_iso1_sl_1fit': '$\sigma_l$ (Bowen)',
+                label = {'bowen_iso1_sg_1fit': '$\sigma_G$ (Bowen)',
+                         'bowen_iso1_sl_1fit': '$\sigma_L$ (Bowen)',
                          'bowen_iso1_fwhm_1fit': '1 GL (Bowen)',
-                         'bowen_iso1_sg_2fit': '$\sigma_g$ 2 fits (Bowen)',
-                         'bowen_iso1_sl_2fit': '$\sigma_l$ 2 fits (Bowen)',
+                         'bowen_iso1_sg_2fit': '$\sigma_G$ 2 fits (Bowen)',
+                         'bowen_iso1_sl_2fit': '$\sigma_L$ 2 fits (Bowen)',
                          'bowen_iso1_fwhm_2fit': '2 fits (Bowen)',
-                         'bowen_d2o_sg_1fit': '$\sigma_g$ (Bowen)',
-                         'bowen_d2o_sl_1fit': '$\sigma_l$ (Bowen)',
+                         'bowen_d2o_sg_1fit': '$\sigma_G$ (Bowen)',
+                         'bowen_d2o_sl_1fit': '$\sigma_L$ (Bowen)',
                          'bowen_d2o_fwhm_1fit': '1 GL (Bowen)',
-                         'bowen_d2o_sg_2fit': '$\sigma_g$ 2 fits (Bowen)',
-                         'bowen_d2o_sl_2fit': '$\sigma_l$ 2 fits (Bowen)',
+                         'bowen_d2o_sg_2fit': '$\sigma_G$ 2 fits (Bowen)',
+                         'bowen_d2o_sl_2fit': '$\sigma_L$ 2 fits (Bowen)',
                          'bowen_d2o_fwhm_2fit': '2 fits (Bowen)',
                          }
-                eds, = ax.plot(width_set[0], width_set[1], 'o', label=label[key],
+                eds, = ax.plot(width_set[0], width_set[1], 's', label=label[key],
                                markersize=markersize, color=color_comp_data[idx])
                 ext_data.append(eds)
                 idx += 1
+                
             ax.legend(handles=ext_data, loc=0, fontsize=fontsize_label, numpoints=1)
+#             if add_own_data_legend:
+#                 leg_own = ax.legend(handles=own_data, loc=0, fontsize=fontsize_label, numpoints=1)
         if fname is None:
             fig.show()
         else:
