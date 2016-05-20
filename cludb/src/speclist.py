@@ -713,9 +713,11 @@ class SpecPeWaterFitList(SpecPeWaterList):
                            fontsize_label=12, markersize=6, xlim=[0,0.42],
                            ylim=[-4,0], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
                            color=None, alpha=1.0, markeredgecolor='black',
-                           markertype_comp_data=None, fade_color=False,
+                           markertype_comp_data=None, markersize_comp_data=None,
+                           fade_color=False,
                            color_comp_data=None, show_own_data_legend=True,
-                           show_sigma=False, generic_legend_labels=False):
+                           show_sigma=False, generic_legend_labels=False,
+                           show_fit_results=True):
         
         fit_id = self._eval_fit_id()
         # get linear parameters depending on water type
@@ -779,7 +781,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
             markeredgecolor = [markeredgecolor]*4
                          
         def plot_comp(plot_data, fit_par, fit_res, cutoff, fontsize_label, markersize,
-                      xlim, ylim, ax2_ticks, markertype_comp_data, comp_data=None):
+                      xlim, ylim, ax2_ticks, markertype_comp_data, markersize_comp_data,
+                      comp_data=None):
             fig = plt.figure()
             # setup lower axis
             ax = host_subplot(111, axes_class=AA.Axes)
@@ -804,23 +807,24 @@ class SpecPeWaterFitList(SpecPeWaterList):
             ax2.axis["right"].major_ticklabels.set_visible(False)
             ax2.grid(b=True)
             # write fit values
-            if len(fit_par) > 0:
-                fit_par.sort(key=lambda fp: fp[-1], reverse=True)
-                if cutoff is None:
-                    ex_str = 'Extrapolation to bulk:'
-                else:
-                    ex_str = 'Extrapolation to bulk (from size {}):'.format(cutoff)
-                i = 0
-                for par_set in fit_par:
-                    if i == 1:
-                        ex_str = ex_str.replace('Extrapolation', 'Extrapolations')
-                    res_set = fit_res[i]
-                    i += 1
-                    ex_str += '\n{:.2f}$\pm${:.2f}eV'.format(par_set[1], res_set[1])
-                bbox_props = {'boxstyle': 'square', 'facecolor': 'white'} 
-                # TODO: text position relative to axis?
-                ax.text(0.015, -0.2 + ylim[1], ex_str, verticalalignment='top',
-                        fontsize=fontsize_label,bbox=bbox_props)
+            if show_fit_results:
+                if len(fit_par) > 0:
+                    fit_par.sort(key=lambda fp: fp[-1], reverse=True)
+                    if cutoff is None:
+                        ex_str = 'Extrapolation to bulk:'
+                    else:
+                        ex_str = 'Extrapolation to bulk (from size {}):'.format(cutoff)
+                    i = 0
+                    for par_set in fit_par:
+                        if i == 1:
+                            ex_str = ex_str.replace('Extrapolation', 'Extrapolations')
+                        res_set = fit_res[i]
+                        i += 1
+                        ex_str += '\n{:.2f}$\pm${:.2f}eV'.format(par_set[1], res_set[1])
+                    bbox_props = {'boxstyle': 'square', 'facecolor': 'white'} 
+                    # TODO: text position relative to axis?
+                    ax.text(0.015, -0.2 + ylim[1], ex_str, verticalalignment='top',
+                            fontsize=fontsize_label,bbox=bbox_props)
             # plot data
             idx = 0
             '''TODO: name peak groups! With idx label get wrong names, if range is plotted, which 
@@ -839,12 +843,22 @@ class SpecPeWaterFitList(SpecPeWaterList):
                 own_legend = plt.legend(handles=own_data, loc=4, fontsize=fontsize_label,
                                         numpoints=1)
                 ax.add_artist(own_legend)
+            # plot fits
+            c = 0.5
+            if cutoff is not None:
+                c = cutoff**(-1/3)            
+            for par_set in fit_par:
+                lin_fit = np.poly1d(par_set)
+                ax.plot([xlim[0], c], lin_fit([xlim[0], c]), '-', color='grey')
+                ax.plot([c, xlim[1]], lin_fit([c, xlim[1]]), '--', color='grey')
             # plot comparison data
             if comp_data is not None:
                 idx = 0
                 ext_data = []
                 if markertype_comp_data is None:
                     markertype_comp_data = ['o']*len(comp_data)
+                if markersize_comp_data is None:
+                    markersize_comp_data = markersize
                 for key, peak_set in sorted(comp_data.items()):
 #                     if idx < 4:
 #                         marker ='o'
@@ -864,7 +878,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                              'herbert_surface': 'surface (Herbert)',
                              'herbert_partial': 'part. embeded (Herbert)',
                              'herbert_cavity': 'Cavity (Herbert)',
-                             'herbert_cavity_aneal': 'Cavity aneal. (Herbert)',
+                             'herbert_cavity_aneal': 'Cavity init. (Herbert)',
                              'turi_tb_surface': 'TB surface (Turi)',
                              'turi_tb_interior': 'TB interior (Turi)',
                              'turi_lgs_surface': 'LGS surface (Turi)',
@@ -875,18 +889,11 @@ class SpecPeWaterFitList(SpecPeWaterList):
                              }
                     eds, = ax.plot(peak_set[0], -1*peak_set[1], markertype_comp_data[idx],
                                    label=label[key],
-                                   markersize=markersize, color=color_comp_data[idx])
+                                   markersize=markersize_comp_data, color=color_comp_data[idx])
                     ext_data.append(eds)
                     idx += 1
                 ax.legend(handles=ext_data, loc=0, fontsize=fontsize_label, numpoints=1)
-            # plot fits
-            c = 0.5
-            if cutoff is not None:
-                c = cutoff**(-1/3)            
-            for par_set in fit_par:
-                lin_fit = np.poly1d(par_set)
-                ax.plot([xlim[0], c], lin_fit([xlim[0], c]), '-', color='grey')
-                ax.plot([c, xlim[1]], lin_fit([c, xlim[1]]), '--', color='grey')
+            
             # plot borders for isomer classification
             if plot_iso_borders:
                 for par in linpar.values():
@@ -969,6 +976,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         plot_comp(plot_data, fit_par, fit_res, cutoff, fontsize_label=fontsize_label,
                   markersize=markersize, xlim=xlim, ylim=ylim, ax2_ticks=ax2_ticks,
                   markertype_comp_data=markertype_comp_data,
+                  markersize_comp_data=markersize_comp_data,
                   comp_data=comp_data)
         return fit_par, fit_res
 
