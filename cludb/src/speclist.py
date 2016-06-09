@@ -717,7 +717,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                            fade_color=False,
                            color_comp_data=None, show_own_data_legend=True,
                            show_sigma=False, generic_legend_labels=False,
-                           show_fit_results=True):
+                           show_fit_results=True, add_slopes=None):
         
         fit_id = self._eval_fit_id()
         # get linear parameters depending on water type
@@ -782,7 +782,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                          
         def plot_comp(plot_data, fit_par, fit_res, cutoff, fontsize_label, markersize,
                       xlim, ylim, ax2_ticks, markertype_comp_data, markersize_comp_data,
-                      comp_data=None):
+                      comp_data=None, add_slopes=None):
             fig = plt.figure()
             # setup lower axis
             ax = host_subplot(111, axes_class=AA.Axes)
@@ -893,6 +893,29 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     ext_data.append(eds)
                     idx += 1
                 ax.legend(handles=ext_data, loc=0, fontsize=fontsize_label, numpoints=1)
+                
+            # add slopes for comparison
+            slope_legend = []
+            slope_legend_ref = []
+            if add_slopes is not None:
+                add_slopes.sort()
+                for slope in add_slopes:
+                    # TODO: use lambda
+                    ir0=0
+                    ir1=80**(-1/3)
+                    ir2=xlim[1]
+                    vde0=slope[1]
+                    vde1=vde0 + ir1*slope[0]
+                    vde2=vde0 + ir2*slope[0]
+                    eds, = ax.plot([ir0, ir1], [vde0, vde1], '-', color=slope[2],
+                                   label='A={}'.format(slope[0]))
+                    ax.plot([ir1, ir2], [vde1, vde2], '--', color=slope[2])
+                    if slope[0] not in slope_legend_ref:
+                        slope_legend_ref.append(slope[0])
+                        slope_legend.append(eds)
+                    
+                slope_legend = list(set(slope_legend))
+                ax.legend(handles=slope_legend, loc=0, fontsize=fontsize_label, numpoints=1)
             
             # plot borders for isomer classification
             if plot_iso_borders:
@@ -977,7 +1000,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                   markersize=markersize, xlim=xlim, ylim=ylim, ax2_ticks=ax2_ticks,
                   markertype_comp_data=markertype_comp_data,
                   markersize_comp_data=markersize_comp_data,
-                  comp_data=comp_data)
+                  comp_data=comp_data, add_slopes=add_slopes)
         return fit_par, fit_res
 
 
