@@ -1009,7 +1009,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
                             markeredgecolor='black', add_own_data_legend=False,
                             size=[20,14], fontsize_label=12, markersize=6, xlim=[0,0.42],
                             ylim=[0,1.2], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
-                            color=None, show_legend=True, n_xticks=None, sfactor=1):
+                            color=None, show_legend=True, n_xticks=None, sfactor=1,
+                            comp_legend_loc=0):
         
         fit_id = self._eval_fit_id()
         # TODO: hard coded == bad idea
@@ -1044,7 +1045,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
         if color is None:
             if fade_color:
                 color = {'s_g': 'lightgrey', 's_l': color_faded['limegreen'],
-                         '1': color_faded['blue'], '4': color_faded['red']}
+                         '1': color_faded['blue'], '2': color_faded['red'],
+                         '3': color_faded['red'], '4': color_faded['red']}
             else:
                 color = {'s_g': 'grey', 's_l': 'limegreen',
                          '1': 'blue', '2': 'yellow', '3': 'midnightblue', '4': 'red'}
@@ -1145,7 +1147,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                 ext_data.append(eds)
                 idx += 1
                 
-            ax.legend(handles=ext_data, loc=0, fontsize=fontsize_label, numpoints=1)
+            ax.legend(handles=ext_data, loc=comp_legend_loc, fontsize=fontsize_label, numpoints=1)
 #             if add_own_data_legend:
 #                 leg_own = ax.legend(handles=own_data, loc=0, fontsize=fontsize_label, numpoints=1)
         if fname is None:
