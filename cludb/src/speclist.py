@@ -913,8 +913,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     if slope[0] not in slope_legend_ref:
                         slope_legend_ref.append(slope[0])
                         slope_legend.append(eds)
-                    
-                slope_legend = list(set(slope_legend))
+                
                 ax.legend(handles=slope_legend, loc=0, fontsize=fontsize_label, numpoints=1)
             
             # plot borders for isomer classification
