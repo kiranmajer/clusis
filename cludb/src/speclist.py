@@ -717,7 +717,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                            fade_color=False,
                            color_comp_data=None, show_own_data_legend=True,
                            show_sigma=False, generic_legend_labels=False,
-                           show_fit_results=True, add_slopes=None):
+                           show_fit_results=True, add_slopes=None, hw_data=None):
         
         fit_id = self._eval_fit_id()
         # get linear parameters depending on water type
@@ -731,16 +731,26 @@ class SpecPeWaterFitList(SpecPeWaterList):
         else:
             linpar = linpar['default_fit']
             
+        if hw_data is not None:
+            hw_linpar = self.cfg.water_isomer_limits['D2O']
+            if fit_id in hw_linpar:
+                hw_linpar = hw_linpar[fit_id]
+            else:
+                hw_linpar = hw_linpar['default_fit']
+            
         # disable marking isomer classes for single fit
         # TODO: Again, hard coded values are bad!
         color_faded = {'indigo': '#746282',
                        'limegreen': '#9acd9a',
                        'blue': '#bfbfff',
                        'red': '#ffbfbf'}
+        
+        hw_color = ['indigo', 'limegreen', 'blue', 'red']
         if fit_id == 'single_gl':
             mark_iso = False
             if fade_color:
                 color = [color_faded['blue']]
+                hw_color = ['blue']
             else:
                 color = ['blue']
             
@@ -782,7 +792,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                          
         def plot_comp(plot_data, fit_par, fit_res, cutoff, fontsize_label, markersize,
                       xlim, ylim, ax2_ticks, markertype_comp_data, markersize_comp_data,
-                      comp_data=None, add_slopes=None):
+                      comp_data=None, add_slopes=None, hw_data=None):
             fig = plt.figure()
             # setup lower axis
             ax = host_subplot(111, axes_class=AA.Axes)
@@ -837,9 +847,26 @@ class SpecPeWaterFitList(SpecPeWaterList):
                                markeredgecolor=markeredgecolor[idx])
                 own_data.append(ods)
                 idx += 1
+                
+            # plot d2o data
+            if hw_data is not None:
+                print('Plotting d2o data...')
+                idx = 0
+                '''TODO: name peak groups! With idx label get wrong names, if range is plotted, which 
+                does not coantain peak II.'''
+                hw_own_data = []
+                for peak_set in hw_plot_data:
+                    # mind the ',' after ods, because plot returns a list
+                    ods, = ax.plot(peak_set[2], peak_set[1], 'o', markersize=markersize_comp_data,
+                                   color=hw_color[idx], label=leg_label[idx], alpha=alpha)
+                    hw_own_data.append(ods)
+                    idx += 1            
+            
             # optionally add legend for our data points
             if show_own_data_legend and not comp_data:
                 # handles argument requires matplotlib >= 1.4(.2)
+                if hw_data is not None:
+                    own_data = hw_own_data
                 own_legend = plt.legend(handles=own_data, loc=4, fontsize=fontsize_label,
                                         numpoints=1)
                 ax.add_artist(own_legend)
@@ -957,6 +984,43 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     p_1b.append([cs.mdata.data('clusterBaseUnitNumber'), p])
             
             del cs
+            
+        # add d2o data
+        if hw_data is not None:
+            hw_p_2 = []
+            hw_p_1a = []
+            hw_p_1b = []
+            hw_p_vib = []
+            hw_p_sg = []
+            hw_p_sl = []
+            for s in hw_data.dbanswer:
+                cs = load_pickle(self.cfg,s[str('pickleFile')])
+                #peak_list = [cs.ebin(p) for p in cs.mdata.data('fitData')[fit_id]['par'][:-2:2]]
+                hw_peak_list = [cs.ebin(peak[0]) for peak in cs._get_fit_peaks(fit_par_type='par',
+                                                                               fit_id=fit_id)]
+                hw_shape_par = cs._get_peakshape_par(fit_par='par', fit_id=fit_id, width=False,
+                                                     width_pars=True)
+                hw_sg, hw_sl = hw_shape_par[0], hw_shape_par[1]
+                for p in hw_peak_list:
+                        hw_p_sg.append([cs.mdata.data('clusterBaseUnitNumber'),
+                                        p - np.sqrt(2*np.log(2))*hw_sg])
+                        hw_p_sl.append([cs.mdata.data('clusterBaseUnitNumber'), p + hw_sl])
+                if mark_iso:
+                    self._sort_peaks(cs.mdata.data('clusterBaseUnitNumber'), hw_linpar,
+                                     hw_peak_list, hw_p_2, hw_p_1a, hw_p_1b, hw_p_vib)
+                else:
+                    for p in hw_peak_list:
+                        hw_p_1b.append([cs.mdata.data('clusterBaseUnitNumber'), p])
+                
+                del cs            
+ 
+            if not show_sigma:
+                hw_p_sg, hw_p_sl = [], []
+            hw_plot_data = [ps for ps in [hw_p_2, hw_p_1a, hw_p_1b, hw_p_vib, hw_p_sg, hw_p_sl] if len(ps) > 0]
+            hw_plot_data = [np.array(ps).transpose() for ps in hw_plot_data]
+            hw_plot_data = [np.vstack((ps, ps[0]**(-1/3))) for ps in hw_plot_data]
+            for ps in hw_plot_data:
+                ps[1] = ps[1]*-1 
          
         #print('p_* are:', p_2, p_1a, p_1b, p_vib)
         if not show_sigma:
@@ -999,7 +1063,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                   markersize=markersize, xlim=xlim, ylim=ylim, ax2_ticks=ax2_ticks,
                   markertype_comp_data=markertype_comp_data,
                   markersize_comp_data=markersize_comp_data,
-                  comp_data=comp_data, add_slopes=add_slopes)
+                  comp_data=comp_data, add_slopes=add_slopes, hw_data=hw_data)
         return fit_par, fit_res
 
 
