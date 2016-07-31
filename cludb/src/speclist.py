@@ -792,7 +792,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                          
         def plot_comp(plot_data, fit_par, fit_res, cutoff, fontsize_label, markersize,
                       xlim, ylim, ax2_ticks, markertype_comp_data, markersize_comp_data,
-                      comp_data=None, add_slopes=None, hw_data=None):
+                      comp_data=None, add_slopes=None, hw_plot_data=None):
             fig = plt.figure()
             # setup lower axis
             ax = host_subplot(111, axes_class=AA.Axes)
@@ -849,7 +849,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                 idx += 1
                 
             # plot d2o data
-            if hw_data is not None:
+            if hw_plot_data is not None:
                 print('Plotting d2o data...')
                 idx = 0
                 '''TODO: name peak groups! With idx label get wrong names, if range is plotted, which 
@@ -986,7 +986,9 @@ class SpecPeWaterFitList(SpecPeWaterList):
             del cs
             
         # add d2o data
-        if hw_data is not None:
+        if hw_data is None:
+            hw_plot_data = None
+        else:
             hw_p_2 = []
             hw_p_1a = []
             hw_p_1b = []
@@ -1063,7 +1065,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                   markersize=markersize, xlim=xlim, ylim=ylim, ax2_ticks=ax2_ticks,
                   markertype_comp_data=markertype_comp_data,
                   markersize_comp_data=markersize_comp_data,
-                  comp_data=comp_data, add_slopes=add_slopes, hw_data=hw_data)
+                  comp_data=comp_data, add_slopes=add_slopes, hw_plot_data=hw_plot_data)
         return fit_par, fit_res
 
 
