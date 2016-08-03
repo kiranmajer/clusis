@@ -9,7 +9,7 @@ from mdata import Mdata
 from ase.atoms import Atoms
 from ase.data import chemical_symbols
 import sys
-sys.path.append(os.path.normpath(os.path.join(os.getcwd(), '../../../delay/src')))
+sys.path.append(os.path.normpath(os.path.join(os.getcwd(), '../../delay/src')))
 from filestorage import load_xml, load_pickle, load_json
 #import config
 
