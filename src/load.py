@@ -182,7 +182,8 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
     return failedImports
     
 
-def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={}, prefer_filename_mdata=False):
+def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
+                      channel_map={'ch1': 'rawVoltageSpec', 'ch2': 'rawVoltageRamp'}):
     '''Build a list, so we can work with lists only'''
     datFileList = []
     if type(datFiles) is list:
@@ -192,7 +193,7 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
     
     '''Build a list of spec objects'''
     typeclass_map = {'spec': Spec,
-                     'specMs': SpecMs,
+                     'specM': SpecM,
                      'specTof': SpecTof}
     specList = []
     movedFiles =[]
@@ -205,7 +206,7 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
         print('\n######################')
         print('Importing: '+datFile+' with ', commonMdata)
         try:
-            mi = RawData_3f(datFile, cfg, spectype, commonMdata, prefer_filename_mdata=prefer_filename_mdata)
+            mi = RawData_3f(datFile, cfg, spectype, commonMdata)
         except Exception as e:
             print('LegacyData creation failed:', e)
             failedImports.append([datFile, 'LegacyData creation failed: {}'.format(e)])
@@ -228,8 +229,9 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
                     try:                    
                         # init spec obj
                         mdata = mi.mdata.data()
-                        ydata = {'rawIntensity': mi.data}
-                        xdata = {'idx': np.arange(0,len(ydata['rawIntensity']))+1/2} # intensity for [i,i+1] will be displayed at i+0.5
+                        ydata = {channel_map['ch1']: mi.data_ch1}
+                        ydata[channel_map['ch2']] = mi.data_ch2
+                        xdata = {'idx': np.arange(0,len(ydata['rawVoltageSpec']))} # intensity for [i,i+1] will be displayed at i+0.5
                         spec = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
                         spec._commit_pickle()
                     except Exception as e:
@@ -280,9 +282,8 @@ def load_pickle(cfg, pickleFile):
                      'specMs': SpecMs,
                      'specPe': SpecPe,
                      'specPePt': SpecPePt,
-                     'specPeIr': SpecPeIr,
                      'specPeWater': SpecPeWater,
-                     'specPf': SpecPf
+                     'specPf': SpecPf,
                      }
     with open(pickleFile, 'rb') as f:
             mdata, xdata, ydata = pickle.load(f)
@@ -306,6 +307,36 @@ def load_pickle(cfg, pickleFile):
     
     return spectrum
 
+
+def load_pickle_3f(cfg, pickleFile):
+    if not os.path.isabs(pickleFile):
+        pickleFile = os.path.join(cfg.path['base'], pickleFile)
+    typeclass_map = {'spec': Spec,
+                     'specM': SpecM,
+                     'specTof': SpecTof,
+                     }
+    with open(pickleFile, 'rb') as f:
+            mdata, xdata, ydata = pickle.load(f)
+    
+    # testing for correct mdata version
+    mdata_converted = False
+    if mdata['mdataVersion'] < cfg.mdata_version:
+        raise ValueError('mdata converter missing!')
+#         if mdata['mdataVersion'] == 0.1:
+#             print('Old mdata version detected: 0.1.') 
+#             mdata = cfg.convert_mdata_v0p1_to_v0p2(mdata)
+#             
+#         if mdata['mdataVersion'] == 0.2:
+#             print('Old mdata version detected: 0.2.') 
+#             mdata = cfg.convert_mdata_v0p2_to_v0p3(mdata)
+        
+        mdata_converted = True
+        
+    spectrum = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
+    if mdata_converted:
+        spectrum.commit()
+    
+    return spectrum
 
 
 def import_cludb_dir(cfg, import_dir):

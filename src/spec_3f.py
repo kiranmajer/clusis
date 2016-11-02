@@ -198,11 +198,11 @@ class SpecTof(Spec):
         #print 'Assigning view.ViewPes'
         self.view = view_3f.ViewTof(self)
      
-class SpecMs(Spec):
+class SpecM(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
-        print('__init__: Init SpecMs')
+        print('__init__: Init SpecM')
         Spec.__init__(self, mdata, xdata, ydata, cfg)
-        self._update_mdata_reference('specMs')
+        self._update_mdata_reference('specM')
         self.view = view_3f.ViewMs(self)
         
 

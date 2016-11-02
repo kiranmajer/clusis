@@ -9,6 +9,7 @@ from mdata import Mdata
 from ase.atoms import Atoms
 from ase.data import chemical_symbols
 import sys
+from scipy.stats.mstats_basic import threshold
 sys.path.append(os.path.normpath(os.path.join(os.getcwd(), '../../delay/src')))
 #from filestorage import load_xml, load_pickle, load_json
 #import config
@@ -18,7 +19,7 @@ sys.path.append(os.path.normpath(os.path.join(os.getcwd(), '../../delay/src')))
 class RawData_3f(object):
     
     def __init__(self, fileToImport, cfg, spectype=None, commonMdata={}, cbu='Ag', spec_type='ms',
-                 machine='3f', prefer_filename_mdata=False):
+                 machine='3f'):
         self.spectype = spectype
         self.datfile_orig = os.path.abspath(fileToImport)
         self.metadata = {'datFileOrig': os.path.abspath(fileToImport),
@@ -37,6 +38,8 @@ class RawData_3f(object):
         
         print('Parsing dat file ...')
         self.parse_file(fileToImport)
+        self.get_time_metrics()
+        self.verify_time_metrics()
         print('Setting up meta data ...')
         self.get_sha1()
         self.get_recTime(self.spectype)
@@ -53,7 +56,7 @@ class RawData_3f(object):
         self.mdata_ref = self.build_mdata_ref(self.metadata['specTypeClass'])
         print('mdata ref.:', self.mdata_ref)
         self.mdata = Mdata({}, self.mdata_ref, cfg.mdata_systemtags)
-        del(self.metadata['datFileOrig'])
+        #del(self.metadata['datFileOrig'])
         self.mdata.add(self.metadata)
         if len(commonMdata) > 0:
             print('Importing commonMdata', commonMdata)
@@ -94,8 +97,17 @@ class RawData_3f(object):
         self.data_ch2 = spec_data[column_name.index('Channel B')]*si_factor[column_unit[column_name.index('Channel B')]]
             
             
-            
+    def get_time_metrics(self):
+        self.metadata['triggerOffset'] = -1*self.data_t[0] # offset from idx = 0
+        self.metadata['timePerPoint'] = np.round((self.data_t[-1] - self.data_t[0])/(len(self.data_t) - 1), 9)
         
+    def verify_time_metrics(self, threshold=10e-6):
+        idx = np.arange(0,len(self.data_ch1))
+        data_t_calc = idx*self.metadata['timePerPoint'] - self.metadata['triggerOffset']
+        if np.sum(data_t_calc - self.data_t) > threshold:
+            raise ValueError('Difference of calculated time data from orignal time data exceeds threshold.')
+        else:
+            print('Time metrics verified (within threshold of {}'.format(threshold))
         
     def add_default_mdata(self):
         print('>>> add_default_mdata <<<')
@@ -207,14 +219,14 @@ class RawData_3f(object):
 
     def set_spectype_class(self):
         classtype_map = {'generic': 'spec',
-                         'ms': 'specMs',
+                         'ms': 'specM',
                          'tof': 'specTof',
                          }
         self.metadata['specTypeClass'] = classtype_map[self.metadata['specType']]
             
     def build_mdata_ref(self, spec_type_class):
         ref_map = {'spec': ['spec'],
-                   'specMs': ['spec', 'specMs'],
+                   'specM': ['spec', 'specM'],
                    'specTof': ['spec', 'specTof'],
                    }
         mdata_ref = {}
