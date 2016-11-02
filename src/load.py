@@ -5,6 +5,7 @@ from rawData_3f import RawData_3f
 from shutil import copy2
 from traceback import print_tb
 from sys import exc_info
+from glob import glob
 #import config
 #import mdata
 #import pickle
@@ -71,7 +72,7 @@ def move_back(movedFiles):
         os.rename(pair[0], pair[1])
 
 
-def ls_recursive(rootdir, suffix='.dat'):
+def ls(rootdir, suffix='.csv', recursive=False):
     '''
     Populates a list with the full path of all files recursively found
     under rootdir with corresponding suffix.
@@ -81,13 +82,17 @@ def ls_recursive(rootdir, suffix='.dat'):
     fileList = []
     rootdir = os.path.abspath(rootdir)
     if os.path.exists(rootdir):
-        for root, subFolders, files in os.walk(rootdir):
-            for f in files:
-                if f.endswith(suffix) and root.find('selection') == -1: #skip selection folders since they contain doublets
-                    fileList.append(os.path.join(root,f))
+        if recursive:
+            for root, subFolders, files in os.walk(rootdir):
+                for f in files:
+                    if f.endswith(suffix) and root.find('selection') == -1: #skip selection folders since they contain doublets
+                        fileList.append(os.path.join(root,f))
+        else:
+            fileList = glob(rootdir + '*' + suffix)
     else: raise IOError(2, 'No such file or directory: ' + rootdir)
             
     return fileList
+
 
  
 def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filename_mdata=False):
@@ -352,7 +357,7 @@ def import_cludb_dir(cfg, import_dir):
     if not os.path.isdir(import_archive) or not os.path.isdir(import_data):
         raise ValueError('"{}" does not seem to be a valid cludb dir.'.format(import_dir)) 
     # get pickle files for import
-    pickle_list =  ls_recursive(import_data, suffix='.pickle')
+    pickle_list =  ls(import_data, suffix='.pickle', recursive=True)
     # process spectra
     for pfile in pickle_list:
         cs = load_pickle(cfg, pfile)
@@ -394,7 +399,7 @@ def import_export_speclist(cfg, export_dir):
     db = Db('casi', cfg)
     failedImports = []
     successfulImports = []
-    filelist = ls_recursive(export_dir, suffix='.pickle')
+    filelist = ls(export_dir, suffix='.pickle', recursive=True)
     for pfile in filelist:
         print('Importing {} ...'.format(os.path.basename(pfile)))
         cs = load_pickle(cfg, pfile)
