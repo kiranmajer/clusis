@@ -2,6 +2,8 @@ import os
 import sqlite3
 from dbshell import Db
 import config_3f
+from load import *
+from speclist_3f import *
 #import ConfigParser
 
 

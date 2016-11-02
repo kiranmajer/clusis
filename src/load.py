@@ -2,7 +2,7 @@ from spec import *
 from spec_3f import *
 from legacyData import LegacyData
 from rawData_3f import RawData_3f
-from shutil import copy2
+from shutil import copy2, copyfile
 from traceback import print_tb
 from sys import exc_info
 from glob import glob
@@ -40,7 +40,7 @@ def abs_path(cfg, p):
     return p
 
 
-def archive(cfg, mdata):
+def archive(cfg, mdata, mode):
     """Move raw data file(s) *.dat (and *.cfg) to raw data archive.
     Update mdata with file location.
     """
@@ -50,7 +50,12 @@ def archive(cfg, mdata):
         os.makedirs(os.path.dirname(new_file))
     'TODO: catch io exceptions'
     if not os.path.exists(new_file):
-        os.rename(old_file, new_file)
+        if mode == 'mv':
+            os.rename(old_file, new_file)
+        elif mode == 'cp':
+            copyfile(old_file, new_file)
+        else:
+            raise ValueError('"mode" must be one of ["cp", "mv"].')
         movedFiles = [[new_file, old_file]]
     else:
         raise ValueError('Archive contains already a file with this file name.')
@@ -67,9 +72,14 @@ def archive(cfg, mdata):
     return movedFiles
 
 
-def move_back(movedFiles):
+def move_back(movedFiles, mode):
     for pair in movedFiles:
-        os.rename(pair[0], pair[1])
+        if mode == 'mv':
+            os.rename(pair[0], pair[1])
+        elif mode == 'rm':
+            os.remove(pair[0])
+        else:
+            raise ValueError('"mode" must be one of ["mv", "rm"].')
 
 
 def ls(rootdir, suffix='.csv', recursive=False):
@@ -151,7 +161,7 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
                     except Exception as e:
                         print('%s failed to import:'%datFile, e)
                         failedImports.append([datFile, 'Import error: %s.'%e])
-                        move_back(moved)
+                        move_back(moved, mode='mv')
                         raise
                     else:
                         movedFiles.extend(moved)
@@ -171,7 +181,7 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
     except Exception as e:
         print('Db population failed:', e)
         # remove all files in our data dir, from this import
-        move_back(movedFiles)
+        move_back(movedFiles, mode='mv')
         for spec in specList:
             pickleFile = os.path.join(cfg.path['base'], spec.mdata.data('pickleFile'))
             os.remove(pickleFile)
@@ -188,7 +198,7 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
     
 
 def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
-                      channel_map={'ch1': 'rawVoltageSpec', 'ch2': 'rawVoltageRamp'}):
+                      channel_map={'ch1': 'rawVoltageSpec', 'ch2': 'rawVoltageRamp'}, archive_mode='cp'):
     '''Build a list, so we can work with lists only'''
     datFileList = []
     if type(datFiles) is list:
@@ -226,7 +236,7 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
                 print(os.path.basename(datFile), '''ready to convert ...
                 ''')
                 try:
-                    moved = archive(cfg, mi.metadata) # ! use metadata dict here since it has '...FileOrig' entries
+                    moved = archive(cfg, mi.metadata, mode='cp') # ! use metadata dict here since it has '...FileOrig' entries
                 except Exception as e:
                     print('%s: Failed to archive raw data:'%datFile, e)
                     failedImports.append([datFile, 'Import error: Archive failed: %s.'%e])
@@ -242,7 +252,7 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
                     except Exception as e:
                         print('%s failed to import:'%datFile, e)
                         failedImports.append([datFile, 'Import error: %s.'%e])
-                        move_back(moved)
+                        move_back(moved, mode='rm')
                         raise
                     else:
                         movedFiles.extend(moved)
@@ -262,7 +272,7 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
     except Exception as e:
         print('Db population failed:', e)
         # remove all files in our data dir, from this import
-        move_back(movedFiles)
+        move_back(movedFiles, mode='rm')
         for spec in specList:
             pickleFile = os.path.join(cfg.path['base'], spec.mdata.data('pickleFile'))
             os.remove(pickleFile)
