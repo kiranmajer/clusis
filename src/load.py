@@ -1,6 +1,6 @@
 from spec import *
 from spec_3f import *
-from legacyData import LegacyData
+# from legacyData import LegacyData not necessary for data other than CASI data
 from rawData_3f import RawData_3f
 from shutil import copy2
 from traceback import print_tb
