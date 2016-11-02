@@ -88,7 +88,7 @@ def ls(rootdir, suffix='.csv', recursive=False):
                     if f.endswith(suffix) and root.find('selection') == -1: #skip selection folders since they contain doublets
                         fileList.append(os.path.join(root,f))
         else:
-            fileList = glob(rootdir + '*' + suffix)
+            fileList = glob(rootdir + '/*' + suffix)
     else: raise IOError(2, 'No such file or directory: ' + rootdir)
             
     return fileList
