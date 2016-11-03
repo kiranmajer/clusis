@@ -62,7 +62,8 @@ class Spec(object):
         self._commit_db(update=update)
         
     def _auto_key_selection(self, xdata_key, ydata_key, key_deps):
-        #print('Searching for valid keys ...')
+        print('Searching for valid keys ...')
+        print('Got key dependencies: ', key_deps)
         def auto_xkey(key_deps):
             k_gauged = [i for i in key_deps.keys() if 'Gauged' in i]
             if 'gauged' in self.mdata.data('systemTags') and len(k_gauged) > 0:
@@ -231,8 +232,11 @@ class SpecM(Spec):
             self.commit()
         # idealize ramp voltage
         if 'voltageRampFitted' not in self.ydata.keys():
-            self.idealize_ramp()
-            self.commit()
+            try:
+                self.idealize_ramp()
+                self.commit()
+            except:
+                pass
             
     
     def scale_ramp_voltage(self, factor=100):

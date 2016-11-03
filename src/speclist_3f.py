@@ -11,6 +11,7 @@ import mpl_toolkits.axisartist as AA
 import matplotlib.ticker as ticker
 #from scipy.stats import linregress
 from itertools import combinations
+import viewlist_3f
 
 
 
@@ -28,7 +29,7 @@ class SpecList(object):
                                      notInTags=notInTags, datFileName=datFileName,
                                      hide_trash=hide_trash, order_by=order_by)
         self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
-        self.view = viewlist.ViewList(self)
+        self.view = viewlist_3f.ViewList(self)
         
 
 #    def query(self, recTime=None, recTimeRange=None,
@@ -251,7 +252,7 @@ class SpecTofList(SpecList):
                                      notInTags=notInTags, datFileName=datFileName,
                                      hide_trash=hide_trash, order_by=order_by)
         self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
-        self.view = viewlist.ViewPesList(self)
+        self.view = viewlist_3f.ViewTofList(self)
         
         
 
@@ -268,7 +269,7 @@ class SpecMList(SpecList):
                                      notInTags=notInTags, datFileName=datFileName,
                                      hide_trash=hide_trash, order_by=order_by)
         self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
-        self.view = viewlist.ViewMsList(self)
+        self.view = viewlist_3f.ViewMsList(self)
 
 
 # class Batch(object):
