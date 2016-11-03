@@ -122,6 +122,12 @@ class Spec(object):
         """
         self.ydata[new_int_key] = self._set_neg_int_zero(self.ydata[int_key])
         
+    def _invert_dataset(self, ydata_key, new_ydata_key):
+        """
+        Adds a new ydata set with key new_ydata_key which contains the inverted values from ydata_key
+        """
+        self.ydata[new_ydata_key] = -1*self.ydata[ydata_key]
+        
         
     def calc_spec_data(self):
         self._calc_time_data()
@@ -197,6 +203,12 @@ class SpecTof(Spec):
         self._update_mdata_reference('specTof')
         #print 'Assigning view.ViewPes'
         self.view = view_3f.ViewTof(self)
+        
+        # calculate time vector
+        if 'time' not in self.xdata.keys():
+            self._calc_time_data('time')
+            self.commit()
+            
      
 class SpecM(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
@@ -205,5 +217,13 @@ class SpecM(Spec):
         self._update_mdata_reference('specM')
         self.view = view_3f.ViewMs(self)
         
+        # calculate time vector
+        if 'time' not in self.xdata.keys():
+            self._calc_time_data('time')
+            self.commit()
+        # invert spectrum
+        if 'voltageSpec' not in self.ydata.keys():
+            self._invert_dataset('rawVoltageSpec', 'voltageSpec')
+            self.commit()
 
 

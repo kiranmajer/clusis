@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import os.path
-from numpy import log10,sqrt, abs, argmin, arange
+#from numpy import log10,sqrt, abs, argmin, arange, sort
+import numpy as np
 
 import load
 
@@ -114,14 +115,15 @@ class View(object):
         if not ms:
             partClusterNumber = '_{%s}'%(str(self.spec.mdata.data('clusterBaseUnitNumber')))
         partCharge = '}^{%s}'%self.spec.mdata.data('ionType')
-        partDopant = '{%s}'%self.spec.mdata.data('clusterDopant')
-        partDopantNumber = '_{%s}'%(str(self.spec.mdata.data('clusterDopantNumber')))
+        if 'clusterDopant' in self.spec.mdata.data().keys():
+            partDopant = '{%s}'%self.spec.mdata.data('clusterDopant')
+            partDopantNumber = '_{%s}'%(str(self.spec.mdata.data('clusterDopantNumber')))
         
         cluster_id_str = formatStart + partCluster
         if not ms:
             if self.spec.mdata.data('clusterBaseUnitNumber') > 1:
                 cluster_id_str += partClusterNumber
-        if self.spec.mdata.data('clusterDopant'):
+        if 'clusterDopant' in self.spec.mdata.data().keys():
             cluster_id_str += partDopant
             if self.spec.mdata.data('clusterDopantNumber') > 1:
                 cluster_id_str += partDopantNumber
@@ -182,7 +184,7 @@ class View(object):
         if time_unit not in [1, 1e-3, 1e-6, 1e-9]:
             raise ValueError('time_unit must be one of: 1, 1e-3, 1e-6, 1e-9.')
         prefix_map = ['', 'm', '\mu ', 'n']
-        prefix = prefix_map[int(abs(log10(time_unit)/3))]
+        prefix = prefix_map[int(abs(np.log10(time_unit)/3))]
         ax.set_xlabel(r'{0} (${1}s$)'.format(label, prefix), fontsize=fontsize)
         
 
@@ -239,9 +241,13 @@ class View(object):
         ax.autoscale(axis='y')
         
     def _yminmax_in_xrange(self, xdata, ydata, xlim_scale):
-        xlb = argmin(abs(xdata-xlim_scale[0]))
-        xub = argmin(abs(xdata-xlim_scale[1]))
-        return ydata[xlb:xub].min(), ydata[xlb:xub].max()
+        xlb = np.argmin(abs(xdata-xlim_scale[0]))
+        xub = np.argmin(abs(xdata-xlim_scale[1]))
+        ydata_sorted = np.sort(ydata[xlb:xub])
+        # exclude infinite values
+        ymin = ydata_sorted[np.isfinite(ydata_sorted)][0]
+        ymax = ydata_sorted[np.isfinite(ydata_sorted)][-1]
+        return ymin, ymax
                
     
     def _auto_ylim(self, ax, xdata, ydata, xlim_scale, lower_padding=0.04, upper_padding=0.3):
@@ -272,7 +278,7 @@ class View(object):
                             xlim_scale)
               
         
-    def plot_tof(self, ax, xdata_key, ydata_key, time_unit, xlim, xlim_scale=None,
+    def plot_time(self, ax, xdata_key, ydata_key, time_unit, xlim, xlim_scale=None,
                  n_xticks=None, color='black'):
         self.xdata_key = xdata_key
         self.ydata_key = ydata_key
@@ -293,10 +299,10 @@ class View(object):
             
     def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None,
                  show_mdata=False, show_ytics=False, fontsize_label=12, fontsize_ref=6,
-                 export=False, show_xlabel=True, show_ylabel=True, size=None):
+                 export=False, show_xlabel=True, show_ylabel=True, size=None,
+                 key_deps={'idx': ['rawVoltageSpec', 'rawVoltageRamp', 'rawVoltagePulse']}):
         self._single_fig_output(size=size)
         # set data keys
-        key_deps = {'idx': ['rawVoltageSpec', 'rawVoltageRamp', 'rawVoltagePulse']}
         xdata_key, ydata_key = self._auto_key_selection(xdata_key='idx', ydata_key=ydata_key, key_deps=key_deps)        
         self.plot_idx(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim,
                       xlim_scale=xlim_scale, n_xticks=n_xticks)
@@ -319,18 +325,17 @@ class View(object):
             self.fig.canvas.draw()
 
 
-    def show_tof(self, xdata_key='auto', ydata_key='auto', time_label='Time',
-                 time_unit=1e-6, xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None, show_mdata=False,
-                 show_ytics=False, fontsize_label=12, fontsize_ref=6, export=False, show_xlabel=True,
-                 show_ylabel=True, size=None):     
+    def show_time(self, xdata_key='auto', ydata_key='auto', time_label='Time',
+                  time_unit=1e-6, xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None, show_mdata=False,
+                  show_ytics=False, fontsize_label=12, fontsize_ref=6, export=False, show_xlabel=True,
+                  show_ylabel=True, size=None,
+                  key_deps={'time': ['rawVoltageSpec', 'rawVoltageRamp', 'rawVoltagePulse'],}):     
         self._single_fig_output(size=size)
         # set data keys
-        key_deps = {'tof': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'],
-                    'tofGauged': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']} 
         xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key,
                                                         key_deps=key_deps)      
-        self.plot_tof(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
-                      time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks)
+        self.plot_time(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
+                       time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks)
         if show_xlabel:
             self._set_xlabel_time(self.ax, label=time_label, time_unit=time_unit, fontsize=fontsize_label)
         if show_ylabel:
@@ -360,9 +365,9 @@ class View(object):
 #             xlim_scale = self.ax.get_xlim()
 #         else:
 #             xlim_scale = self.xlim_scale
-        if self._yminmax_in_xrange(xdata, ydata, self.xlim_scale)[1] > self.ymax:
-            self._auto_ylim(ax, xdata, ydata, self.xlim_scale)
-        added_line = ax.plot(xdata, ydata, color=color, linestyle=linestyle, linewidth=linewidth)[0]
+        if self._yminmax_in_xrange(xdata, ydata, np.array(self.xlim_scale)*self.timeunit)[1] > self.ymax:
+            self._auto_ylim(ax, xdata, ydata, np.array(self.xlim_scale)*self.timeunit)
+        added_line = ax.plot(xdata/self.timeunit, ydata, color=color, linestyle=linestyle, linewidth=linewidth)[0]
         if linestyle in ['--', ':']:
             added_line.set_dashes((1,1))
         self.fig.canvas.draw()
@@ -460,134 +465,42 @@ class ViewTof(View):
         View.__init__(self, spec)
         
 
-    def plot_ekin(self, ax, xdata_key, ydata_key, xlim, xlim_scale=None, n_xticks=None,
-                  color='black'):
-        self.xdata_key = xdata_key
-        self.ydata_key = ydata_key
-        # plot 
-        ax.plot(self.spec.xdata[xdata_key], self.spec.ydata[ydata_key], color=color)
-        #set axes limits  
-        xlim_auto = [0, self.spec._hv]
-        xlim_plot = self._set_xlimit(ax, xlim, xlim_auto, n_xticks=n_xticks)
-        if xlim_scale is None:
-            self._auto_ylim(ax, self.spec.xdata[xdata_key], self.spec.ydata[ydata_key],
-                            [xlim_plot[1], xlim_plot[0]])
-        else:
-            self._auto_ylim(ax, self.spec.xdata[xdata_key], self.spec.ydata[ydata_key],
-                            [xlim_scale[1], xlim_scale[0]])
-
-
-    def plot_ebin(self, ax, xdata_key, ydata_key, xlim, xlim_scale=None, n_xticks=None,
-                  color='black'):       
-        self.xdata_key = xdata_key
-        self.ydata_key = ydata_key
-        # plot
-        ax.plot(self.spec.xdata[xdata_key], self.spec.ydata[ydata_key], color=color)
-        #set axes limits  
-        xlim_auto = [0, self.spec._hv]
-        xlim_plot = self._set_xlimit(ax, xlim, xlim_auto, n_xticks=n_xticks)
-        if xlim_scale is None:
-            self._auto_ylim(ax, self.spec.xdata[xdata_key], self.spec.ydata[ydata_key],
-                            xlim_plot)
-        else:
-            self._auto_ylim(ax, self.spec.xdata[xdata_key], self.spec.ydata[ydata_key],
-                            xlim_scale)
-
-
     def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None,
                  show_mdata=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
-                 fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None):
+                 fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None,
+                  show_pulse=True):
+        key_deps={'idx': ['rawVoltageSpec', 'rawVoltagePulse'],}
         View.show_idx(self, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks,
                       show_mdata=show_mdata, show_ytics=show_ytics, fontsize_label=fontsize_label,
                       fontsize_ref=fontsize_ref, export=export, show_xlabel=show_xlabel,
-                      show_ylabel=show_ylabel, size=size)
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
+                      show_ylabel=show_ylabel, size=size,key_deps=key_deps)
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(ms=True), text_pos='right',
                                  fontsize=fontsize_clusterid)
+        if show_pulse:
+            self.add_plot(self.ax, self.spec.xdata[self.xdata_key], self.spec.ydata['rawVoltagePulse'])
         if not export:          
             self.fig.canvas.draw()
 
         
-    def show_tof(self, xdata_key='auto', ydata_key='auto', time_label='Flight Time',
-                 time_unit=1e-6, xlim=[0, 'auto'], xlim_scale=None, n_xticks=None,
-                 show_mdata=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
-                 fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None):
-        View.show_tof(self, xdata_key=xdata_key, ydata_key=ydata_key, time_label=time_label, 
-                      time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks,
-                      show_mdata=show_mdata, show_ytics=show_ytics, fontsize_label=fontsize_label,
-                      fontsize_ref=fontsize_ref, export=export, show_xlabel=show_xlabel,
-                      show_ylabel=show_ylabel, size=size)
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
-                                 fontsize=fontsize_clusterid)        
+    def show_time(self, xdata_key='auto', ydata_key='auto', time_label='Time',
+                  time_unit=1e-3, xlim=[0, 'auto'], xlim_scale=None, n_xticks=None,
+                  show_mdata=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
+                  fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None,
+                  show_pulse=True):
+        key_deps={'time': ['rawVoltageSpec', 'rawVoltagePulse'],}
+        View.show_time(self, xdata_key=xdata_key, ydata_key=ydata_key, time_label=time_label, 
+                       time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks,
+                       show_mdata=show_mdata, show_ytics=show_ytics, fontsize_label=fontsize_label,
+                       fontsize_ref=fontsize_ref, export=export, show_xlabel=show_xlabel,
+                       show_ylabel=show_ylabel, size=size, key_deps=key_deps)
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(ms=True), text_pos='right',
+                                 fontsize=fontsize_clusterid)    
+        if show_pulse:
+            self.add_plot(self.ax, self.spec.xdata[self.xdata_key], self.spec.ydata['rawVoltagePulse'])
         if not export:          
             self.fig.canvas.draw()
-        
-
-    def show_ekin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None,
-                  n_xticks=None, show_mdata=False, show_ytics=False, fontsize_clusterid=28,
-                  fontsize_label=12, fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True,
-                  size=None):
-        self._single_fig_output(size=size)
-        # set data keys
-        key_deps = {'ekin': ['jIntensity', 'jIntensitySub'],
-                    'ekinGauged': ['jIntensityGauged', 'jIntensityGaugedSub']} 
-        xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key,
-                                                        key_deps=key_deps)        
-        self.plot_ekin(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim,
-                       xlim_scale=xlim_scale, n_xticks=n_xticks)
-        if show_xlabel:
-            self.ax.set_xlabel(r'E$_{kin}$ (eV)', fontsize=fontsize_label)
-        if show_ylabel:
-            self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
-        self.ax.tick_params(labelsize=fontsize_label)  
-        self._addtext_file_id(self.ax, fontsize=fontsize_ref)
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), text_pos='right',
-                                 fontsize=fontsize_clusterid)
-        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
-                                   fontsize=fontsize_ref)
-        if show_mdata:
-            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_pos='right',
-                               text_vpos='top', fontsize=fontsize_label)
-        if show_ytics:
-            self.ax.yaxis.set_major_locator(plt.AutoLocator())
-        else:
-            self.ax.yaxis.set_major_locator(plt.NullLocator())  
-        self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')    
-        if not export:          
-            self.fig.canvas.draw()
-
-
-    def show_ebin(self, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None,
-                  n_xticks=None, show_mdata=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
-                  fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None):
-        self._single_fig_output(size=size)
-        # set data keys
-        key_deps = {'ebin': ['jIntensity', 'jIntensitySub'],
-                    'ebinGauged': ['jIntensityGauged', 'jIntensityGaugedSub']} 
-        xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key,
-                                                        key_deps=key_deps)         
-        self.plot_ebin(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim,
-                       xlim_scale=xlim_scale, n_xticks=n_xticks)
-        if show_xlabel:
-            self.ax.set_xlabel(r'E$_{bin}$ (eV)', fontsize=fontsize_label)
-        if show_ylabel:
-            self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
-        self.ax.tick_params(labelsize=fontsize_label)    
-        self._addtext_file_id(self.ax, fontsize=fontsize_ref)
-        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(), fontsize=fontsize_clusterid)
-        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
-                                   fontsize=fontsize_ref)
-        if show_mdata:
-            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_pos='right',
-                               text_vpos='top', fontsize=fontsize_label)
-        if show_ytics:
-            self.ax.yaxis.set_major_locator(plt.AutoLocator())
-        else:
-            self.ax.yaxis.set_major_locator(plt.NullLocator()) 
-        self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
-        if not export:          
-            self.fig.canvas.draw()
-        
-        
+            
+       
     def show_gaugeref(self):
         gaugeRef = self.spec.mdata.data('gaugeRef')
         gaugeSpec = load.load_pickle_3f(self.spec.cfg, gaugeRef)
@@ -673,54 +586,7 @@ class ViewTof(View):
         self.fig.canvas.draw()
         
         
-    def _add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1,
-                              yscale_type='area', xoffset='ea', color='blue',
-                              linestyle='-' , linewidth=.5, fontsize_clusterid=28,
-                              ax=None):
-        '''
-        Right now a alkali specific shortcut for _add_spec, which automatically sets some values.
-        Might be moved to a special class (?).
-        '''
-        if ax is None:
-            ax = self.ax
-        addspec = load.load_pickle_3f(self.spec.cfg, specfile)
-        try:
-            ea = addspec.mdata.data('electronAffinity')
-            ea_ref = self.spec.mdata.data('electronAffinity')
-        except:
-            raise ValueError('Missing electron affinity value.')
-        if xscale == 'fermi_energy':
-            self.comp_spec_data['xscale_type'] = xscale
-            xscale = self.spec.cfg.bulk_fermi_energy[self.spec.mdata.data('clusterBaseUnit')]/self.spec.cfg.bulk_fermi_energy[addspec.mdata.data('clusterBaseUnit')]
-        elif type(xscale) not in [int, float]:
-            raise ValueError('xscale must be numeric or "fermy_energy"')    
-        if xoffset == 'ea':
-            #ea_xoffset = True
-            if 'ebin' in self.xdata_key:
-                xoffset = ea_ref - ea*xscale
-            elif 'ekin' in self.xdata_key:
-                xoffset = (self.spec._hv - ea_ref) - (self.spec._hv - ea)*xscale
-            elif 'tof' in self.xdata_key:
-                xoffset = sqrt(self.spec._pFactor/(self.spec._hv - ea_ref))/self.timeunit - sqrt(self.spec._pFactor/(self.spec._hv - ea))/self.timeunit*xscale
-            print('xoffset calculated from eas:', xoffset)
-            if 'manual offset' in self.spec.mdata.data('tags'):
-                self.spec.mdata.remove_tag('manual offset')
-        else:
-            self.spec.mdata.add_tag('manual offset')
-        self._add_spec(specfile=specfile, xscale=xscale, yscale=yscale, yscale_type=yscale_type,
-                       xoffset=xoffset, color=color, linestyle=linestyle, linewidth=linewidth,
-                       fontsize_clusterid=fontsize_clusterid, ax=ax)
-#         if ea_xoffset:
-#             self.comp_spec_data['xoffset'] = 'ea'
-        
-        
-    def add_fermiscaled_spec(self, specfile, xscale='fermi_energy', yscale=1, yscale_type='area',
-                             xoffset='ea', color='blue', linestyle='-' , linewidth=.5,
-                             fontsize_clusterid=28, ax=None):
-        self._add_fermiscaled_spec(specfile, xscale=xscale, yscale=yscale, yscale_type=yscale_type,
-                                   xoffset=xoffset, color=color, fontsize_clusterid=fontsize_clusterid,
-                                   ax=ax)
-        self.fig.canvas.draw()
+
 
     def add_che_spec(self, point, shifted_point, yscale, linewidth=1.5):
         '''Shortcut for shifting the same spectrum by the difference of point_shifted - point.
@@ -730,44 +596,7 @@ class ViewTof(View):
         self.add_spec(self.spec.mdata.data('pickleFile'), linewidth=linewidth,
                       xoffset=xoffset, yoffset=yoffset, yscale=yscale)
 
-    def show_comp_spec(self, comp_spec_id, fontsize_clusterid=28, **keywords):
-        base_plot_map = {'tof': self.show_tof,
-                         'ekin': self.show_ekin,
-                         'ebin': self.show_ebin}
-        if type(comp_spec_id) is not list:
-            comp_spec_id = [comp_spec_id]
-        base_plot_mode = None
-        for csid in comp_spec_id:
-            if csid not in self.spec.mdata.data('compSpecs').keys():
-                raise ValueError('No comparison spec with id "{}" is attached to this spec.')
-            # set mode for base plot and plot
-            if base_plot_mode is None:
-                for k in base_plot_map.keys():
-                    if k in self.spec.mdata.data('compSpecs')[csid]['xdata_key']:
-                        base_plot_map[k](fontsize_clusterid=fontsize_clusterid, **keywords)
-                        base_plot_mode = k
-                        break
-            elif base_plot_mode not in self.spec.mdata.data('compSpecs')[csid]['xdata_key']:
-                raise ValueError('Comparison spectrum type ({}) does not fit to chosen view ({}).'.format(self.spec.mdata.data('compSpecs')[csid]['xdata_key'],
-                                                                                                          base_plot_mode))
-            if 'xscale_type' in self.spec.mdata.data('compSpecs')[csid].keys() and self.spec.mdata.data('compSpecs')[csid]['xscale_type'] == 'fermi_energy':
-                print('Adding spec in fermi scaled mode.')
-                self._add_fermiscaled_spec(specfile=self.spec.mdata.data('compSpecs')[csid]['specfile'],
-                                           xscale=self.spec.mdata.data('compSpecs')[csid]['xscale_type'],
-                                           yscale=self.spec.mdata.data('compSpecs')[csid]['yscale'],
-                                           yscale_type=self.spec.mdata.data('compSpecs')[csid]['yscale_type'],
-                                           color=self.spec.mdata.data('compSpecs')[csid]['color'],
-                                           fontsize_clusterid=fontsize_clusterid)
-            else:
-                self._add_spec(self.spec.mdata.data('compSpecs')[csid]['specfile'],
-                               self.spec.mdata.data('compSpecs')[csid]['xscale'],
-                               self.spec.mdata.data('compSpecs')[csid]['yscale'],
-                               self.spec.mdata.data('compSpecs')[csid]['yscale_type'],
-                               self.spec.mdata.data('compSpecs')[csid]['xoffset'],
-                               self.spec.mdata.data('compSpecs')[csid]['yoffset'],
-                               self.spec.mdata.data('compSpecs')[csid]['color'],
-                               fontsize_clusterid=fontsize_clusterid)
-            
+       
         
 
        
@@ -807,7 +636,43 @@ class ViewMs(View):
                             xlim_scale)
 #         ax.relim()
 #         ax.autoscale()
+     
+     
+    def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None,
+                 show_mdata=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
+                 fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None,
+                 show_ramp=True):
+        key_deps = {'idx': ['voltageSpec', 'rawVoltageSpec', 'rawVoltageRamp', 'rawVoltagePulse'],}
+        View.show_idx(self, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks,
+                      show_mdata=show_mdata, show_ytics=show_ytics, fontsize_label=fontsize_label,
+                      fontsize_ref=fontsize_ref, export=export, show_xlabel=show_xlabel,
+                      show_ylabel=show_ylabel, size=size, key_deps=key_deps)
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(ms=True), text_pos='right',
+                                 fontsize=fontsize_clusterid)
+        if show_ramp:
+            self.add_plot(self.ax, self.spec.xdata[self.xdata_key], self.spec.ydata['rawVoltageRamp'])
+        if not export:          
+            self.fig.canvas.draw()
+            
         
+    def show_time(self, xdata_key='auto', ydata_key='auto', time_label='Time',
+                 time_unit=1e-3, xlim=[0, 'auto'], xlim_scale=None, n_xticks=None,
+                 show_mdata=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
+                 fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None,
+                 show_ramp=True):
+        key_deps = {'time': ['voltageSpec', 'rawVoltageSpec', 'rawVoltageRamp', 'rawVoltagePulse'],}
+        View.show_time(self, xdata_key=xdata_key, ydata_key=ydata_key, time_label=time_label, 
+                      time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks,
+                      show_mdata=show_mdata, show_ytics=show_ytics, fontsize_label=fontsize_label,
+                      fontsize_ref=fontsize_ref, export=export, show_xlabel=show_xlabel,
+                      show_ylabel=show_ylabel, size=size, key_deps=key_deps)
+        self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(ms=True), text_pos='right',
+                                 fontsize=fontsize_clusterid)        
+        if show_ramp:
+            self.add_plot(self.ax, self.spec.xdata[self.xdata_key], self.spec.ydata['rawVoltageRamp'])
+        if not export:          
+            self.fig.canvas.draw()
+            
         
     def show_ms(self, mass_key='cluster', xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None,
                 color='black', show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
