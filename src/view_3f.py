@@ -356,7 +356,7 @@ class View(object):
             self.fig.canvas.draw()
         
         
-    def add_plot(self, ax, xdata, ydata, color='blue', linestyle='-', linewidth=.5, file_id=None):
+    def add_plot(self, ax, xdata, ydata, color='blue', linestyle='-', linewidth=.5, file_id=None, rescale=True):
 #         if not hasattr(self, 'fig'):
 #             raise ValueError('No active plot. Create one first via show_XXX.')
         if file_id is not None:
@@ -365,9 +365,15 @@ class View(object):
 #             xlim_scale = self.ax.get_xlim()
 #         else:
 #             xlim_scale = self.xlim_scale
-        if self._yminmax_in_xrange(xdata, ydata, np.array(self.xlim_scale)*self.timeunit)[1] > self.ymax:
-            self._auto_ylim(ax, xdata, ydata, np.array(self.xlim_scale)*self.timeunit)
-        added_line = ax.plot(xdata/self.timeunit, ydata, color=color, linestyle=linestyle, linewidth=linewidth)[0]
+        if self.timeunit:
+            unit_scale = self.timeunit
+        else:
+            unit_scale = 1
+        if rescale:
+            if self._yminmax_in_xrange(xdata, ydata, np.array(self.xlim_scale)*unit_scale)[1] > self.ymax:
+                self._auto_ylim(ax, xdata, ydata, np.array(self.xlim_scale)*unit_scale)
+        
+        added_line = ax.plot(xdata/unit_scale, ydata, color=color, linestyle=linestyle, linewidth=linewidth)[0]
         if linestyle in ['--', ':']:
             added_line.set_dashes((1,1))
         self.fig.canvas.draw()
@@ -672,7 +678,53 @@ class ViewMs(View):
             self.add_plot(self.ax, self.spec.xdata[self.xdata_key], self.spec.ydata['rawVoltageRamp'])
         if not export:          
             self.fig.canvas.draw()
+    
+    
+    def plot_ramp(self, ax, xdata_key, ydata_key, xlim, xlim_scale=None,
+                 n_xticks=None, color='black'):
+        self.xdata_key = xdata_key
+        self.ydata_key = ydata_key
+        #self.timeunit = time_unit
+        #self.xlim_scale = xlim_scale
+        # plot      
+        ax.plot(self.spec.ydata[xdata_key], self.spec.ydata[ydata_key], color=color)
+        #set axes limits
+        xlim_auto = [self.spec.ydata[xdata_key][0], self.spec.ydata[xdata_key][-1]] 
+        xlim_plot = self._set_xlimit(ax, xlim, xlim_auto, n_xticks=n_xticks)
+        if xlim_scale is None:
+            self._auto_ylim(ax, self.spec.ydata[xdata_key], self.spec.ydata[ydata_key],
+                            xlim_plot)
+        else:
+            self._auto_ylim(ax, self.spec.ydata[xdata_key], self.spec.ydata[ydata_key],
+                            xlim_scale)
             
+    
+    def show_ramp(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None,
+                 show_mdata=False, show_ytics=False, fontsize_label=12, fontsize_ref=6,
+                 export=False, show_xlabel=True, show_ylabel=True, size=None,):
+        self._single_fig_output(size=size)
+        # set data keys
+        xdata_key, ydata_key = 'voltageRamp', 'voltageSpec' #self._auto_key_selection(xdata_key='idx', ydata_key=ydata_key, key_deps=key_deps)        
+        self.plot_ramp(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim,
+                       xlim_scale=xlim_scale, n_xticks=n_xticks)
+        if show_xlabel:
+            self.ax.set_xlabel('Voltage', fontsize=fontsize_label)
+        if show_ylabel:
+            self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
+        self.ax.tick_params(labelsize=fontsize_label)      
+        self._addtext_file_id(self.ax, fontsize=fontsize_ref)
+        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fontsize=fontsize_ref)
+        if show_mdata:
+            self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_pos='right',
+                               fontsize=fontsize_label)
+        if show_ytics:
+            self.ax.yaxis.set_major_locator(plt.AutoLocator())
+        else:
+            self.ax.yaxis.set_major_locator(plt.NullLocator())
+        self.ax.xaxis.grid(linewidth=.1, linestyle=':', color='black')
+        if not export:          
+            self.fig.canvas.draw()
+                
         
     def show_ms(self, mass_key='cluster', xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None,
                 color='black', show_ytics=False, fontsize_clusterid=28, fontsize_label=12,

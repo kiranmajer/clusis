@@ -225,5 +225,39 @@ class SpecM(Spec):
         if 'voltageSpec' not in self.ydata.keys():
             self._invert_dataset('rawVoltageSpec', 'voltageSpec')
             self.commit()
+        # idealize ramp voltage
+        if 'voltageRamp' not in self.ydata.keys():
+            self.idealize_ramp()
+            self.commit()
+            
+            
+    def idealize_ramp(self, offset_factor_max_finding=0.2, exclude_from_fit=0.05):
+        # linear fit to channelB
+        #
+        # locate ramp period
+        ramp = self.ydata['rawVoltageRamp']
+        idx_ramp_max1 = np.argmax(ramp)
+        idx_ramp_max2 = np.argmax(ramp[idx_ramp_max1+int(len(ramp)*offset_factor_max_finding):]) + idx_ramp_max1+int(len(ramp)*offset_factor_max_finding)
+        # skip first 5% due to coupling
+        idx_ramp_max1 = idx_ramp_max1 + int(round((idx_ramp_max2 - idx_ramp_max1)*exclude_from_fit))
+        print('Indices %s, %s'%(idx_ramp_max1, idx_ramp_max2))
+        t_ramp_max1 = self.xdata['time'][idx_ramp_max1]
+        t_ramp_max2 = self.xdata['time'][idx_ramp_max2]
+        print('Maximums %s, %s'%(t_ramp_max1, t_ramp_max2))
+        
+        # fit
+        fit_par = np.polyfit(self.xdata['time'][idx_ramp_max1:idx_ramp_max2], ramp[idx_ramp_max1:idx_ramp_max2], 1)
+        lin_fit = np.poly1d(fit_par)
+        t0_real = -1*fit_par[1]/fit_par[0]
+        idx0 = (np.abs(self.xdata['time']-t0_real)).argmin()
+        t0 = self.xdata['time'][idx0]
+        print(t0)
+        
+        # build idelized ramp vector
+        ramp_fit = np.zeros(len(ramp))
+        ramp_fit[idx0:idx_ramp_max2+1] = lin_fit(self.xdata['time'][idx0:idx_ramp_max2+1])
+        ramp_fit[idx_ramp_max2+1:] = lin_fit(self.xdata['time'][idx_ramp_max2+1])
+        
+        self.ydata['voltageRamp'] = ramp_fit
 
 
