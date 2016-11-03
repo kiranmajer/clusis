@@ -18,9 +18,9 @@ sys.path.append(os.path.normpath(os.path.join(os.getcwd(), '../../delay/src')))
 
 class RawData_3f(object):
     
-    def __init__(self, fileToImport, cfg, spectype=None, commonMdata={}, cbu='Ag', spec_type='ms',
-                 machine='3f'):
+    def __init__(self, fileToImport, cfg, spectype=None, commonMdata={}, cbu='Ag', machine='3f'):
         if spectype in cfg.mdata_ref['spec']['specType'][0]:
+            print('Got valid spectype: {}'.format(spectype))
             self.spectype = spectype
         else:
             raise ValueError('Unknown spectype: {}'.format(spectype))
@@ -33,7 +33,7 @@ class RawData_3f(object):
                          'machine': machine,
                          'info': '',
                          'clusterBaseUnit': cbu,
-                         'specType': spec_type,
+                         'specType': self.spectype,
                          }
         self.cfg = cfg
         self.header = []
