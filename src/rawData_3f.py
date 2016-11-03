@@ -20,7 +20,10 @@ class RawData_3f(object):
     
     def __init__(self, fileToImport, cfg, spectype=None, commonMdata={}, cbu='Ag', spec_type='ms',
                  machine='3f'):
-        self.spectype = spectype
+        if spectype in cfg.mdata_ref['spec']['specType'][0]:
+            self.spectype = spectype
+        else:
+            raise ValueError('Unknown spectype: {}'.format(spectype))
         self.datfile_orig = os.path.abspath(fileToImport)
         self.metadata = {'datFileOrig': os.path.abspath(fileToImport),
                          'tags': [],
