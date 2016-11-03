@@ -210,6 +210,13 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
     typeclass_map = {'spec': Spec,
                      'specM': SpecM,
                      'specTof': SpecTof}
+    
+    '''Map channel to data type'''
+    channel_map={'generic': {'ch1': 'rawVoltageCh1', 'ch2': 'rawVoltageCh2'},
+                 'ms': {'ch1': 'rawVoltageSpec', 'ch2': 'rawVoltageRamp'},
+                 'tof': {'ch1': 'rawVoltageSpec', 'ch2': 'rawVoltagePulse'},
+                 }
+    
     specList = []
     movedFiles =[]
     failedImports = []
@@ -244,8 +251,8 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
                     try:                    
                         # init spec obj
                         mdata = mi.mdata.data()
-                        ydata = {channel_map['ch1']: mi.data_ch1}
-                        ydata[channel_map['ch2']] = mi.data_ch2
+                        ydata = {channel_map[spectype]['ch1']: mi.data_ch1}
+                        ydata[channel_map[spectype]['ch2']] = mi.data_ch2
                         xdata = {'idx': np.arange(0,len(ydata['rawVoltageSpec']))} # intensity for [i,i+1] will be displayed at i+0.5
                         spec = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
                         spec._commit_pickle()
