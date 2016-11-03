@@ -699,16 +699,17 @@ class ViewMs(View):
                             xlim_scale)
             
     
-    def show_ramp(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None,
-                 show_mdata=False, show_ytics=False, fontsize_label=12, fontsize_ref=6,
-                 export=False, show_xlabel=True, show_ylabel=True, size=None,):
+    def show_ramp(self, ramp_data_key='voltageRampFitted', ydata_key='auto', xlim=['auto', 'auto'],
+                  xlim_scale=None, n_xticks=None,
+                  show_mdata=False, show_ytics=False, fontsize_label=12, fontsize_ref=6,
+                  export=False, show_xlabel=True, show_ylabel=True, size=None,):
         self._single_fig_output(size=size)
         # set data keys
-        xdata_key, ydata_key = 'voltageRamp', 'voltageSpec' #self._auto_key_selection(xdata_key='idx', ydata_key=ydata_key, key_deps=key_deps)        
+        xdata_key, ydata_key = ramp_data_key, 'voltageSpec' #self._auto_key_selection(xdata_key='idx', ydata_key=ydata_key, key_deps=key_deps)        
         self.plot_ramp(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim,
                        xlim_scale=xlim_scale, n_xticks=n_xticks)
         if show_xlabel:
-            self.ax.set_xlabel('Voltage', fontsize=fontsize_label)
+            self.ax.set_xlabel('Ramp Voltage (V)', fontsize=fontsize_label)
         if show_ylabel:
             self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
         self.ax.tick_params(labelsize=fontsize_label)      
