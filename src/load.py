@@ -223,8 +223,8 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
         try:
             mi = RawData_3f(datFile, cfg, spectype, commonMdata)
         except Exception as e:
-            print('LegacyData creation failed:', e)
-            failedImports.append([datFile, 'LegacyData creation failed: {}'.format(e)])
+            print('rawData_3f creation failed:', e)
+            failedImports.append([datFile, 'rawData_3f creation failed: {}'.format(e)])
             print('Traceback:')
             print_tb(exc_info()[2])
             continue
