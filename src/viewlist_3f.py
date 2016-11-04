@@ -245,7 +245,8 @@ class ViewMsList(ViewList):
                    show_mdata=show_mdata, key_deps=key_deps)
         spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(ms=True), fontsize=10) 
         if show_ramp:
-            spec.view.add_plot(ax, spec.xdata['time'], spec.ydata['rawVoltageRamp'], batch_mode=True)   
+            spec.view.add_plot(ax, spec.xdata['time'], spec.ydata['rawVoltageRamp'], batch_mode=True,
+                               unit_scale=spec.view.timeunit)   
     
     
     def _show_ramp(self, spec, ax, ramp_data_key='voltageRampFitted', ydata_key='voltageSpec', xlim=['auto', 'auto'],

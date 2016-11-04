@@ -14,6 +14,7 @@ import view
 import view_3f
 import pickle
 import load
+import speclist_3f
 
 
 
@@ -209,7 +210,13 @@ class SpecTof(Spec):
         if 'time' not in self.xdata.keys():
             self._calc_time_data('time')
             self.commit()
-            
+    
+    
+    def cluster_velocity(self, tof):
+        return self.mdata.data('flightLength')/tof
+    
+    
+    
      
 class SpecM(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
@@ -276,3 +283,66 @@ class SpecM(Spec):
         self.ydata['voltageRampFitted'] = ramp_fit
 
 
+    def _convertVtoNumSilver(self, deflector_voltage, clustervelocity, masscoefficient=3200000):
+        mass = deflector_voltage*masscoefficient/(clustervelocity**2)
+        return mass
+
+    # Converts the Number of Silver atoms to Diameter
+    # 
+    # WignerSeitz radius times a_o times 2 in nm is where 0.319
+    # comes from 
+    def _convertMassToSize(self, mass):
+        size=0.319*(mass)**(1./3.)
+        return size
+
+    # Converts the deflection Voltage atoms to Diameter
+    # 
+    # WignerSeitz radius times a_o times 2 in nm is where 0.319
+    # comes from 
+    def _convertVToSize(self, V, clustervelocity, masscoefficient=3200000):
+        V[V<0] = 0
+        #print V,masscoefficient, clustervelocity
+        #size = 0.319*(V*masscoefficient/(clustervelocity*clustervelocity))**(1/3)
+        diam = 0.319*(self._convertVtoNumSilver(deflector_voltage=V, clustervelocity=clustervelocity,
+                                                masscoefficient=masscoefficient))**(1/3)*1e-9
+        return diam
+    
+
+    
+    
+    
+    def calibrate(self, tof_tags=[]):
+        tof_spectra = speclist_3f.SpecTofList(self.cfg, inTags=tof_tags)
+        spec_idx = int(input('Choose index of tof spectrum for tof extraction: '))
+        
+        tof = tof_spectra.get_spec(spec_idx)
+        
+        try:
+            sat_tof = tof.mdata.data('saturationFlightTime')
+        except KeyError:
+            tof.view.show_time()
+            sat_tof = float(input('Insert time in ms when saturation starts: '))*1e-3
+            tof.mdata.add({'saturationFlightTime': sat_tof}, update=True)
+            tof.commit()
+        
+        self.mdata.add({'refFlightTime': sat_tof,
+                        'refVelocity': tof.cluster_velocity(sat_tof),
+                        'refTofSpec': tof.mdata.data('pickleFile'),
+                        #'refDeflectorVoltage': tof.mdata.data('deflectorVoltage')
+                        },
+                       update=True)
+        print('Calibrating using ToF: {} and cluster velocity: {}'.format(sat_tof, self.mdata.data('refVelocity')))
+        self.xdata['cluster'] = self._convertVtoNumSilver(self.ydata['voltageRampFitted'],
+                                                          self.mdata.data('refVelocity'))
+        self.xdata['diam'] = self._convertVToSize(self.ydata['voltageRampFitted'],
+                                                  self.mdata.data('refVelocity'))
+        self.mdata.add_tag('gauged', 'systemTags')
+        
+        
+        
+    
+    
+    
+    
+    
+    

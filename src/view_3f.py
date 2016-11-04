@@ -621,7 +621,12 @@ class ViewMs(View):
         View.__init__(self, spec)   
         
         
-    def _xlabel_str(self, mass_key):
+    def _xlabel_str(self, mass_key, mass_unit=None):
+        diam_mass_unit_map = {1: 'm',
+                              1e-3: 'mm',
+                              1e-6: 'um',
+                              1e-9: 'nm',
+                              1e-10: 'angstrom'}
         if mass_key == 'cluster':
             # TODO: better a generic str parser and formatter
             id_str = self._pretty_format_clusterid(ms=True)
@@ -632,22 +637,24 @@ class ViewMs(View):
             xlabel = 'Cluster Size (number of {})'.format(id_str)
         elif mass_key == 's_u':
             xlabel = 'Cluster Mass (simplified u)'
-        else:
+        elif mass_key == 'u':
             xlabel = 'Cluster Mass (u)'
+        else:
+            xlabel = 'Cluster Diameter ({})'.format(diam_mass_unit_map[mass_unit])
             
         return xlabel        
 
     
-    def plot_ms(self, ax, mass_key, xlim, xlim_scale=None, n_xticks=None, color='black'):
-        ax.plot(self.spec.xdata[mass_key], self.spec.ydata['intensity'], color=color)
+    def plot_ms(self, ax, mass_key, mass_unit, xlim, xlim_scale=None, n_xticks=None, color='black', spec_key='voltageSpec'):
+        ax.plot(self.spec.xdata[mass_key]/mass_unit, self.spec.ydata[spec_key], color=color)
         # set axes limits
-        xlim_auto = [self.spec.xdata[mass_key][0], self.spec.xdata[mass_key][-1]]
+        xlim_auto = [self.spec.xdata[mass_key][0]/mass_unit, self.spec.xdata[mass_key][-1]/mass_unit]
         xlim_plot = self._set_xlimit(ax, xlim, xlim_auto, n_xticks=n_xticks)
         if xlim_scale is None:
-            self._auto_ylim(ax, self.spec.xdata[mass_key], self.spec.ydata['intensity'],
+            self._auto_ylim(ax, self.spec.xdata[mass_key]/mass_unit, self.spec.ydata[spec_key],
                             xlim_plot)
         else:
-            self._auto_ylim(ax, self.spec.xdata[mass_key], self.spec.ydata['intensity'],
+            self._auto_ylim(ax, self.spec.xdata[mass_key]/mass_unit, self.spec.ydata[spec_key],
                             xlim_scale)
 #         ax.relim()
 #         ax.autoscale()
@@ -737,11 +744,16 @@ class ViewMs(View):
             self.fig.canvas.draw()
                 
         
-    def show_ms(self, mass_key='cluster', xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None,
+    def show_ms(self, mass_key='diam', mass_unit=None, xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None,
                 color='black', show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
                 fontsize_ref=6, export=False, show_mdata=None, size=None):
         self._single_fig_output(size=size)
-        self.plot_ms(ax=self.ax, mass_key=mass_key, xlim=xlim, xlim_scale=xlim_scale,
+        if not mass_unit:
+            if mass_key=='diam':
+                mass_unit = 1e-9
+            else:
+                mass_unit = 1
+        self.plot_ms(ax=self.ax, mass_key=mass_key, mass_unit=mass_unit, xlim=xlim, xlim_scale=xlim_scale,
                      n_xticks=n_xticks, color=color)
         self.ax.set_xlabel(self._xlabel_str(mass_key), fontsize=fontsize_label)
         self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
@@ -752,7 +764,7 @@ class ViewMs(View):
                                      fontsize=fontsize_clusterid)
         if show_mdata:
             self._addtext_info(self.ax, self._pretty_print_info(show_mdata), fontsize=fontsize_label,
-                                    text_pos='right', text_vpos='top')
+                               text_pos='right', text_vpos='top')
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
