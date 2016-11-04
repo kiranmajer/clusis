@@ -276,3 +276,34 @@ class SpecM(Spec):
         self.ydata['voltageRampFitted'] = ramp_fit
 
 
+    def convertVtoNumSilver(self, deflector_voltage, masscoefficient, clustervelocity):
+        mass = deflector_voltage*masscoefficient/(clustervelocity*clustervelocity)
+        return mass
+
+    # Converts the Number of Silver atoms to Diameter
+    # 
+    # WignerSeitz radius times a_o times 2 in nm is where 0.319
+    # comes from 
+    def convertMassToSize(self, mass):
+        size=0.319*(mass)**(1./3.)
+        return size
+
+    # Converts the deflection Voltage atoms to Diameter
+    # 
+    # WignerSeitz radius times a_o times 2 in nm is where 0.319
+    # comes from 
+    def convertVToSize(self, V, masscoefficient, clustervelocity):
+        V[V<0] = 0
+        #print V,masscoefficient, clustervelocity
+        size = 0.319*(V*masscoefficient/(clustervelocity*clustervelocity))**(1./3.)
+        return size
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
