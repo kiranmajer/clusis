@@ -1,4 +1,4 @@
-from load import load_pickle_3f
+import load
 from dbshell import Db
 import time
 import os
@@ -39,14 +39,14 @@ class SpecList(object):
 #                                     inTags=inTags, notInTags=notInTags, datFileName=datFileName)
 
     def get_spec(self, number):
-        spec = load_pickle_3f(self.cfg, self.dbanswer[number]['pickleFile'])
+        spec = load.load_pickle_3f(self.cfg, self.dbanswer[number]['pickleFile'])
         return spec
 
     def update_mdata(self, mdataDict):
         'TODO: open db only once'
         for entry in self.dbanswer:
             print(entry['pickleFile'])
-            cs = load_pickle_3f(self.cfg, entry['pickleFile'])
+            cs = load.load_pickle_3f(self.cfg, entry['pickleFile'])
             try:
                 cs.mdata.update(mdataDict)
                 if hasattr(cs, '_hv') and 'waveLength' in mdataDict.keys():
@@ -63,7 +63,7 @@ class SpecList(object):
         
     def remove_tag(self, tag, tagkey='userTags'):
         for entry in self.dbanswer:
-            cs = load_pickle_3f(self.cfg, entry['pickleFile'])
+            cs = load.load_pickle_3f(self.cfg, entry['pickleFile'])
             try:
                 cs.mdata.remove_tag(tag, tagkey=tagkey)
             except ValueError:
@@ -82,7 +82,7 @@ class SpecList(object):
         print('datFile:', keys)
         print('-'*85)
         for s in self.dbanswer:
-            cs = load_pickle_3f(self.cfg, s['pickleFile'])
+            cs = load.load_pickle_3f(self.cfg, s['pickleFile'])
             values = [cs.mdata.data(k) for k in keys]
             print('{}:'.format(os.path.basename(cs.mdata.data('datFile'))), values)
             del cs
@@ -135,7 +135,7 @@ class SpecList(object):
     def remove_spec(self):
         'TODO: query for confirmation, since you can cause great damage.'
         for entry in self.dbanswer:
-            cs = load_pickle_3f(self.cfg, entry['pickleFile'])
+            cs = load.load_pickle_3f(self.cfg, entry['pickleFile'])
             cs.remove()
             del cs      
             

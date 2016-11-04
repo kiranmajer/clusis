@@ -1,5 +1,5 @@
 from spec import *
-from spec_3f import *
+import spec_3f
 from legacyData import LegacyData
 from rawData_3f import RawData_3f
 from shutil import copy2, copyfile
@@ -207,9 +207,9 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
         datFileList.append(datFiles)
     
     '''Build a list of spec objects'''
-    typeclass_map = {'spec': Spec,
-                     'specM': SpecM,
-                     'specTof': SpecTof}
+    typeclass_map = {'spec': spec_3f.Spec,
+                     'specM': spec_3f.SpecM,
+                     'specTof': spec_3f.SpecTof}
     
     '''Map channel to data type'''
     channel_map={'generic': {'ch1': 'rawVoltageCh1', 'ch2': 'rawVoltageCh2'},
@@ -333,9 +333,9 @@ def load_pickle(cfg, pickleFile):
 def load_pickle_3f(cfg, pickleFile):
     if not os.path.isabs(pickleFile):
         pickleFile = os.path.join(cfg.path['base'], pickleFile)
-    typeclass_map = {'spec': Spec,
-                     'specM': SpecM,
-                     'specTof': SpecTof,
+    typeclass_map = {'spec': spec_3f.Spec,
+                     'specM': spec_3f.SpecM,
+                     'specTof': spec_3f.SpecTof,
                      }
     with open(pickleFile, 'rb') as f:
             mdata, xdata, ydata = pickle.load(f)

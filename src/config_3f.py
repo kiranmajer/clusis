@@ -78,7 +78,11 @@ class Cfg():
                           'specM': {'clusterBaseUnit': [str, True],
                                     'clusterBaseUnitMass': [float, True],
                                     'ionType': [['+','-'], True],
-                                    'refTofSpec':[str, False],
+                                    #'refDeflectorVoltage': [float, False],
+                                    'refFlightTime': [float, False],
+                                    'refTofSpec': [str, False],
+                                    'refVelocity': [float, False],
+                                    'saturationFlightTime': [float, False],
                                     },
                           'specTof': {'cfgFile': [str, False],
                                       'clusterBaseUnit': [str, True],
@@ -86,6 +90,7 @@ class Cfg():
                                       'deflectorVoltage': [float, True],
                                       'flightLength': [float, True],
                                       'ionType': [['+','-'], True],
+                                      'saturationFlightTime': [float, False],
                                       },
                           }
 
