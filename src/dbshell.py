@@ -304,6 +304,7 @@ class Db(object):
                 sql += i
             sql = sql.rstrip(' AND ')
         
+        # TODO: move to config
         # build order part
         if order_by in ['recTime', 'trapTemp']:
             pes_order = ' ORDER BY clusterBaseUnit, clusterBaseUnitNumber, {}, datFile'.format(order_by)
@@ -312,6 +313,7 @@ class Db(object):
         
         orderResults = {'pes': pes_order,
                         'ms': ' ORDER BY clusterBaseUnit, recTime, datFile',
+                        'tof': ' ORDER BY clusterBaseUnit, recTime, datFile',
                         'generic': ' ORDER BY recTime, datFile'}
         sql += orderResults[specType]
         
@@ -323,6 +325,7 @@ class Db(object):
         db_cursor.close()
         del db_cursor
         
+        # TODO: move fromating stuff to config or make it more generic
         def print_answer(fetch):
             def format_RecTime(unixtime):
                 return time.strftime('%d.%m.%Y  %H:%M', time.localtime(unixtime))
@@ -381,10 +384,12 @@ class Db(object):
             
             printHead = {'pes': print_head_pes,
                          'ms': print_head_ms,
+                         'tof': print_head_ms,
                          'generic': print_head_generic}
                            
             printData = {'pes': print_data_pes,
                          'ms': print_data_ms,
+                         'tof': print_data_ms,
                          'generic': print_data_generic}
             
             
