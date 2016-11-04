@@ -261,9 +261,10 @@ class ViewMsList(ViewList):
             spec.view._addtext_info(ax, spec.view._pretty_print_info(show_mdata), fontsize=6, text_pos='right')
         
                 
-    def _show_ms(self, spec, ax, mass_key='cluster', xlim=['auto', 'auto'], xlim_scale=None,
+    def _show_ms(self, spec, ax, mass_key='diam', mass_unit=None, xlim=['auto', 'auto'], xlim_scale=None,
                  n_xticks=None, fontsize_clusterid=10, show_mdata=None):        
-        spec.view.plot_ms(ax=ax, mass_key=mass_key, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks)
+        spec.view.plot_ms(ax=ax, mass_key=mass_key, mass_unit=mass_unit, xlim=xlim, xlim_scale=xlim_scale,
+                          n_xticks=n_xticks)
         if fontsize_clusterid:
             spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(ms=True),
                                           fontsize=fontsize_clusterid)
@@ -271,15 +272,28 @@ class ViewMsList(ViewList):
         if show_mdata is not None:
             spec.view._addtext_info(ax, spec.view._pretty_print_info(show_mdata), fontsize=6, text_pos='left')
             
-    def _xlabel_str(self, mass_key):
+    def _xlabel_str(self, mass_key, mass_unit=None):
+        diam_mass_unit_map = {1: 'm',
+                              1e-3: 'mm',
+                              1e-6: 'um',
+                              1e-9: 'nm',
+                              1e-10: 'angstrom'}
         if mass_key == 'cluster':
-            xlabel = 'Cluster Size (# cluster base units)'
+            # TODO: better a generic str parser and formatter
+            id_str = self._pretty_format_clusterid(ms=True)
+            ref_str = self.spec.mdata.data('clusterBaseUnit')
+            id_str = id_str[id_str.index(ref_str[0]):id_str.index(ref_str[-1])+1]
+            if '_' in id_str:
+                id_str = '$\mathrm{\mathsf{' + id_str + '}}$'
+            xlabel = 'Cluster Size (number of {})'.format(id_str)
         elif mass_key == 's_u':
             xlabel = 'Cluster Mass (simplified u)'
-        else:
+        elif mass_key == 'u':
             xlabel = 'Cluster Mass (u)'
+        else:
+            xlabel = 'Cluster Diameter ({})'.format(diam_mass_unit_map[mass_unit])
             
-        return xlabel             
+        return xlabel            
             
                     
     def show_time(self, layout=[5,1], size=[21,29.7], xdata_key='auto', ydata_key='auto', time_unit=1e-6,
@@ -301,10 +315,15 @@ class ViewMsList(ViewList):
     
 
         
-    def show_ms(self, layout=[5,1], size=[21,29.7], mass_key='cluster', xlim=['auto', 'auto'],
+    def show_ms(self, layout=[5,1], size=[21,29.7], mass_key='diam', mass_unit=None, xlim=['auto', 'auto'],
                 xlim_scale=None, n_xticks=None, pdf=True, fontsize_clusterid=10, show_mdata=None):
-        self._show(self._show_ms, xlabel_str=self._xlabel_str(mass_key), mass_key=mass_key,
-                   layout=layout, size=size, pdf=pdf, xlim=xlim, xlim_scale=xlim_scale,
-                   n_xticks=n_xticks, fontsize=fontsize_clusterid, show_mdata=show_mdata)        
+        if not mass_unit:
+            if mass_key=='diam':
+                mass_unit = 1e-9
+            else:
+                mass_unit = 1
+        self._show(self._show_ms, xlabel_str=self._xlabel_str(mass_key, mass_unit=mass_unit), mass_key=mass_key,
+                   mass_unit=mass_unit, layout=layout, size=size, pdf=pdf, xlim=xlim, xlim_scale=xlim_scale,
+                   n_xticks=n_xticks, fontsize_clusterid=fontsize_clusterid, show_mdata=show_mdata)        
         
         

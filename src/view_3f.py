@@ -755,7 +755,7 @@ class ViewMs(View):
                 mass_unit = 1
         self.plot_ms(ax=self.ax, mass_key=mass_key, mass_unit=mass_unit, xlim=xlim, xlim_scale=xlim_scale,
                      n_xticks=n_xticks, color=color)
-        self.ax.set_xlabel(self._xlabel_str(mass_key), fontsize=fontsize_label)
+        self.ax.set_xlabel(self._xlabel_str(mass_key, mass_unit=mass_unit), fontsize=fontsize_label)
         self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
         self.ax.tick_params(labelsize=fontsize_label)
         self._addtext_file_id(self.ax, fontsize=fontsize_ref)
