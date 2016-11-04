@@ -1,26 +1,40 @@
 import os.path
 import numpy as np
+from config import *
+from spec_3f import *
+from rawData_3f import *
 
-
-class Cfg():
+class Cfg3f(Cfg):
     def __init__(self,user_storage_dir, base_dir_name):
-        if not os.path.isabs(user_storage_dir):
-            raise ValueError('Please enter absolute path.')
-        # cfg and base dir absolute
-        cfg_dir = os.path.join(os.path.expanduser('~'), '.clusis_3f')
-        base_Dir = os.path.join(user_storage_dir, base_dir_name)
-        # we keep the internal dir structure relative
-        data_storage_dir = 'data'
-        archive_storage_dir = 'archive'
+        self.database_name = '3f'
+        self.typeclass_map = {'spec': Spec,
+                         'specM': SpecM,
+                         'specTof': SpecTof}
         
-        self.path = {'cfg': cfg_dir,
-                     'base': base_Dir,
-                     'data': data_storage_dir,
-                     'archive': archive_storage_dir
-                     }
+        self.channel_map={'ch1': 'rawVoltageSpec', 'ch2': 'rawVoltageRamp'}
+        super().__init__(user_storage_dir, base_dir_name) # calls initDb
         
+    
+    def get_typeclass_map(self):
+        return self.typeclass_map 
+    
+    def get_raw_data(self,datFile,spectype,commonMdata={}):
+        return RawData_3f(datFile, self, spectype, commonMdata=commonMdata)
+        
+    def get_spectrum(self,mi):
+        # init spec obj
+        mdata = mi.mdata.data()         
+        #~~~~~~~
+        ydata = {self.channel_map['ch1']: mi.data_ch1}
+        ydata[self.channel_map['ch2']] = mi.data_ch2
+        xdata = {'idx': np.arange(0,len(ydata['rawVoltageSpec']))} # intensity for [i,i+1] will be displayed at i+0.5
+        spec = self.typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, self)
+        #~~~~~~~
+        return spec
+    
+    def initDb(self):
         'TODO: Db should be machine independent in long term.'             
-        self.db = {'3f': {'path': self.path['base'],  # path should always be absolute
+        self.db = {self.database_name: {'path': self.path['base'],  # path should always be absolute
                           'layout': {'tof': (['sha1', 'TEXT PRIMARY KEY'],
                                              ['clusterBaseUnit', 'TEXT'],
                                              ['pickleFile', 'TEXT UNIQUE'],
@@ -106,50 +120,4 @@ class Cfg():
                                             },
                                 }
                          }       
-        
-#        
-# 
-#     def convert_mdata_v0p1_to_v0p2(self, mdata):
-#         start_version = 0.1
-#         target_version = 0.2
-#         if mdata['mdataVersion'] == start_version: 
-#             print('Converting mdata from version {} to {} ...'.format(start_version, target_version))
-#             if mdata['specType'] in ['generic']:
-#                 mdata['mdataVersion'] = target_version
-#             else:
-#                 mdata['delayState'] = mdata.pop('delayTimings')
-#                 mdata['mdataVersion'] = target_version
-#         else:
-#             raise ValueError('mdata has wrong version: {}, expected {}.'.format(mdata['mdataVersion'],
-#                                                                                 start_version))
-#         
-#         return mdata 
-#     
-#     def convert_mdata_v0p2_to_v0p3(self, mdata):
-#         start_version = 0.2
-#         target_version = 0.3
-#         if mdata['mdataVersion'] == start_version:
-#             print('Converting mdata from version {} to {} ...'.format(start_version, target_version))
-#             if mdata['specTypeClass'] in ['specPeWater'] and 'fitPar' in mdata.keys():
-#                 print('Converting fit data in new dictionary ...')
-#                 mdata['fitData'] = {'default_fit': {'covar': mdata.pop('fitCovar'),
-#                                                     'cutoff': mdata.pop('fitCutoff'),
-#                                                     'info': mdata.pop('fitInfo'),
-#                                                     'par': mdata.pop('fitPar'),
-#                                                     'par0': mdata.pop('fitPar0'),
-#                                                     'xdataKey': mdata.pop('fitXdataKey'),
-#                                                     'ydataKey': mdata.pop('fitYdataKey'),
-#                                                     }
-#                                     }
-#                 mdata['evalTags'] = ['default_fit']
-#                 mdata['tags'].append('default_fit')
-#                 mdata['mdataVersion'] = target_version
-#             else:
-#                 mdata['evalTags'] = []
-#                 mdata['mdataVersion'] = target_version
-#         else:
-#             raise ValueError('mdata has wrong version: {}, expected {}.'.format(mdata['mdataVersion'],
-#                                                                                 start_version))
-#         
-#         return mdata
-#         
+         

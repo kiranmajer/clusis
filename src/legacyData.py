@@ -25,9 +25,11 @@ class LegacyData(object):
                          'tags': [],
                          'systemTags': [],
                          'userTags': [],
+                         'evalTags': [],
                          'machine': machine,
                          'delayState': {},
-                         'info': ''}
+                         'info': ''
+                        }
         self.cfg = cfg
         self.header = []
         self.data = []
@@ -85,6 +87,7 @@ class LegacyData(object):
         print('Building mdata reference...')
         self.mdata_ref = self.build_mdata_ref(self.metadata['specTypeClass'])
         print('mdata ref.:', self.mdata_ref)
+        print('currently in File: '+os.path.abspath(fileToImport))
         self.mdata = Mdata({}, self.mdata_ref, cfg.mdata_systemtags) 
         self.mdata.add(self.metadata)
         if len(commonMdata) > 0:
@@ -249,7 +252,7 @@ class LegacyData(object):
             raise ValueError('Found more than 1 cfg file.')
      
     
-    def parse_cfgfile(self, cfgfile, prefer_filename_mdata):
+    def parse_cfgfile(self, cfgfile, prefer_filename_mdata = False):
         """Extracts all information of cfgfile and its filename.
         """
 #        cfg_data_map = ['ch1Tstart', 'ch1Tstop', 'ch2Tstart', 'ch2Tstop',

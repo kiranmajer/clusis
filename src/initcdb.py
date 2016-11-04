@@ -44,9 +44,9 @@ def init_db(cfg):
     
         
         
-def init_cludb(user_storage_dir, base_dir_name):
+def init_cludb(cfg):
     'TODO: provide global cfg object.'
-    cfg = config_3f.Cfg(user_storage_dir, base_dir_name)
+#    cfg = config_3f.Cfg(user_storage_dir, base_dir_name)
 #    cfg = ConfigParser.SafeConfigParser()
 #    "set base path where all cludb files live"
 #    if mainStorageDir == config.mainStorageDir:
@@ -70,6 +70,6 @@ def init_cludb(user_storage_dir, base_dir_name):
     setup_sqlite3()
     init_db(cfg)
     
-    return cfg
+#    return cfg:
                 
                 
