@@ -137,31 +137,35 @@ class ViewTofList(ViewList):
 
 
     def _show_idx(self, spec, ax, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None,
-                  n_xticks=None, show_mdata=None):
+                  n_xticks=None, show_mdata=None, show_pulse=True):
         ViewList._show_idx(self, spec, ax, ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale,
                            n_xticks=n_xticks, show_mdata=show_mdata)
-        spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), fontsize=10,
+        spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(ms=True), fontsize=10,
                                       text_pos='right')
         spec.view._addtext_statusmarker(ax, xdata_key='idx', ydata_key=ydata_key, text_pos='left')
+        if show_pulse:
+            spec.view.add_plot(ax, spec.xdata['idx'], spec.ydata['rawVoltagePulse'], batch_mode=True)
         
     def _show_time(self, spec, ax, xdata_key='auto', ydata_key='auto', time_unit=1e-6,
-                  xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None, show_mdata=None):
+                  xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None, show_mdata=None, show_pulse=True):
         ViewList._show_time(self, spec, ax, xdata_key=xdata_key, ydata_key=ydata_key,
                    time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks,
                    show_mdata=show_mdata)
-        spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(), fontsize=10,
+        spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(ms=True), fontsize=10,
                                       text_pos='right')
+        if show_pulse:
+            spec.view.add_plot(ax, spec.xdata['time'], spec.ydata['rawVoltagePulse'], batch_mode=True)
         #spec.view._addtext_statusmarker(ax, xdata_key=xdata_key, ydata_key=ydata_key, text_pos='left')          
                
 
 
     def show_time(self, layout=[7,3], size=[21,29.7], xdata_key='auto', ydata_key='auto', time_unit=1e-6,
                  xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None, pdf=True, show_mdata=None,
-                 show_yticks=False):
-        self._show(self._show_time, xlabel_str=self._format_time_label('Flight Time', time_unit),
+                 show_yticks=False, show_pulse=True):
+        self._show(self._show_time, xlabel_str=self._format_time_label('Time', time_unit),
                    layout=layout, size=size, pdf=pdf, xdata_key=xdata_key, ydata_key=ydata_key,
                    time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks,
-                   show_mdata=show_mdata, show_yticks=show_yticks)              
+                   show_mdata=show_mdata, show_yticks=show_yticks, show_pulse=show_pulse)              
         
        
 
@@ -230,14 +234,31 @@ class ViewMsList(ViewList):
                            n_xticks=n_xticks, show_mdata=show_mdata, key_deps=key_deps)
         spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(ms=True), fontsize=10)
         spec.view._addtext_statusmarker(ax, xdata_key='idx', ydata_key=ydata_key, text_pos='left')
+        if show_ramp:
+            spec.view.add_plot(ax, spec.xdata['idx'], spec.ydata['rawVoltageRamp'], batch_mode=True)
         
     def _show_time(self, spec, ax, xdata_key='auto', ydata_key='auto', time_unit=1e-6,
-                  xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None, show_mdata=None):
+                  xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None, show_mdata=None, show_ramp=True):
         key_deps = {'time': ['voltageSpec', 'rawVoltageSpec', 'rawVoltageRamp', 'rawVoltagePulse'],}
         ViewList._show_time(self, spec, ax, xdata_key=xdata_key, ydata_key=ydata_key,
                    time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks,
                    show_mdata=show_mdata, key_deps=key_deps)
-        spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(ms=True), fontsize=10)        
+        spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(ms=True), fontsize=10) 
+        if show_ramp:
+            spec.view.add_plot(ax, spec.xdata['time'], spec.ydata['rawVoltageRamp'], batch_mode=True)   
+    
+    
+    def _show_ramp(self, spec, ax, ramp_data_key='voltageRampFitted', ydata_key='voltageSpec', xlim=['auto', 'auto'],
+                   xlim_scale=None, n_xticks=None,
+                   show_mdata=False, show_ytics=False, fontsize_label=12, fontsize_ref=6,
+                   export=False, show_xlabel=True, show_ylabel=True, size=None,):
+        spec.view.plot_ramp(ax=ax, xdata_key=ramp_data_key, ydata_key=ydata_key, xlim=xlim,
+                            xlim_scale=xlim_scale, n_xticks=n_xticks,)
+        spec.view._addtext_file_id(ax)
+        spec.view._addtext_statusmarker(ax, xdata_key=ramp_data_key, ydata_key=ydata_key, text_pos='left')
+        if show_mdata is not None:
+            spec.view._addtext_info(ax, spec.view._pretty_print_info(show_mdata), fontsize=6, text_pos='right')
+        
                 
     def _show_ms(self, spec, ax, mass_key='cluster', xlim=['auto', 'auto'], xlim_scale=None,
                  n_xticks=None, fontsize_clusterid=10, show_mdata=None):        
@@ -262,11 +283,21 @@ class ViewMsList(ViewList):
                     
     def show_time(self, layout=[5,1], size=[21,29.7], xdata_key='auto', ydata_key='auto', time_unit=1e-6,
                  xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None, pdf=True, show_mdata=None,
-                 show_yticks=False):
-        self._show(self._show_time, xlabel_str=self._format_time_label('Flight Time', time_unit),
+                 show_yticks=False, show_ramp=True):
+        self._show(self._show_time, xlabel_str=self._format_time_label('Time', time_unit),
                    layout=layout, size=size, pdf=pdf, xdata_key=xdata_key, ydata_key=ydata_key,
                    time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks,
-                   show_mdata=show_mdata, show_yticks=show_yticks)  
+                   show_mdata=show_mdata, show_yticks=show_yticks, show_ramp=show_ramp)
+    
+    
+    def show_ramp(self, layout=[5,1], size=[21,29.7], ramp_data_key='voltageRampFitted', ydata_key='voltageSpec',
+                 xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None, pdf=True, show_mdata=None,
+                 show_yticks=False):
+        self._show(self._show_ramp, xlabel_str='Ramp Voltage (V)',
+                   layout=layout, size=size, pdf=pdf, ramp_data_key=ramp_data_key, ydata_key=ydata_key,
+                   xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks,
+                   show_mdata=show_mdata, show_yticks=show_yticks)
+    
 
         
     def show_ms(self, layout=[5,1], size=[21,29.7], mass_key='cluster', xlim=['auto', 'auto'],

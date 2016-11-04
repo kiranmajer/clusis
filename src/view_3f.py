@@ -5,6 +5,7 @@ import os.path
 import numpy as np
 
 import load
+from matplotlib.pyplot import xlim
 
 class View(object):
     def __init__(self, spec):
@@ -98,6 +99,7 @@ class View(object):
     
     
     def _pretty_format_clusterid(self, ms=False):
+        print('ms mode: ', ms)
         formatStart = '$\mathrm{\mathsf{'
         formatEnd = '}}$'
         bu = self.spec.mdata.data('clusterBaseUnit')
@@ -241,8 +243,12 @@ class View(object):
         ax.autoscale(axis='y')
         
     def _yminmax_in_xrange(self, xdata, ydata, xlim_scale):
+        print('xdata: ', xdata)
+        print('ydata: ', ydata)
+        print('xlim_scale: ', xlim_scale)
         xlb = np.argmin(abs(xdata-xlim_scale[0]))
         xub = np.argmin(abs(xdata-xlim_scale[1]))
+        print('Boundaries: ', xlb, xub)
         ydata_sorted = np.sort(ydata[xlb:xub])
         # exclude infinite values
         ymin = ydata_sorted[np.isfinite(ydata_sorted)][0]
@@ -356,7 +362,8 @@ class View(object):
             self.fig.canvas.draw()
         
         
-    def add_plot(self, ax, xdata, ydata, color='blue', linestyle='-', linewidth=.5, file_id=None, rescale=True):
+    def add_plot(self, ax, xdata, ydata, color='blue', linestyle='-', linewidth=.5, file_id=None, unit_scale=1,
+                 rescale=True, batch_mode=False):
 #         if not hasattr(self, 'fig'):
 #             raise ValueError('No active plot. Create one first via show_XXX.')
         if file_id is not None:
@@ -365,10 +372,10 @@ class View(object):
 #             xlim_scale = self.ax.get_xlim()
 #         else:
 #             xlim_scale = self.xlim_scale
-        if self.timeunit:
-            unit_scale = self.timeunit
-        else:
-            unit_scale = 1
+#         if self.timeunit:
+#             unit_scale = self.timeunit
+#         else:
+#             unit_scale = 1
         if rescale:
             if self._yminmax_in_xrange(xdata, ydata, np.array(self.xlim_scale)*unit_scale)[1] > self.ymax:
                 self._auto_ylim(ax, xdata, ydata, np.array(self.xlim_scale)*unit_scale)
@@ -376,7 +383,8 @@ class View(object):
         added_line = ax.plot(xdata/unit_scale, ydata, color=color, linestyle=linestyle, linewidth=linewidth)[0]
         if linestyle in ['--', ':']:
             added_line.set_dashes((1,1))
-        self.fig.canvas.draw()
+        if not batch_mode:
+            self.fig.canvas.draw()
         
         
     def _scalefactor_equal_area(self, xdata_ref, ydata_ref, xdata, ydata, yoffset):
@@ -502,7 +510,8 @@ class ViewTof(View):
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(ms=True), text_pos='right',
                                  fontsize=fontsize_clusterid)    
         if show_pulse:
-            self.add_plot(self.ax, self.spec.xdata[self.xdata_key], self.spec.ydata['rawVoltagePulse'])
+            self.add_plot(self.ax, self.spec.xdata[self.xdata_key], self.spec.ydata['rawVoltagePulse'],
+                          unit_scale=self.timeunit)
         if not export:          
             self.fig.canvas.draw()
             
@@ -675,7 +684,8 @@ class ViewMs(View):
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(ms=True), text_pos='right',
                                  fontsize=fontsize_clusterid)        
         if show_ramp:
-            self.add_plot(self.ax, self.spec.xdata[self.xdata_key], self.spec.ydata['rawVoltageRamp'])
+            self.add_plot(self.ax, self.spec.xdata[self.xdata_key], self.spec.ydata['rawVoltageRamp'],
+                          unit_scale=self.timeunit)
         if not export:          
             self.fig.canvas.draw()
     
