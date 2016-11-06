@@ -221,12 +221,17 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
     movedFiles =[]
     failedImports = []
     sha1ToImport = []
+    i = 0
     "TODO: adapt for more db"
     #with Db('casi', cfg) as db:
     db = Db('3f', cfg)
     for datFile in datFileList:
         print('\n######################')
         print('Importing: '+datFile+' with ', commonMdata)
+        print('Processing data file #{}'.format(i+1))
+        print('sha1 list has length {}: '.format(len(sha1ToImport)))
+#         print(sha1ToImport)
+        i+=1
         try:
             mi = RawData_3f(datFile, cfg, spectype, commonMdata)
         except Exception as e:
@@ -235,6 +240,7 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
             print('Traceback:')
             print_tb(exc_info()[2])
             continue
+#         print('Testing for sha1: {}'.format(mi.mdata.data('sha1')))
         if not db.table_has_sha1(mi.mdata.data('specType'), mi.mdata.data('sha1')) and mi.mdata.data('sha1') not in sha1ToImport:
             '''TODO: handle special files with identical sha1 (e.g. "flat line"-spectra).
             It might be interesting to have them in the db. Allow fake sha1 = sha1+unix 
@@ -265,16 +271,20 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
                         movedFiles.extend(moved)
                         spec._commit_pickle()
                         specList.append(spec)
+                        print('Appending sha1', mi.mdata.data('sha1'))
                         sha1ToImport.append(mi.mdata.data('sha1'))
             else:
                 #print 'some files already exist'
                 failedImports.append([datFile, 'Some raw files were already imported'])
         else:
-            #print os.path.basename(datFile)+': Db has already sha1 entry'
+            print(os.path.basename(datFile), ': Db has already sha1 entry')
             failedImports.append([datFile, 'Db or earlier import has already entry with this sha1'])
             
     try:
         print('Starting db import ....')
+        print('Processing {} specs in speclist:'.format(len(specList)))
+#         for s in specList:
+#             print(s.mdata.data('pickleFile'))
         db.add(specList)
     except Exception as e:
         print('Db population failed:', e)
@@ -284,7 +294,7 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
             pickleFile = os.path.join(cfg.path['base'], spec.mdata.data('pickleFile'))
             os.remove(pickleFile)
         raise
-    
+     
     del db
         
     print('Number of files to import: ', len(datFiles))

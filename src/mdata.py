@@ -21,9 +21,9 @@ class Mdata(object):
         '''
         Returns a valid value or raises an error.
         '''
-        print('Starting new validation run.')
-        print('Checking: ', key, value)
-        print('type: ', type(value))
+        #print('Starting new validation run.')
+        #print('Checking: ', key, value)
+        #print('type: ', type(value))
         ref = self.__reference
         if ref[key][0] is np.ndarray and type(value) is np.ndarray:
             v = value
@@ -60,25 +60,25 @@ class Mdata(object):
     def check_completeness(self):
         '''
         '''
-        print('Starting mdata check ...')
+        #print('Starting mdata check ...')
         ref = self.__reference
         mdata = self.__mdata
         for k, v in ref.items():
             if v[1]: # obligatory?
-                print('{} is obligatory. Checking value ...'.format(k))
+                #print('{} is obligatory. Checking value ...'.format(k))
                 hasChanged = True
                 while hasChanged:
                     if k in mdata:
                         try:
                             mdata[k] = self.__validate_value(k, mdata[k])
                             hasChanged = False
-                            print('{}: exists and has a valid value.'.format(k))
+                            #print('{}: exists and has a valid value.'.format(k))
                         except:
                             mdata.update(self.__ask_for_key_value(k))
                             hasChanged = True
                             
                     else:
-                        print('Missing obligatory mdata detected: {}'.format(k))
+                        #print('Missing obligatory mdata detected: {}'.format(k))
                         mdata.update(self.__ask_for_key_value(k))
                         hasChanged = True
 

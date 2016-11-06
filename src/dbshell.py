@@ -77,6 +77,7 @@ class Db(object):
         db_cursor = self.__db.cursor()
         #print('cursor created')
         for specType,values in valueList.items():
+            print('Inserting following values into db:', values)
             if update:
                 sql = 'INSERT OR REPLACE INTO ' + specType + " VALUES (" + "?,"*(len(self.__dbProps['layout'][specType])-1) + "?)"
                 #print('Adding with sql string:\n', sql, values)

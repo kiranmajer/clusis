@@ -20,7 +20,7 @@ class RawData_3f(object):
     
     def __init__(self, fileToImport, cfg, spectype=None, commonMdata={}, cbu='Ag', machine='3f'):
         if spectype in cfg.mdata_ref['spec']['specType'][0]:
-            print('Got valid spectype: {}'.format(spectype))
+            #print('Got valid spectype: {}'.format(spectype))
             self.spectype = spectype
         else:
             raise ValueError('Unknown spectype: {}'.format(spectype))
@@ -39,30 +39,30 @@ class RawData_3f(object):
         self.header = []
         self.data = []
         
-        print('Parsing dat file ...')
+        #print('Parsing dat file ...')
         self.parse_file(fileToImport)
         self.get_time_metrics()
         self.verify_time_metrics()
-        print('Setting up meta data ...')
+        #print('Setting up meta data ...')
         self.get_sha1()
         self.get_recTime(self.spectype)
         self.set_storage_paths()
         self.add_default_mdata()
         if self.metadata['specType'] in ['ms', 'tof']:
-            print('Fetching clusterBaseUnit mass for {} ...'.format(self.metadata['clusterBaseUnit']))
+            #print('Fetching clusterBaseUnit mass for {} ...'.format(self.metadata['clusterBaseUnit']))
             self.metadata['clusterBaseUnitMass'] = Atoms(self.metadata['clusterBaseUnit']).get_masses().sum()
-        print('Setting specTypeClass ...')
+        #print('Setting specTypeClass ...')
         self.set_spectype_class()
-        print('... {}'.format(self.metadata['specTypeClass']))
-        print('Converting metadata to Mdata object ...')
-        print('Building mdata reference...')
+        #print('... {}'.format(self.metadata['specTypeClass']))
+        #print('Converting metadata to Mdata object ...')
+        #print('Building mdata reference...')
         self.mdata_ref = self.build_mdata_ref(self.metadata['specTypeClass'])
-        print('mdata ref.:', self.mdata_ref)
+        #print('mdata ref.:', self.mdata_ref)
         self.mdata = Mdata({}, self.mdata_ref, cfg.mdata_systemtags)
         #del(self.metadata['datFileOrig'])
         self.mdata.add(self.metadata)
         if len(commonMdata) > 0:
-            print('Importing commonMdata', commonMdata)
+            #print('Importing commonMdata', commonMdata)
             self.mdata.add(commonMdata)
             #self.metadata.update(commonMdata)
         self.mdata.check_completeness()
@@ -113,7 +113,7 @@ class RawData_3f(object):
             print('Time metrics verified (within threshold of {}'.format(threshold))
         
     def add_default_mdata(self):
-        print('>>> add_default_mdata <<<')
+        #print('>>> add_default_mdata <<<')
         # add default meta data to metadata 
         for k,v in self.cfg.defaults[self.metadata['machine']][self.metadata['specType']].items():
             if k not in list(self.metadata.keys()):

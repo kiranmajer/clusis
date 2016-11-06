@@ -199,6 +199,7 @@ class Spec(object):
         
 
 class SpecTof(Spec):
+    #TODO: __ini_ should never commit, else import breaks (double db adds)
     def __init__(self, mdata, xdata, ydata, cfg):
         #print('__init__: Init SpecPe')
         Spec.__init__(self, mdata, xdata, ydata, cfg)
@@ -209,7 +210,7 @@ class SpecTof(Spec):
         # calculate time vector
         if 'time' not in self.xdata.keys():
             self._calc_time_data('time')
-            self.commit()
+            #self.commit()
     
     
     def cluster_velocity(self, tof):
@@ -228,20 +229,20 @@ class SpecM(Spec):
         # calculate time vector
         if 'time' not in self.xdata.keys():
             self._calc_time_data('time')
-            self.commit()
+#             self.commit()
         # invert spectrum
         if 'voltageSpec' not in self.ydata.keys():
             self._invert_dataset('rawVoltageSpec', 'voltageSpec')
-            self.commit()
+#             self.commit()
         # scale ramp voltage
         if 'voltageRamp' not in self.ydata.keys():
             self.scale_ramp_voltage()
-            self.commit()
+#             self.commit()
         # idealize ramp voltage
         if 'voltageRampFitted' not in self.ydata.keys():
             try:
                 self.idealize_ramp()
-                self.commit()
+#                 self.commit()
             except:
                 pass
             
