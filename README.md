@@ -9,3 +9,8 @@ matplotlib
 
 create config with path to write to
 
+from initcdb import *
+cfg = init_cludb("/home/simond/Documents/measurements/clusisdata","test")
+import_rawdata_3f(cfg, ls("/home/simond/Documents/measurements/MobileQuelle/capacitor_masspecs/hvamp/tofs"),spectype="tof", commonMdata={'deflectorVoltage' : 55 , 'ionType' : '-'})
+
+
