@@ -2,6 +2,7 @@ import os.path
 import numpy as np
 from config import *
 from spec_3f import *
+from speclist_3f import *
 from rawData_3f import *
 
 class Cfg3f(Cfg):
@@ -20,7 +21,16 @@ class Cfg3f(Cfg):
     
     def get_raw_data(self,datFile,spectype,commonMdata={}):
         return RawData_3f(datFile, self, spectype, commonMdata=commonMdata)
-        
+    
+    
+    def get_speclist(self, spectype='ms'):
+        s=False
+        if spectype == 'ms':
+            print('Assuming Type: Massspectrum')
+            s= SpecMList(self)
+            
+        return s
+    
     def get_spectrum(self,mi):
         # init spec obj
         mdata = mi.mdata.data()         

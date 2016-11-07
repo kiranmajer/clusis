@@ -23,6 +23,14 @@ class CfgCasi(Cfg):
         #return LegacyData(datFile, self, spectype, commonMdata, prefer_filename_mdata=prefer_filename_mdata)
         return LegacyData(datFile, self, spectype,commonMdata=commonMdata)
         
+        
+#    def print_speclists(self):
+#    
+#    def get_speclist(self, num, filter):
+#        
+#        return listmap[num](self,filter)
+#        
+    
     def get_spectrum(self,mi):
         # init spec obj
         mdata = mi.mdata.data()

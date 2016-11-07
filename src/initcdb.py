@@ -46,20 +46,6 @@ def init_db(cfg):
         
 def init_cludb(cfg):
     'TODO: provide global cfg object.'
-#    cfg = config_3f.Cfg(user_storage_dir, base_dir_name)
-#    cfg = ConfigParser.SafeConfigParser()
-#    "set base path where all cludb files live"
-#    if mainStorageDir == config.mainStorageDir:
-#        userCfgFile = os.path.join(config.mainStorageDir, '.cludb')
-#        if os.path.isfile(userCfgFile):
-#            cfg.read(userCfgFile)
-#            config.mainStorageDir = cfg.get('Settings','mainStorageDir')
-#    else:
-#        userCfgFile = os.path.join(mainStorageDir, '.cludb')
-#            
-#            with open(userCfgFile) as f:
-#            
-#    config.mainStorageDir = mainStorageDir
     for p in cfg.path.values():
         if os.path.isabs(p):
             ensure_path(p)

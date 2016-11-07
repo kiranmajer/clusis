@@ -244,7 +244,7 @@ def import_rawdata(cfg, datFiles, spectype=None, commonMdata={},
                 print(os.path.basename(datFile), '''ready to convert ...
                 ''')
                 try:
-                    moved = archive(cfg, mi.metadata, mode='cp') # ! use metadata dict here since it has '...FileOrig' entries
+                    moved = archive(cfg, mi.metadata, mode=archive_mode) # ! use metadata dict here since it has '...FileOrig' entries
                 except Exception as e:
                     print('%s: Failed to archive raw data:'%datFile, e)
                     failedImports.append([datFile, 'Import error: Archive failed: %s.'%e])
@@ -291,10 +291,11 @@ def import_rawdata(cfg, datFiles, spectype=None, commonMdata={},
         raise
     
     del db
-        
+    
+    archive_mode_string = "move" if archive_mode =='mv' else "copy"
     print('Number of files to import: ', len(datFiles))
     print('Number of Spectra to import: ', len(specList))
-    print('Number of files to move: ', len(movedFiles))
+    print('Number of files to ' + archive_mode_string + ":", len(movedFiles))
     print('Number of failed imports: ', len(failedImports))
      
     return failedImports
