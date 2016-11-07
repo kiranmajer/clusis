@@ -121,7 +121,7 @@ class ViewList(object):
                    ydata_key=ydata_key, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks,
                    show_mdata=show_mdata, show_yticks=show_yticks)
 
-    def show_time(self, layout=[7,3], size=[21,29.7], xdata_key='auto', ydata_key='auto', time_unit=1e-6,
+    def show_time(self, layout=[7,3], size=[21,29.7], xdata_key='auto', ydata_key='auto', time_unit=1e-3,
                  xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None, pdf=True, show_mdata=None,
                  show_yticks=False):
         self._show(self._show_time, xlabel_str=self._format_time_label('Time', time_unit), layout=layout,
@@ -154,12 +154,13 @@ class ViewTofList(ViewList):
         spec.view._addtext_cluster_id(ax, spec.view._pretty_format_clusterid(ms=True), fontsize=10,
                                       text_pos='right')
         if show_pulse:
-            spec.view.add_plot(ax, spec.xdata['time'], spec.ydata['rawVoltagePulse'], batch_mode=True)
+            spec.view.add_plot(ax, spec.xdata['time'], spec.ydata['rawVoltagePulse'], batch_mode=True,
+                               unit_scale=time_unit)
         #spec.view._addtext_statusmarker(ax, xdata_key=xdata_key, ydata_key=ydata_key, text_pos='left')          
                
 
 
-    def show_time(self, layout=[7,3], size=[21,29.7], xdata_key='auto', ydata_key='auto', time_unit=1e-6,
+    def show_time(self, layout=[7,3], size=[21,29.7], xdata_key='auto', ydata_key='auto', time_unit=1e-3,
                  xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None, pdf=True, show_mdata=None,
                  show_yticks=False, show_pulse=True):
         self._show(self._show_time, xlabel_str=self._format_time_label('Time', time_unit),
