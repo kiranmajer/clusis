@@ -1,7 +1,14 @@
 import numpy as np
+from scipy.signal import gaussian
+
+def moving_avg_gaussian(x, window_size=11, sigma=5):
+    window = gaussian(window_size, sigma)
+    smoothed_data = np.convolve(x, window, mode='same')/window.sum()
+    
+    return smoothed_data
 
 
-def smooth(x,window_len=11,window='hanning'):
+def moving_avg(x, window_size=11, window='hanning'):
     """smooth the data using a window with requested size.
     
     This method is based on the convolution of a scaled window with the signal.
@@ -11,7 +18,7 @@ def smooth(x,window_len=11,window='hanning'):
     
     input:
         x: the input signal 
-        window_len: the dimension of the smoothing window; should be an odd integer
+        window_size: the dimension of the smoothing window; should be an odd integer
         window: the type of window from 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'
             flat window will produce a moving average smoothing.
 
@@ -35,11 +42,11 @@ def smooth(x,window_len=11,window='hanning'):
     if x.ndim != 1:
         raise ValueError("smooth only accepts 1 dimension arrays.")
 
-    if x.size < window_len:
+    if x.size < window_size:
         raise ValueError("Input vector needs to be bigger than window size.")
 
 
-    if window_len<3:
+    if window_size<3:
         return x
 
 
@@ -47,15 +54,15 @@ def smooth(x,window_len=11,window='hanning'):
         raise ValueError("Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
 
 
-    s=np.r_[2*x[0]-x[window_len-1::-1],x,2*x[-1]-x[-1:-window_len:-1]]
+    s=np.r_[2*x[0]-x[window_size-1::-1],x,2*x[-1]-x[-1:-window_size:-1]]
     #print(len(s))
     if window == 'flat': #moving average
-        w=np.ones(window_len,'d')
+        w=np.ones(window_size,'d')
     else:
-        w=eval('np.'+window+'(window_len)')
+        w=eval('np.'+window+'(window_size)')
 
     y=np.convolve(w/w.sum(),s,mode='same')
-    return y[window_len:-window_len+1]
+    return y[window_size:-window_size+1]
 
 
 def savitzky_golay(y, window_size, order, deriv=0):

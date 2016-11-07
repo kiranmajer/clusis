@@ -6,6 +6,7 @@ import numpy as np
 
 import load
 from matplotlib.pyplot import xlim
+from smooth import moving_avg_gaussian
 
 class View(object):
     def __init__(self, spec):
@@ -698,28 +699,29 @@ class ViewMs(View):
     
     
     def plot_ramp(self, ax, xdata_key, ydata_key, xlim, xlim_scale=None,
-                 n_xticks=None, color='black'):
+                 n_xticks=None, color='black', smooth=True):
         self.xdata_key = xdata_key
         self.ydata_key = ydata_key
         #self.timeunit = time_unit
         #self.xlim_scale = xlim_scale
+        if smooth:
+            ydata = moving_avg_gaussian(self.spec.ydata[ydata_key])
+        else:
+            ydata = self.spec.ydata[ydata_key]
         # plot      
-        ax.plot(self.spec.ydata[xdata_key], self.spec.ydata[ydata_key], color=color)
+        ax.plot(self.spec.ydata[xdata_key], ydata, color=color)
         #set axes limits
         xlim_auto = [self.spec.ydata[xdata_key][0], self.spec.ydata[xdata_key][-1]] 
         xlim_plot = self._set_xlimit(ax, xlim, xlim_auto, n_xticks=n_xticks)
         if xlim_scale is None:
-            self._auto_ylim(ax, self.spec.ydata[xdata_key], self.spec.ydata[ydata_key],
-                            xlim_plot)
+            self._auto_ylim(ax, self.spec.ydata[xdata_key], ydata, xlim_plot)
         else:
-            self._auto_ylim(ax, self.spec.ydata[xdata_key], self.spec.ydata[ydata_key],
-                            xlim_scale)
+            self._auto_ylim(ax, self.spec.ydata[xdata_key], ydata, xlim_scale)
             
     
     def show_ramp(self, ramp_data_key='voltageRampFitted', ydata_key='auto', xlim=['auto', 'auto'],
-                  xlim_scale=None, n_xticks=None,
-                  show_mdata=False, show_ytics=False, fontsize_label=12, fontsize_ref=6,
-                  export=False, show_xlabel=True, show_ylabel=True, size=None,):
+                  xlim_scale=None, n_xticks=None, show_mdata=False, show_ytics=False, fontsize_clusterid=28,
+                  fontsize_label=12, fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None,):
         self._single_fig_output(size=size)
         # set data keys
         xdata_key, ydata_key = ramp_data_key, 'voltageSpec' #self._auto_key_selection(xdata_key='idx', ydata_key=ydata_key, key_deps=key_deps)        
@@ -732,6 +734,9 @@ class ViewMs(View):
         self.ax.tick_params(labelsize=fontsize_label)      
         self._addtext_file_id(self.ax, fontsize=fontsize_ref)
         self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fontsize=fontsize_ref)
+        if fontsize_clusterid:
+            self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(ms=True), text_pos='right',
+                                     fontsize=fontsize_clusterid)
         if show_mdata:
             self._addtext_info(self.ax, self._pretty_print_info(show_mdata), text_pos='right',
                                fontsize=fontsize_label)
