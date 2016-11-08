@@ -481,7 +481,7 @@ class ViewTof(View):
         
 
     def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None,
-                 show_mdata=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
+                 show_mdata=False, show_ytics=True, fontsize_clusterid=28, fontsize_label=12,
                  fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None,
                   show_pulse=True):
         key_deps={'idx': ['rawVoltageSpec', 'rawVoltagePulse'],}
@@ -499,7 +499,7 @@ class ViewTof(View):
         
     def show_time(self, xdata_key='auto', ydata_key='auto', time_label='Time',
                   time_unit=1e-3, xlim=[0, 'auto'], xlim_scale=None, n_xticks=None,
-                  show_mdata=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
+                  show_mdata=False, show_ytics=True, fontsize_clusterid=28, fontsize_label=12,
                   fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None,
                   show_pulse=True):
         key_deps={'time': ['rawVoltageSpec', 'rawVoltagePulse'],}
@@ -662,7 +662,7 @@ class ViewMs(View):
      
      
     def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None,
-                 show_mdata=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
+                 show_mdata=False, show_ytics=True, fontsize_clusterid=28, fontsize_label=12,
                  fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None,
                  show_ramp=True):
         key_deps = {'idx': ['voltageSpec', 'rawVoltageSpec', 'rawVoltageRamp', 'rawVoltagePulse'],}
@@ -680,7 +680,7 @@ class ViewMs(View):
         
     def show_time(self, xdata_key='auto', ydata_key='auto', time_label='Time',
                  time_unit=1e-3, xlim=[0, 'auto'], xlim_scale=None, n_xticks=None,
-                 show_mdata=False, show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
+                 show_mdata=False, show_ytics=True, fontsize_clusterid=28, fontsize_label=12,
                  fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None,
                  show_ramp=True):
         key_deps = {'time': ['voltageSpec', 'rawVoltageSpec', 'rawVoltageRamp', 'rawVoltagePulse'],}
@@ -720,7 +720,7 @@ class ViewMs(View):
             
     
     def show_ramp(self, ramp_data_key='voltageRampFitted', ydata_key='auto', xlim=['auto', 'auto'],
-                  xlim_scale=None, n_xticks=None, show_mdata=False, show_ytics=False, fontsize_clusterid=28,
+                  xlim_scale=None, n_xticks=None, show_mdata=False, show_ytics=True, fontsize_clusterid=28,
                   fontsize_label=12, fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None,):
         self._single_fig_output(size=size)
         # set data keys
@@ -750,7 +750,7 @@ class ViewMs(View):
                 
         
     def show_ms(self, mass_key='diam', mass_unit=None, xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None,
-                color='black', show_ytics=False, fontsize_clusterid=28, fontsize_label=12,
+                color='black', show_ytics=True, fontsize_clusterid=28, fontsize_label=12,
                 fontsize_ref=6, export=False, show_mdata=None, size=None):
         self._single_fig_output(size=size)
         if not mass_unit:
