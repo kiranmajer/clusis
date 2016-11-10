@@ -28,6 +28,7 @@ class Spec(object):
         self.ydata = ydata
         self.cfg = cfg
         self.view = view.View(self)
+        self.commit_msgs = set()
         
 #     def __del__(self):
 #         print('Commiting ...')
@@ -58,9 +59,22 @@ class Spec(object):
             pickle.dump((self.mdata.data(), self.xdata, self.ydata), f)
             
             
+    def _commit_specdatadir(self, compress=False):
+        # TODO: don't exstract this from pickleFile
+        data_dir = self.mdata.data('pickleFile').rstrip('.pickle')
+        full_path = os.path.join(self.cfg.path['base'], data_dir)
+        load.dump_spec_data(full_path, self.mdata.data(), self.xdata, self.ydata, compress=compress)
+            
+            
     def commit(self, update=True):
         self._commit_pickle()
         self._commit_db(update=update)
+        
+        
+    def _update_data_array(self, data_array, data_key, data):
+        data_array[data_key] = data
+        self.commit_msgs.add('spec data: updating data with id {}'.format(data_key))
+        
         
     def _auto_key_selection(self, xdata_key, ydata_key, key_deps):
         print('Searching for valid keys ...')
@@ -102,10 +116,11 @@ class Spec(object):
     
     def _calc_time_data(self, time_data_key='tof', time_offset=0):
 #         print('>>> _calc_time_data <<<')
-        self.xdata[time_data_key] = self._idx2time(idx=self.xdata['idx'],
-                                                   time_per_point=self.mdata.data('timePerPoint'),
-                                                   trigger_offset=self.mdata.data('triggerOffset'),
-                                                   time_offset=time_offset)
+        time_data = self._idx2time(idx=self.xdata['idx'],
+                                   time_per_point=self.mdata.data('timePerPoint'),
+                                   trigger_offset=self.mdata.data('triggerOffset'),
+                                   time_offset=time_offset)
+        self._update_data_array(self.xdata, time_data_key, time_data)
 #         print(self.xdata[time_data_key])
 
     def _photon_energy(self, waveLength):
@@ -333,10 +348,16 @@ class SpecM(Spec):
                         },
                        update=True)
         print('Calibrating using ToF: {} and cluster velocity: {}'.format(sat_tof, self.mdata.data('refVelocity')))
-        self.xdata['cluster'] = self._convertVtoNumSilver(self.ydata['voltageRampFitted'],
+        self._update_data_array(self.xdata,
+                                'cluster',
+                                self._convertVtoNumSilver(self.ydata['voltageRampFitted'], 
                                                           self.mdata.data('refVelocity'))
-        self.xdata['diam'] = self._convertVToSize(self.ydata['voltageRampFitted'],
-                                                  self.mdata.data('refVelocity'))
+                                )
+        self._update_data_array(self.xdata,
+                                'diam',
+                                self._convertVToSize(self.ydata['voltageRampFitted'],
+                                                     self.mdata.data('refVelocity'))
+                                )
         self.mdata.add_tag('gauged', 'systemTags')
         
         

@@ -8,6 +8,7 @@ class Mdata(object):
         self.__reference = mdata_ref
         self.__mdata = mdataDict
         self.__systemtags_ref = systemtags_ref
+        self.commit_msgs = {}
     
      
 #    def __key_isvalid(self, key):
@@ -96,6 +97,7 @@ class Mdata(object):
         current_tags = self.__mdata[tagkey]
         if current_tags.count(tag) == 0:
             current_tags.append(tag)
+            self.commit_msgs['mdata entry {}: added new tag: {}'.format(tagkey, tag)] = '' 
             self.__update_tags()
 #         else:
 #             print('Tag already exists.')
@@ -112,6 +114,7 @@ class Mdata(object):
         current_tags = self.__mdata[tagkey]
         if tag in current_tags:
             current_tags.remove(tag)
+            self.commit_msgs['mdata entry {}: removed tag: {}'.format(tagkey, tag)] = ''
             self.__update_tags()
         else:
             raise ValueError('Tag does not exist: {}'.format(tag))
@@ -127,20 +130,24 @@ class Mdata(object):
                 
     def __add_fit_data(self, fdata_dict):
         mdata = self.__mdata
+        mdata_key = 'fitData'
         #print('Got fit data.')
-        if 'fitData' not in mdata:
-            mdata['fitData'] = {}
-        mdata['fitData'].update(fdata_dict)
+        if mdata_key not in mdata:
+            mdata[mdata_key] = {}
+        mdata[mdata_key].update(fdata_dict)
+        self.commit_msgs['mdata entry {} updated with fit id(s):'.format(mdata_key)] = sorted(fdata_dict.keys)
         for fid in fdata_dict.keys():
             self.add_tag(fid, 'evalTags')
         
             
     def _rm_fit_data(self, fit_id):
+        mdata_key = 'fitData'
         "TODO: how do we handle 'default_fit'"
-        if len(self.__mdata['fitData']) > 1:
-            del self.__mdata['fitData'][fit_id]
+        if len(self.__mdata[mdata_key]) > 1:
+            del self.__mdata[mdata_key][fit_id]
+            self.commit_msgs['mdata entry {}: removed fit id:'.format(mdata_key)] = fit_id
         else:
-            self.rm('fitData')
+            self.rm(mdata_key)
             self.remove_tag('fitted', 'systemTags')
         self.remove_tag(fit_id, 'evalTags')
         
@@ -177,6 +184,7 @@ class Mdata(object):
                         mdata[k] = mdata[k] + self.__validate_value(k, v)
                     elif update: #key exists, is not tags not compSpecs
                         mdata[k] = self.__validate_value(k, v)
+                        self.commit_msgs['mdata entry {} changed to:'.format(k)] = v
                     else:
                         v = self.__validate_value(k, v)
                         overwrite=''
@@ -201,6 +209,7 @@ class Mdata(object):
     
     def rm(self, key):
         del self.__mdata[key]
+        self.commit_msgs['removed mdata entry:'] = key
         
         
     def eval_element_name(self, element, reference):

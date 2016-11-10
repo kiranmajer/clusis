@@ -1,11 +1,14 @@
-from spec import *
 import spec_3f
+import json
+from spec import *
 from legacyData import LegacyData
 from rawData_3f import RawData_3f
 from shutil import copy2, copyfile
 from traceback import print_tb
 from sys import exc_info
 from glob import glob
+from numpy import ndarray
+#from pytz.tzfile import base
 #import config
 #import mdata
 #import pickle
@@ -369,6 +372,85 @@ def load_pickle_3f(cfg, pickleFile):
         spectrum.commit()
     
     return spectrum
+
+
+def spec_from_specdatadir(cfg, data_dir):
+    if not os.path.isabs(data_dir):
+        data_dir = os.path.join(cfg.path['base'], data_dir)
+    typeclass_map = {'spec': spec_3f.Spec,
+                     'specM': spec_3f.SpecM,
+                     'specTof': spec_3f.SpecTof,
+                     }
+    
+    mdata, xdata, ydata = load_spec_data(data_dir)
+    spectrum = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
+    
+    return spectrum
+
+
+def dump_spec_data(data_path, mdata, xdata, ydata, compress=False):
+    if not os.path.isabs(data_path):
+        raise ValueError('base_dir must contain absolute path, got intead: {}'.format(data_path))
+    if not os.path.exists(data_path):
+        os.makedirs(data_path)
+
+    def modify_dict(d):
+        '''
+        In d recursively change ndarrays to lists.
+        '''
+        for k,v in d.items():
+            if isinstance(v, dict):
+                modify_dict(v)
+            elif isinstance(v, ndarray):
+                d[k] = list(v)
+            else:
+                pass
+            
+    modify_dict(mdata)
+    
+    # TODO. handle io exceptions and rollback
+    # dump mdata
+    mdata_file_path = os.path.join(data_path, 'mdata.json')
+    with open(mdata_file_path, 'w') as f:
+        json.dump(mdata, f, indent=4, sort_keys=True)
+    
+    if compress:
+        file_ext = 'dat.gz'
+    else:
+        file_ext = 'dat'
+    # dump x-, ydata
+    for k in xdata.keys():
+        data_file_path = os.path.join(data_path, 'xdata_{}.{}'.format(k, file_ext))
+        np.savetxt(data_file_path, xdata[k])
+    
+    for k in ydata.keys():
+        data_file_path = os.path.join(data_path, 'ydata_{}.{}'.format(k, file_ext))
+        np.savetxt(data_file_path, ydata[k])
+        
+ 
+def load_spec_data(data_path):
+    if not os.path.isabs(data_path):
+        raise ValueError('data_path must contain absolute path, got intead: {}'.format(data_path))
+    # load mdata
+    mdata_file_path = os.path.join(data_path, 'mdata.json')
+    with open(mdata_file_path, 'r') as f:
+        mdata = json.load(f)
+    
+    # load x-, ydata into dicts
+    files = [os.path.join(data_path, f) for f in os.listdir(data_path)]
+    xdata = {}
+    xdata_files = [f for f in files if os.path.isfile(f) and 'xdata_' in os.path.basename(f)]
+    for data_file in xdata_files:
+        data_key = os.path.basename(data_file).lstrip('xdata_').rstrip('.dat.gz')
+        xdata[data_key] = np.loadtxt(data_file)
+    
+    ydata = {}
+    ydata_files = [f for f in files if os.path.isfile(f) and 'ydata_' in os.path.basename(f)]
+    for data_file in ydata_files:
+        data_key = os.path.basename(data_file).lstrip('ydata_').rstrip('.dat.gz')
+        ydata[data_key] = np.loadtxt(data_file)
+    
+    return mdata, xdata, ydata     
 
 
 def import_cludb_dir(cfg, import_dir):
