@@ -340,6 +340,7 @@ class SpecM(Spec):
             sat_tof = float(input('Insert time in ms when saturation starts: '))*1e-3
             tof.mdata.add({'saturationFlightTime': sat_tof}, update=True)
             tof.commit()
+            tof.view._close_fig()
         
         self.mdata.add({'refFlightTime': sat_tof,
                         'refVelocity': tof.cluster_velocity(sat_tof),

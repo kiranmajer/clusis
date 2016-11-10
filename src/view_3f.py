@@ -53,6 +53,10 @@ class View(object):
         self.fig.show()
         'TODO: is this still needed since It is now in init?'
         self.comp_spec_data = {}
+    
+    
+    def _close_fig(self):
+        plt.close(self.fig)
         
         
     def __scale_text_vpos(self, ax, offset, scale_to_width=False):
