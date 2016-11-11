@@ -1,10 +1,10 @@
 import os.path
 import numpy as np
-
+from abc import ABCMeta, abstractmethod
 # import correct spectrumClass
 
 
-class Cfg():
+class Cfg(metaclass=ABCMeta):
     def __init__(self,user_storage_dir, base_dir_name):
         if not os.path.isabs(user_storage_dir):
             raise ValueError('Please enter absolute path.')
@@ -20,23 +20,40 @@ class Cfg():
                      'data': data_storage_dir,
                      'archive': archive_storage_dir
                      }
-        
+        self.metadata = {
+                 'tags': [],
+                 'systemTags': [],
+                 'userTags': [],
+                 'evalTags': [],
+                 'machine': self.get_machine,
+                 'delayState': {},
+                 'info': ''
+                }
         self.initDb()
         
+        
+        
+        
+    @abstractmethod
     def initDb(self):
-        print("You MUST overwrite initDb()!!")
-        'TODO: Db should be machine independent in long term.'             
-        self.db = {self.database_name: {'path': self.path['base'],  # path should always be absolute
-                            }
-                   }
-        
-
-
-        
-        ''' Values used when importing legacy data'''
-        self.defaults = {self.database_name : {
-                                  }
-                         }       
-    def get_typeclass_map():
-        print("You must overwrite get_typeclass_map()!!")
-        
+        pass
+    
+    @abstractmethod
+    def get_typeclass_map(self):
+        pass
+    
+    @abstractmethod
+    def get_metadata(self):
+        pass
+    
+    @abstractmethod
+    def get_machine(self):
+        pass
+    
+    @abstractmethod
+    def get_spectrum(self):
+        pass
+    
+    @abstractmethod
+    def get_speclist(self):
+        pass

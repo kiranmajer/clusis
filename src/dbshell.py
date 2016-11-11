@@ -39,6 +39,9 @@ class Db(object):
 #    def __timeConverter(self, utime):
 #        return time.gmtime(utime)
     
+    
+    
+    
         
     def create_table(self, specType):
         
@@ -92,6 +95,17 @@ class Db(object):
         
         return valueList
     
+    
+    
+    def list_tables(self):
+        sql = "SELECT name FROM sqlite_master where type ='table'"
+        db_cursor = self.__db.cursor()
+        answer = db_cursor.execute(sql).fetchall()
+        db_cursor.close()
+        self.__db.commit()
+        del db_cursor
+        return answer
+                
     
     def remove(self, sha1, tablename):
         sql = 'DELETE FROM {} WHERE sha1 IS "{}"'.format(tablename, sha1)

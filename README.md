@@ -21,6 +21,8 @@ get list: l = SpecMList(cfg)
 
 # usage
 
+# read into database
+
 from load import *
 from initcdb import *
 create config with path to write to
@@ -45,6 +47,20 @@ from config_casi import *
 casi_cfg = CfgCasi("/home/simond/Documents/measurements/clusisdata", "casi")
 init_cludb(casi_cfg)
 import_rawdata(casi_cfg, ls("/tmp/testdata/casi/ag/",suffix=".dat", recursive=True),commonMdata = {'waveLength' : 590e-9, 'clusterBaseUnitNumberEnd' : 100 , 'clusterBaseUnitNumberStart' : 1 , 'clusterDopantMass' : 16})
+
+
+
+
+from load import *
+from initcdb import *
+from config_3f import *
+cfg = config_3f.Cfg3f("/home/simond/Documents/measurements/clusisdata", "yuyu")
+init_cludb(cfg)
+import_rawdata(cfg, ls("/home/simond/Documents/measurements/MobileQuelle/capacitor_masspecs/hvamp/massspecs"),spectype="ms")
+
+
+
+
 
 
 # read from database

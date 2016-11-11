@@ -14,10 +14,19 @@ class CfgCasi(Cfg):
                      'specPePt': SpecPePt,
                      'specPeWater': SpecPeWater,
                      'specPf': SpecPf}
+        self.rawdatatype="LegacyData"
+ 
         super().__init__(user_storage_dir, base_dir_name)# calls initDb
+        
+    def get_machine(self):
+        return "Casi"
         
     def get_typeclass_map(self):    
         return self.typeclass_map
+    
+    def get_metadata(self):
+        
+        return self.metadata
     
     def get_raw_data(self,datFile, spectype, commonMdata={},):
         #return LegacyData(datFile, self, spectype, commonMdata, prefer_filename_mdata=prefer_filename_mdata)

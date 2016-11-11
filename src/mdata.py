@@ -57,22 +57,26 @@ class Mdata(object):
             return self.__mdata[key]
      
      
-    def check_completeness(self):
+    def check_completeness(self,verbose=False):
         '''
         '''
-        print('Starting mdata check ...')
+        
+        if verbose:
+            print('Starting mdata check ...')
         ref = self.__reference
         mdata = self.__mdata
         for k, v in ref.items():
             if v[1]: # obligatory?
-                print('{} is obligatory. Checking value ...'.format(k))
+                if verbose: 
+                    print('{} is obligatory. Checking value ...'.format(k))
                 hasChanged = True
                 while hasChanged:
                     if k in mdata:
                         try:
                             mdata[k] = self.__validate_value(k, mdata[k])
                             hasChanged = False
-                            print('{}: exists and has a valid value.'.format(k))
+                            if verbose:
+                                print('{}: exists and has a valid value.'.format(k))
                         except:
                             mdata.update(self.__ask_for_key_value(k))
                             hasChanged = True

@@ -4,7 +4,17 @@ from config import *
 from spec_3f import *
 from speclist_3f import *
 from rawData_3f import *
+from parsing_files import *
 
+
+'''
+#########################################
+##
+## Config class for data aquired in
+## third floor
+##
+######################################### 
+'''
 class Cfg3f(Cfg):
     def __init__(self,user_storage_dir, base_dir_name):
         self.database_name = '3f'
@@ -12,24 +22,74 @@ class Cfg3f(Cfg):
                          'specM': SpecM,
                          'specTof': SpecTof}
         
+        self.typeclass_of_lists_map = {'generic': SpecList,
+                         'ms': SpecMList,
+                         'tof': SpecTofList}
+        
         self.channel_map={'ch1': 'rawVoltageSpec', 'ch2': 'rawVoltageRamp'}
+        self.rawdatatype="RawData_3f"
         super().__init__(user_storage_dir, base_dir_name) # calls initDb
         
+        '''
+            change here if u use somthing else than silver
+        '''
+        self.metadata['clusterBaseUnit'] = 'Ag'
+   
+
+
+    def list_tables(self):
+        
+        with Db(self.database_name, self) as db:
+            tablenames = db.list_tables()
+            for row in tablenames:
+                print(row['name'])
+    def get_machine(self):
+        return "Mobile Clustersource"
     
+    def get_metadata(self):
+        return self.metadata
+        
     def get_typeclass_map(self):
         return self.typeclass_map 
     
+    
     def get_raw_data(self,datFile,spectype,commonMdata={}):
-        return RawData_3f(datFile, self, spectype, commonMdata=commonMdata)
+        return RawDataMobileSource(datFile, self, parse_picoscope, spectype=spectype, commonMdata=commonMdata)
     
     
     def get_speclist(self, spectype='ms'):
         s=False
+        if not spectype in self.typeclass_of_lists_map.keys():
+            print("No such Spectrumtpe: "+ spectype)
+            print("Available SpecTypes are:")
+            self.list_tables()
+            return
         if spectype == 'ms':
             print('Assuming Type: Massspectrum')
-            s= SpecMList(self)
-            
+            s= self.typeclass_of_lists_map[spectype](self)
+        if spectype == 'tof':
+            print('Assuming Type: Time-Of-Flight')
+            s= self.typeclass_of_lists_map[spectype](self)
+        if spectype == 'generic':
+            print('Assuming Type: Generic')
+            s= self.typeclass_of_lists_map[spectype](self)
+        
+        
         return s
+    
+    
+    
+    
+    def init_flighttimes(self):
+        spectra = self.get_speclist(spectype='ms')
+        for spec in spectra:
+            self.init_flighttime(spec)
+        
+    def init_flighttime(self,massSpec):
+        tofs = get_speclist(spectype='tof')
+        
+    
+    
     
     def get_spectrum(self,mi):
         # init spec obj
@@ -41,7 +101,8 @@ class Cfg3f(Cfg):
         spec = self.typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, self)
         #~~~~~~~
         return spec
-    
+  
+
     def initDb(self):
         'TODO: Db should be machine independent in long term.'             
         self.db = {self.database_name: {'path': self.path['base'],  # path should always be absolute
@@ -52,6 +113,7 @@ class Cfg3f(Cfg):
                                              ['deflectorVoltage', 'REAL'],
                                              ['tags', 'LIST'],
                                              ['recTime', 'REAL'],
+                                             ['flighttime', 'REAL'],
                                              ),
                                      'ms': (['sha1', 'TEXT PRIMARY KEY'],
                                             ['clusterBaseUnit', 'TEXT'],
@@ -59,6 +121,7 @@ class Cfg3f(Cfg):
                                             ['datFile', 'TEXT'],
                                             ['tags', 'LIST'],
                                             ['recTime', 'REAL'],
+                                            ['flighttime', 'REAL'],
                                             ),
                                      'generic': (['sha1', 'TEXT PRIMARY KEY'],
                                                  ['pickleFile', 'TEXT UNIQUE'],

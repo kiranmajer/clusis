@@ -201,6 +201,16 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
      
     return failedImports
     
+
+    
+    
+####################################################################
+# Generic method to orchestrate the read-in of datafiles
+# 
+# filetype specificities are outsourced to the config file (TODO: is there a better place?)
+#
+#
+####################################################################
 def import_rawdata(cfg, datFiles, spectype=None, commonMdata={},
                       channel_map={'ch1': 'rawChannel1', 'ch2': 'rawChannel2'}, archive_mode='cp'):
     
@@ -212,9 +222,6 @@ def import_rawdata(cfg, datFiles, spectype=None, commonMdata={},
         datFileList.append(datFiles)
     
     '''Build a list of spec objects'''
-#    typeclass_map = {'spec': Spec,
-#                     'specM': SpecM,
-#                     'specTof': SpecTof}
     typeclass_map = cfg.get_typeclass_map()
     
     specList = []
@@ -222,61 +229,21 @@ def import_rawdata(cfg, datFiles, spectype=None, commonMdata={},
     failedImports = []
     sha1ToImport = []
 
-    db = Db(cfg.database_name, cfg)
-    
+# Get Database
+    db = Db(cfg.database_name, cfg) 
+
+###############################################
+## Do the same thing for all Files 
+## 1. read a raw data object for current file 
+## 2. get a spectrum object for the  
+##    raw data object
+## 3. move/copy datafilese 
+## 4. create pickle for data file 
+## 5. add spectrum object to speclist
+###############################################
     for datFile in datFileList:
-        print('\n######################')
-        print('Importing: '+datFile+' with ', commonMdata)
-        try:
-#            mi = RawData_3f(datFile, cfg, spectype, commonMdata)
-            mi = cfg.get_raw_data(datFile,spectype,commonMdata)
-        except Exception as e:
-            print('rawData_3f creation failed:', e)
-            failedImports.append([datFile, 'rawData_3f creation failed: {}'.format(e)])
-            print('Traceback:')
-            print_tb(exc_info()[2])
-            continue
-        if not db.table_has_sha1(mi.mdata.data('specType'), mi.mdata.data('sha1')) and mi.mdata.data('sha1') not in sha1ToImport:
-            '''TODO: handle special files with identical sha1 (e.g. "flat line"-spectra).
-            It might be interesting to have them in the db. Allow fake sha1 = sha1+unix 
-            time stamp?'''
-            if is_filestorage_possible(mi.mdata.data()):
-                print(os.path.basename(datFile), '''ready to convert ...
-                ''')
-                try:
-                    moved = archive(cfg, mi.metadata, mode=archive_mode) # ! use metadata dict here since it has '...FileOrig' entries
-                except Exception as e:
-                    print('%s: Failed to archive raw data:'%datFile, e)
-                    failedImports.append([datFile, 'Import error: Archive failed: %s.'%e])
-                else:
-                    try:                    
-#                        # init spec obj
-#                        mdata = mi.mdata.data()
-#                        
-#                        #~~~~~~~
-#                        ydata = {channel_map['ch1']: mi.data_ch1}
-#                        ydata[channel_map['ch2']] = mi.data_ch2
-#                        xdata = {'idx': np.arange(0,len(ydata['rawVoltageSpec']))} # intensity for [i,i+1] will be displayed at i+0.5
-#                        spec = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
-#                        #~~~~~~~
-                        spec = cfg.get_spectrum(mi)
-                        spec._commit_pickle()
-                    except Exception as e:
-                        print('%s failed to import:'%datFile, e)
-                        failedImports.append([datFile, 'Import error: %s.'%e])
-                        move_back(moved, mode='rm')
-                        raise
-                    else:
-                        movedFiles.extend(moved)
-                        spec._commit_pickle()
-                        specList.append(spec)
-                        sha1ToImport.append(mi.mdata.data('sha1'))
-            else:
-                #print 'some files already exist'
-                failedImports.append([datFile, 'Some raw files were already imported'])
-        else:
-            #print os.path.basename(datFile)+': Db has already sha1 entry'
-            failedImports.append([datFile, 'Db or earlier import has already entry with this sha1'])
+        read_file(datFile,cfg,db, specList=specList,movedFiles=movedFiles,failedImports=failedImports,sha1ToImport=sha1ToImport,spectype=spectype,commonMdata=commonMdata,archive_mode=archive_mode)
+        
             
     try:
         print('Starting db import ....')
@@ -299,8 +266,86 @@ def import_rawdata(cfg, datFiles, spectype=None, commonMdata={},
     print('Number of failed imports: ', len(failedImports))
      
     return failedImports
+ 
+'''
+##############################################
+# This is the read-in of a single file. 
+# 
+#
+###############################################
+##  
+## 1. read a raw data object for current file 
+## 2. get a spectrum object for the  
+##    raw data object
+## 3. move/copy datafilese 
+## 4. create pickle for data file 
+## 5. add spectrum object to speclist
+###############################################'''
+def read_file(filename, cfg, db, specList,movedFiles,failedImports,sha1ToImport,spectype=None,commonMdata = [], archive_mode='cp'):
+    
+    typeclass_map = cfg.get_typeclass_map()
+    
+    print('\n######################')
+    print('Importing: '+filename+' with ', commonMdata)
+    try:
+#            mi = RawData_3f(filename, cfg, spectype, commonMdata)
+
+#### create raw data file for current dataFile
+        mi = cfg.get_raw_data(filename,spectype,commonMdata)
+    except Exception as e:
+        print(cfg.rawdatatype+' creation failed:', e)
+        failedImports.append([filename, cfg.rawdatatype+' creation failed: {}'.format(e)])
+        print('Traceback:')
+        print_tb(exc_info()[2])
+        return
+    if not db.table_has_sha1(mi.mdata.data('specType'), mi.mdata.data('sha1')) and mi.mdata.data('sha1') not in sha1ToImport:
+        '''TODO: handle special files with identical sha1 (e.g. "flat line"-spectra).
+        It might be interesting to have them in the db. Allow fake sha1 = sha1+unix 
+        time stamp?'''
+        if is_filestorage_possible(mi.mdata.data()):
+            print(os.path.basename(filename), '''ready to convert ...
+            ''')
+            try:
+                moved = archive(cfg, mi.metadata, mode=archive_mode) # ! use metadata dict here since it has '...FileOrig' entries
+            except Exception as e:
+                print('%s: Failed to archive raw data:'%filename, e)
+                failedImports.append([filename, 'Import error: Archive failed: %s.'%e])
+            else:
+                try:                    
+
+#### create spectrum data from raw data object
+                    spec = cfg.get_spectrum(mi)
+                    
+                    ''' CHANGE HERE FOR DIFFRENT DATA STORAGE 
+                    '''
+                    spec._commit_pickle()
+                except Exception as e:
+                    print('%s failed to import:'%filename, e)
+                    failedImports.append([filename, 'Import error: %s.'%e])
+                    move_back(moved, mode='rm')
+                    raise
+                else:
+                    movedFiles.extend(moved)
+                    
+                    ''' CHANGE HERE FOR DIFFRENT DATA STORAGE 
+                    '''
+                    spec._commit_pickle()
+                    specList.append(spec)
+                    sha1ToImport.append(mi.mdata.data('sha1'))
+        else:
+            #print 'some files already exist'
+            failedImports.append([filename, 'Some raw files were already imported'])
+    else:
+        #print os.path.basename(filename)+': Db has already sha1 entry'
+        failedImports.append([filename, 'Db or earlier import has already entry with this sha1'])
+
     
     
+##################################################
+## Former import where calls are specifically
+## Hard-coded
+##
+##################################################
 def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
                       channel_map={'ch1': 'rawVoltageSpec', 'ch2': 'rawVoltageRamp'}, archive_mode='cp'):
     '''Build a list, so we can work with lists only'''
@@ -425,6 +470,9 @@ def load_pickle(cfg, pickleFile):
         spectrum.commit()
     
     return spectrum
+
+
+
 
 
 def load_pickle_3f(cfg, pickleFile):

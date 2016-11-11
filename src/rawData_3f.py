@@ -16,7 +16,17 @@ sys.path.append(os.path.normpath(os.path.join(os.getcwd(), '../../delay/src')))
 
 
 
-class RawData_3f(object):
+
+
+
+'''
+####################################################
+# Import data from the (mobile) machine on
+# third floor 
+#
+####################################################
+'''
+class RawData_3f():
     
     def __init__(self, fileToImport, cfg, spectype=None, commonMdata={}, cbu='Ag', machine='3f'):
         if spectype in cfg.mdata_ref['spec']['specType'][0]:
@@ -39,10 +49,15 @@ class RawData_3f(object):
         self.header = []
         self.data = []
         
+        '''
+        Parse data file, generate time metrics and verify timemetrics
+        '''
         print('Parsing dat file ...')
         self.parse_file(fileToImport)
         self.get_time_metrics()
         self.verify_time_metrics()
+        
+        
         print('Setting up meta data ...')
         self.get_sha1()
         self.get_recTime(self.spectype)

@@ -12,12 +12,12 @@ import sys
 #sys.path.append(os.path.normpath(os.path.join(os.getcwd(), '../../delay/src')))
 from filestorage import load_xml, load_pickle, load_json
 #import config
+from abc import ABCMeta, abstractmethod
 
 
 
 
-
-
+'''
 #######################################################
 # Class importer
 # This is a class defining the interface all classes 
@@ -25,50 +25,49 @@ from filestorage import load_xml, load_pickle, load_json
 # containing measurement data need to implement,
 # and contains some useful functions
 #######################################################
-
+'''
 class importer():
     
-    
+    '''
 #######################################################
 # Obviously a constructor,
 # it needs to know 
 #   - which fileToImport 
-#   - a configuration
+#   - a configuration object
 #   - a spectrumtype spectype
-#######################################################
-    def __init__(self, fileToImport, cfg, spectype=None, commonMdata={}, cbu='Ag', machine='3f'):
+#######################################################'''
+    def __init__(self, fileToImport, cfg, spectype=None, commonMdata={}):
         if spectype in cfg.mdata_ref['spec']['specType'][0]:
             print('Got valid spectype: {}'.format(spectype))
             self.spectype = spectype
         else:
             raise ValueError('Unknown spectype: {}'.format(spectype))
         self.datfile_orig = os.path.abspath(fileToImport)
-        self.metadata = {'datFileOrig': os.path.abspath(fileToImport),
-                         'tags': [],
-                         'systemTags': [],
-                         'userTags': [],
-                         'evalTags': [],
-                         'machine': machine,
-                         'info': '',
-                         'clusterBaseUnit': cbu,
-                         'specType': self.spectype,
-                         }
+
+        self.metadata = cfg.get_metadata()
+        self.metadata['specType'] = self.spectype
+
         self.cfg = cfg
         self.header = []
         self.data = []
+    
+
         
-        
+
 #######################################################
 # add a sha1 hash of the current File 
 # to self.metadata['sha1']
 #
 #######################################################
+
     def get_sha1(self):
         with open(self.metadata['datFileOrig'], 'rb') as f:
             sha1 = hashlib.sha1(f.read()).hexdigest()
         
         self.metadata['sha1'] = sha1
-    
+ 
+
+
 #######################################################
 # extract a timestamp 
 # from the current file
@@ -88,7 +87,7 @@ class importer():
 # parse the current file
 #
 #
-#######################################################            
+####################################################### 
     def parse_file(self, fileToImport):
         """Reads from a file and generates a header list and a data
         ndarray.
@@ -105,12 +104,17 @@ class importer():
 
 
 #######################################################
+#
 # parsing the file on a line to line level
 #
-#
-#######################################################                        
+#######################################################                      
     def parse_line(self,line):
         if re.search('^-{0,1}\d+.{0,1}\d*$',line.strip()) == None: # line contains data other than a numbers, thus supposedly its part of a header
             self.header.extend(line.split())
         elif re.search('^-{0,1}\d+.{0,1}\d*[e|E]{0,1}-{0,1}\d*$',line.strip()):
             self.data.append(float(line.strip()))
+    
+    
+    @abstractmethod    
+    def set_metadata_from_config(self):
+        pass
