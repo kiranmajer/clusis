@@ -110,7 +110,7 @@ class RawData_3f(object):
         if np.sum(data_t_calc - self.data_t) > threshold:
             raise ValueError('Difference of calculated time data from orignal time data exceeds threshold.')
         else:
-            print('Time metrics verified (within threshold of {}'.format(threshold))
+            print('Time metrics verified (within threshold of {})'.format(threshold))
         
     def add_default_mdata(self):
         #print('>>> add_default_mdata <<<')

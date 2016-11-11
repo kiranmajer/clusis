@@ -104,7 +104,6 @@ class View(object):
     
     
     def _pretty_format_clusterid(self, ms=False):
-        print('ms mode: ', ms)
         formatStart = '$\mathrm{\mathsf{'
         formatEnd = '}}$'
         bu = self.spec.mdata.data('clusterBaseUnit')
@@ -248,12 +247,8 @@ class View(object):
         ax.autoscale(axis='y')
         
     def _yminmax_in_xrange(self, xdata, ydata, xlim_scale):
-        print('xdata: ', xdata)
-        print('ydata: ', ydata)
-        print('xlim_scale: ', xlim_scale)
         xlb = np.argmin(abs(xdata-xlim_scale[0]))
         xub = np.argmin(abs(xdata-xlim_scale[1]))
-        print('Boundaries: ', xlb, xub)
         ydata_sorted = np.sort(ydata[xlb:xub])
         # exclude infinite values
         ymin = ydata_sorted[np.isfinite(ydata_sorted)][0]

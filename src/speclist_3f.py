@@ -39,7 +39,9 @@ class SpecList(object):
 #                                     inTags=inTags, notInTags=notInTags, datFileName=datFileName)
 
     def get_spec(self, number):
-        spec = load.load_pickle_3f(self.cfg, self.dbanswer[number]['pickleFile'])
+        data_dir = self.dbanswer[number]['pickleFile'].rstrip('.pickle')
+        spec = load.spec_from_specdatadir(self.cfg, data_dir)
+        #spec = load.load_pickle_3f(self.cfg, self.dbanswer[number]['pickleFile'])
         return spec
 
     def update_mdata(self, mdataDict):

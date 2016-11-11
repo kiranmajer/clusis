@@ -229,11 +229,9 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
     #with Db('casi', cfg) as db:
     db = Db('3f', cfg)
     for datFile in datFileList:
-        print('\n######################')
-        print('Importing: '+datFile+' with ', commonMdata)
-        print('Processing data file #{}'.format(i+1))
-        print('sha1 list has length {}: '.format(len(sha1ToImport)))
-#         print(sha1ToImport)
+        print('\n#########################################################')
+        print('\nImporting: {}\n'.format(datFile))
+        print('Import log:')
         i+=1
         try:
             mi = RawData_3f(datFile, cfg, spectype, commonMdata)
@@ -249,8 +247,6 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
             It might be interesting to have them in the db. Allow fake sha1 = sha1+unix 
             time stamp?'''
             if is_filestorage_possible(mi.mdata.data()):
-                print(os.path.basename(datFile), '''ready to convert ...
-                ''')
                 try:
                     moved = archive(cfg, mi.metadata, mode='cp') # ! use metadata dict here since it has '...FileOrig' entries
                 except Exception as e:
@@ -264,7 +260,12 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
                         ydata[channel_map[spectype]['ch2']] = mi.data_ch2
                         xdata = {'idx': np.arange(0,len(ydata['rawVoltageSpec']))} # intensity for [i,i+1] will be displayed at i+0.5
                         spec = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
-                        spec._commit_pickle()
+#                         for data_id in ['idx', channel_map[spectype]['ch1'], channel_map[spectype]['ch2']]:
+#                             spec.commit_msgs.add('spec data: updating data with id {}'.format(data_id))
+                        spec.mdata.commit_msgs.update(mi.mdata.commit_msgs)
+                        spec.commit_msgs.update(['idx', channel_map[spectype]['ch1'], channel_map[spectype]['ch2']])
+                        #spec._commit_pickle()
+                        spec._commit_specdatadir()
                     except Exception as e:
                         print('%s failed to import:'%datFile, e)
                         failedImports.append([datFile, 'Import error: %s.'%e])
@@ -272,9 +273,10 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
                         raise
                     else:
                         movedFiles.extend(moved)
-                        spec._commit_pickle()
+                        #spec._commit_pickle()
+                        spec._commit_specdatadir()
+                        spec._commit_change_history(short_log='-m {} initial commit'.format(spec.mdata.data('sha1')))
                         specList.append(spec)
-                        print('Appending sha1', mi.mdata.data('sha1'))
                         sha1ToImport.append(mi.mdata.data('sha1'))
             else:
                 #print 'some files already exist'
@@ -284,8 +286,7 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
             failedImports.append([datFile, 'Db or earlier import has already entry with this sha1'])
             
     try:
-        print('Starting db import ....')
-        print('Processing {} specs in speclist:'.format(len(specList)))
+        print('\nStarting db import ....')
 #         for s in specList:
 #             print(s.mdata.data('pickleFile'))
         db.add(specList)
@@ -439,15 +440,15 @@ def load_spec_data(data_path):
     # load x-, ydata into dicts
     files = [os.path.join(data_path, f) for f in os.listdir(data_path)]
     xdata = {}
-    xdata_files = [f for f in files if os.path.isfile(f) and 'xdata_' in os.path.basename(f)]
+    xdata_files = [f for f in files if os.path.isfile(f) and os.path.basename(f).startswith('xdata_')]
     for data_file in xdata_files:
-        data_key = os.path.basename(data_file).lstrip('xdata_').rstrip('.dat.gz')
+        data_key = os.path.basename(data_file).split('xdata_',1)[1].rsplit('.dat',1)[0]
         xdata[data_key] = np.loadtxt(data_file)
     
     ydata = {}
     ydata_files = [f for f in files if os.path.isfile(f) and 'ydata_' in os.path.basename(f)]
     for data_file in ydata_files:
-        data_key = os.path.basename(data_file).lstrip('ydata_').rstrip('.dat.gz')
+        data_key = os.path.basename(data_file).split('ydata_',1)[1].rsplit('.dat',1)[0]
         ydata[data_key] = np.loadtxt(data_file)
     
     return mdata, xdata, ydata     

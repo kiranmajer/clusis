@@ -4,6 +4,7 @@ from dbshell import Db
 import config_3f
 from load import *
 from speclist_3f import *
+from git import Repo
 #import ConfigParser
 
 
@@ -40,6 +41,8 @@ def init_db(cfg):
             with Db(dbName, cfg) as db:
                 for specType in dbProps['layout'].keys():
                     db.create_table(specType)
+    
+    return dbFile 
             
     
         
@@ -68,7 +71,17 @@ def init_cludb(user_storage_dir, base_dir_name):
             ensure_path(p)
     
     setup_sqlite3()
-    init_db(cfg)
+    db_filename = os.path.basename(init_db(cfg))
+    # init git repository
+    rep = Repo.init(cfg.path['base'])
+    # create .gitignore with few defaults
+    git_ignore_path = os.path.join(cfg.path['base'], '.gitignore')
+    with open(git_ignore_path, 'w') as f:
+        f.write('\n'.join([db_filename]))
+    # add .gitignore to index and commit
+    rep.index.add([git_ignore_path])
+    rep.git.commit('-a', '-m Repository initialization: adding ".gitignore".')
+    del rep
     
     return cfg
                 

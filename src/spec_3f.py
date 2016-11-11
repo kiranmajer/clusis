@@ -15,6 +15,7 @@ import view_3f
 import pickle
 import load
 import speclist_3f
+from git import Repo
 
 
 
@@ -64,16 +65,87 @@ class Spec(object):
         data_dir = self.mdata.data('pickleFile').rstrip('.pickle')
         full_path = os.path.join(self.cfg.path['base'], data_dir)
         load.dump_spec_data(full_path, self.mdata.data(), self.xdata, self.ydata, compress=compress)
+        self._add_files_to_index()
+    
+    
+    def _add_files_to_index(self, file_ext=['json', 'dat']):
+        # TODO: don't exstract this from pickleFile
+        data_dir = self.mdata.data('pickleFile').rstrip('.pickle')
+        full_path = os.path.join(self.cfg.path['base'], data_dir)
+        #fl = os.listdir(full_path)
+        #added_files = []
+        staged_files = []
+        # init repo instance
+        repo_instance = Repo(self.cfg.path['base'])
+        for ext in file_ext:
+            #added = 
+            repo_instance.index.add([os.path.join(full_path, '*.{}'.format(ext))])
+            #added_files.extend(added)
+        
+        # get staged files
+        diff_to_head = repo_instance.index.diff('HEAD')
+        for diff in diff_to_head:
+            staged_files.append(diff.a_path)
+        added_files = [os.path.basename(f) for f in staged_files]
+        data_idcs = [f.split('data_',1)[-1].rsplit('.dat')[0] for f in added_files if f not in ['mdata.json']]
+        
+        self.commit_msgs.update(data_idcs)
+                
             
+    
+    def _commit_change_history(self, git_options=['-a'], short_log=None):
+        # biulding commit message strings
+        # log summary
+        git_options = list(git_options)
+        git_msgs = []
+        short_log_auto = '-m {} changed: '.format(self.mdata.data('sha1'))
+        short_log_items = []
+        git_msgs.append(short_log_auto)
+        # mdata changes
+        if self.mdata.commit_msgs:
+            mdata_log_entries = []
+            for k,v in self.mdata.commit_msgs.items():
+                if v:
+                    mdata_log_entries.append('{} {}'.format(k,v))
+                else:
+                    mdata_log_entries.append(str(k))
+            mdata_log = '-m ' + '\n '.join(mdata_log_entries)
+            git_msgs.append(mdata_log)
+            short_log_items.append('mdata')
+        # data changes    
+        if self.commit_msgs:
+            commit_msgs = ['spec data updated with idx: {}'.format(i) for i in self.commit_msgs]
+            data_log = '-m ' + '\n '.join(commit_msgs)
+            git_msgs.append(data_log)
+            short_log_items.append('spec data')
+        
+        git_msgs[0] = git_msgs[0] + ', '.join(short_log_items)
+        if short_log:
+            git_msgs[0] = short_log
+        git_options.extend(git_msgs)
+        
+        # init repo instance
+        repo_instance = Repo(self.cfg.path['base'])
+        repo_instance.git.commit(git_options)
+        
+        # clear up commit_stuff
+        del repo_instance
+        self.commit_msgs.clear()
+        self.mdata.commit_msgs = {}
+ 
+    
             
     def commit(self, update=True):
-        self._commit_pickle()
+        #self._commit_pickle()
+        self._commit_specdatadir()
+        self._commit_change_history()
         self._commit_db(update=update)
         
         
     def _update_data_array(self, data_array, data_key, data):
+        print('Updating data with key:', data_key)
         data_array[data_key] = data
-        self.commit_msgs.add('spec data: updating data with id {}'.format(data_key))
+        #self.commit_msgs.add('spec data: updating data with id {}'.format(data_key))
         
         
     def _auto_key_selection(self, xdata_key, ydata_key, key_deps):
@@ -143,7 +215,8 @@ class Spec(object):
         """
         Adds a new ydata set with key new_ydata_key which contains the inverted values from ydata_key
         """
-        self.ydata[new_ydata_key] = -1*self.ydata[ydata_key]
+        self._update_data_array(self.ydata, new_ydata_key, -1*self.ydata[ydata_key])
+        #self.ydata[new_ydata_key] = -1*self.ydata[ydata_key]
         
         
     def calc_spec_data(self):
@@ -236,7 +309,7 @@ class SpecTof(Spec):
      
 class SpecM(Spec):
     def __init__(self, mdata, xdata, ydata, cfg):
-        print('__init__: Init SpecM')
+        #print('__init__: Init SpecM')
         Spec.__init__(self, mdata, xdata, ydata, cfg)
         self._update_mdata_reference('specM')
         self.view = view_3f.ViewMs(self)
@@ -263,7 +336,8 @@ class SpecM(Spec):
             
     
     def scale_ramp_voltage(self, factor=100):
-        self.ydata['voltageRamp'] = factor*self.ydata['rawVoltageRamp']
+        self._update_data_array(self.ydata, 'voltageRamp', factor*self.ydata['rawVoltageRamp'])
+        #self.ydata['voltageRamp'] = factor*self.ydata['rawVoltageRamp']
     
             
     def idealize_ramp(self, offset_factor_max_finding=0.2, exclude_from_fit=0.05, manual_idx_range=None):
@@ -278,25 +352,26 @@ class SpecM(Spec):
             idx_ramp_max1 = np.argmax(ramp[idx_ramp_max0+int(len(ramp)*offset_factor_max_finding):]) + idx_ramp_max0+int(len(ramp)*offset_factor_max_finding)
         # skip first 5% due to coupling
         idx_ramp_max0 = idx_ramp_max0 + int(round((idx_ramp_max1 - idx_ramp_max0)*exclude_from_fit))
-        print('Indices %s, %s'%(idx_ramp_max0, idx_ramp_max1))
-        t_ramp_max1 = self.xdata['time'][idx_ramp_max0]
-        t_ramp_max2 = self.xdata['time'][idx_ramp_max1]
-        print('Maximums %s, %s'%(t_ramp_max1, t_ramp_max2))
+        #print('Indices %s, %s'%(idx_ramp_max0, idx_ramp_max1))
+        #t_ramp_max1 = self.xdata['time'][idx_ramp_max0]
+        #t_ramp_max2 = self.xdata['time'][idx_ramp_max1]
         
         # fit
         fit_par = np.polyfit(self.xdata['time'][idx_ramp_max0:idx_ramp_max1], ramp[idx_ramp_max0:idx_ramp_max1], 1)
         lin_fit = np.poly1d(fit_par)
-        t0_real = -1*fit_par[1]/fit_par[0]
-        idx0 = (np.abs(self.xdata['time']-t0_real)).argmin()
-        t0 = self.xdata['time'][idx0]
-        print(t0)
+        #t0_real = -1*fit_par[1]/fit_par[0]
+        #idx0 = (np.abs(self.xdata['time']-t0_real)).argmin()
+        #t0 = self.xdata['time'][idx0]
         
         # build idelized ramp vector
-        ramp_fit = np.zeros(len(ramp))
-        ramp_fit[idx0:idx_ramp_max1+1] = lin_fit(self.xdata['time'][idx0:idx_ramp_max1+1])
+#         ramp_fit = np.zeros(len(ramp))
+#         ramp_fit[idx0:idx_ramp_max1+1] = lin_fit(self.xdata['time'][idx0:idx_ramp_max1+1])
+        ramp_fit = lin_fit(self.xdata['time'])
+        ramp_fit[ramp_fit<0] = 0
         ramp_fit[idx_ramp_max1+1:] = lin_fit(self.xdata['time'][idx_ramp_max1+1])
         
-        self.ydata['voltageRampFitted'] = ramp_fit
+        self._update_data_array(self.ydata, 'voltageRampFitted', ramp_fit)
+        #self.ydata['voltageRampFitted'] = ramp_fit
 
 
     def _convertVtoNumSilver(self, deflector_voltage, clustervelocity, masscoefficient=3200000):
@@ -319,8 +394,10 @@ class SpecM(Spec):
         V[V<0] = 0
         #print V,masscoefficient, clustervelocity
         #size = 0.319*(V*masscoefficient/(clustervelocity*clustervelocity))**(1/3)
-        diam = 0.319*(self._convertVtoNumSilver(deflector_voltage=V, clustervelocity=clustervelocity,
-                                                masscoefficient=masscoefficient))**(1/3)*1e-9
+        diam = 0.319*(self._convertVtoNumSilver(deflector_voltage=V,
+                                                clustervelocity=clustervelocity,
+                                                masscoefficient=masscoefficient)
+                      )**(1/3)*1e-9
         return diam
     
 
@@ -348,7 +425,8 @@ class SpecM(Spec):
                         #'refDeflectorVoltage': tof.mdata.data('deflectorVoltage')
                         },
                        update=True)
-        print('Calibrating using ToF: {} and cluster velocity: {}'.format(sat_tof, self.mdata.data('refVelocity')))
+        print('Calibrating using ToF: {} and cluster velocity: {}'.format(sat_tof,
+                                                                          self.mdata.data('refVelocity')))
         self._update_data_array(self.xdata,
                                 'cluster',
                                 self._convertVtoNumSilver(self.ydata['voltageRampFitted'], 

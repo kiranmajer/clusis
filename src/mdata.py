@@ -170,6 +170,7 @@ class Mdata(object):
                         self.__add_fit_data(v)
                     elif k not in mdata.keys(): # key not yet in mdata, so we just add them
                         mdata[k] = self.__validate_value(k, v)
+                        self.commit_msgs['mdata entry {} added with value:'.format(k)] = v
                     elif k in ['tags', 'userTags', 'systemTags', 'evalTags']: 
                         if k == 'tags': # 'tags' is treated like 'userTags' for convenience
                             k = 'userTags'
