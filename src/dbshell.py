@@ -3,6 +3,8 @@ import os
 #import calendar
 import time
 #import config
+from sql_tools import *
+from tabulate import tabulate
 
 
 class Db(object):
@@ -133,7 +135,202 @@ class Db(object):
         check for missing entries? -> consistency check: each table entry has corresponding pickleFile'''
         pass
         
+    
+    
+    
+    
+    def buildDataQuery(self,spectype = 'ms', limits={}):
+        def string_verify(input_string):
+            print(input_string)
+            return True
+        def float_verify(input_string):
+            print(input_string)
+            return True
+        
+        
+        typeverifyers = {
+                        'TEXT' : string_verify,
+                        'REAL' : float_verify,
+                        'LIST' :  string_verify,
+                        'TEXT UNIQUE' :  string_verify
+                            }
+        
+        
+        if not spectype in list(self.__dbProps['layout'].keys()):
+            print("wrong Spectype: "+spectype)
+            print("Available Spectypes are: ")
+            print(list(self.__dbProps['layout'].keys()))
+            return
+        #layout = self.__cfg.db[self.__cfg.database_name]['layout'][spectype]
+        layout = self.__dbProps['layout'][spectype]
+        
+        def verify_keys(self,limits,layout):
+            verbose = False
+            if verbose:
+                print("Verifying limits...")
+                
+            ''' Verify keys'''    
+            
+            keys = [ i[0] for i in layout]
+            
+            valid_keys = True 
+            
+            for i in limits.keys():
+                if i not in keys:
+                    valid_keys = False
+                    
+            return valid_keys
+        
+        def verify_limits(self,limits,layout,typeverifyeres):
+             
+            column2type_map = {}
+            for i in layout:
+                column2type_map[i[0]]=i[1]
+            
+            valid_limits = True
+            for column_name in limits:
+                print("Limits for "+column_name)
+                print(typeverifyers[column2type_map[column_name]](limits[column_name]))
+                if not typeverifyers[column2type_map[column_name]](limits[column_name]):
+                    valid_limits = False
+            return valid_limits
+        
+#        print(verify_keys(self,limits,layout))
+        
+    
+        if verify_keys(self,limits,layout) and verify_limits(self,limits,layout,typeverifyers):
+            
+            column2type_map = {}
+            for i in layout:
+                column2type_map[i[0]]=i[1]
+                
+            where_clause = {}
+            for column_name in limits:
+                where_clause[column2type_map[column_name] ] = [column_name , limits[column_name] ]
+            
+            sql = sql_builder(spectype, where_clause)
+            return sql
+        else:
+            print("Invalid limit structure")
+        return
+         
+    
+    def getData(self,spectype = 'ms', limits={}):
+        
+            sql = self.buildDataQuery(spectype,limits)
+            
+            if not sql :
+                return
+            
+            print('Querying with: ', sql)
+            
+            
+            db_cursor = self.__db.cursor()
+            fetch = db_cursor.execute(sql).fetchall()   
+            db_cursor.close()
+            del db_cursor
+            
+            
+            return fetch 
+    
+    def showData(self,spectype = 'ms', limits={}):
+        
+            sql = self.buildDataQuery(spectype,limits)
+            
+            if not sql :
+                return
+            
+            print('Querying with: ', sql)
+            
+            
+            db_cursor = self.__db.cursor()
+            fetch = db_cursor.execute(sql).fetchall()   
+            db_cursor.close()
+            del db_cursor
+            
+           
+            fetch = self.__queryAndPrint(sql)
+                                                               
 
+#            
+        
+
+    
+    
+    
+    
+    
+        ############################################
+    #
+    # Perform a query on database and print 
+    # it to terminal
+    #
+    #############################################    
+
+    def printDbFetch(self,fetch , modifiers={}):
+        
+        #
+        # Add modifiers, containing column names mapped to a function name, 
+        # the function will then be applied to data in the
+        #
+        names = fetch[0].keys()
+        if modifyers =={}:
+        
+            
+            rows = [list(row) for row in fetch]
+        
+            print(tabulate(rows,headers=names))
+            return 
+  
+        rows = [list(row) for row in fetch]
+        
+        print(tabulate(rows,headers=names))
+  
+#        modifyer_map = {
+#                        'makeNormalTime' : convertTime
+#                        }
+#        
+#            rows=[modifyRow]
+#        
+#        def modifyRow(row,modifyer_map)
+#            modifyedRow =[]
+#            for name in names:
+#                modifyedRow.append(modifyer_map[modifiers[name](row[name])if name in modifiers.keys() else row[name])
+#            return modifyedRow
+#        
+        
+            
+
+            
+
+    ############################################
+    #
+    # Perform a query on database and print 
+    # it to terminal
+    #
+    #############################################    
+
+    def __queryAndPrint(self,sql):
+        db_cursor = self.__db.cursor()
+        fetch = db_cursor.execute(sql).fetchall()
+
+        names = [description[0] for description in db_cursor.description]
+
+        db_cursor.close()
+        del db_cursor
+        
+        rows = [list(row) for row in fetch]
+        
+        print(tabulate(rows,headers=names))
+
+        return fetch
+            
+        
+
+
+
+    
+    
     def query(self, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None, clusterBaseUnitNumberRange=None,
               recTime=None, recTimeRange=None, inTags=None, notInTags=None, datFileName=None, waveLength=None,
               trapTemp=None, trapTempRange=None, hide_trash=True, order_by='recTime'):
