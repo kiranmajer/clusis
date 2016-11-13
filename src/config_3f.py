@@ -4,6 +4,7 @@ from config import *
 from spec_3f import *
 from speclist_3f import *
 from rawData_3f import *
+from rawDataMobileSource import *
 from parsing_files import *
 
 
@@ -27,7 +28,7 @@ class Cfg3f(Cfg):
                          'tof': SpecTofList}
         
         self.channel_map={'ch1': 'rawVoltageSpec', 'ch2': 'rawVoltageRamp'}
-        self.rawdatatype="RawData_3f"
+        self.rawdatatype="RawDataMobileSource"
         super().__init__(user_storage_dir, base_dir_name) # calls initDb
         
         '''
@@ -53,8 +54,8 @@ class Cfg3f(Cfg):
         return self.typeclass_map 
     
     
-    def get_raw_data(self,datFile,spectype,commonMdata={}):
-        return RawDataMobileSource(datFile, self, parse_picoscope, spectype=spectype, commonMdata=commonMdata)
+    def get_raw_data(self,datFile,specType,commonMdata={}):
+        return RawDataMobileSource(datFile, self, parse_picoscope, spectype=specType, commonMdata=commonMdata)
     
     
     def get_speclist(self, spectype='ms'):
@@ -146,7 +147,7 @@ class Cfg3f(Cfg):
         self.mdata_ref = {'spec': {'datFile': [str, True],
                                    'evalTags': [list, True],
                                    'info': [str, True],
-                                   'machine': [['3f'], True],
+                                   'machine': [[self.get_machine()], True],
                                    'mdataVersion': [float, True],
                                    'pickleFile': [str, True],
                                    'recTime': [float, True],
@@ -181,7 +182,7 @@ class Cfg3f(Cfg):
                     
         
         ''' Values used when importing legacy data'''
-        self.defaults = {'3f': {'tof': {'flightLength': 0.19,
+        self.defaults = {self.get_machine(): {'tof': {'flightLength': 0.19,
                                         'mdataVersion': self.mdata_version,
                                         'timeOffset': 0,
                                         },

@@ -14,7 +14,7 @@ import sys
 # Parse the content of a file
 # created with Picoscope
 #############################'''
-def parse_picoscope(filename):
+def parse_picoscope(fileToImport):
     """Reads from a file and generates a header list and a data
     ndarray.
     """

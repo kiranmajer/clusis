@@ -30,7 +30,7 @@ class RawDataMobileSource(importer):
     
     def __init__(self, fileToImport, cfg, parser, spectype=None, commonMdata={}):
    
-        super().__init__(self, fileToImport, cfg, spectype=spectype, commonMdata=commonMdata):
+        super().__init__(fileToImport, cfg, spectype=spectype, commonMdata=commonMdata)
         self.metadata['datFileOrig'] =  os.path.abspath(fileToImport)
         self.parser = parser
         
@@ -71,15 +71,14 @@ class RawDataMobileSource(importer):
     
     
     def set_metadata_from_config(self):
-        
+        return
     
-'''
+    '''
 ####################################################
 #
 # parse the content of a  file
 #
-####################################################
-'''  
+####################################################'''
     def parse_file(self, fileToImport):
         data = self.parser(fileToImport)
         
@@ -87,15 +86,15 @@ class RawDataMobileSource(importer):
         self.data_ch1 = data[1]
         self.data_ch2 = data[2]
             
-
+        
             
-'''
-####################################################
-#
-# finding the relation between
-#
-####################################################
-'''             
+    '''
+    ####################################################
+    #
+    # finding the relation between
+    #
+    ####################################################
+    '''             
     def get_time_metrics(self):
         self.metadata['triggerOffset'] = -1*self.data_t[0] # offset from idx = 0
         self.metadata['timePerPoint'] = np.round((self.data_t[-1] - self.data_t[0])/(len(self.data_t) - 1), 9)
@@ -171,21 +170,24 @@ class RawDataMobileSource(importer):
         month = str(time.localtime(self.metadata['recTime']).tm_mon)
         day = str(time.localtime(self.metadata['recTime']).tm_mday)
         # dir for dat, cfg files
+        
         archive_dir = os.path.join(self.cfg.path['archive'],
                                    self.metadata['machine'],
                                    self.metadata['specType'],
                                    year)
+        
         self.metadata['datFile'] = os.path.join(archive_dir,
                                                 os.path.basename(self.metadata['datFileOrig']))
         #self.metadata['userTags'] = []
         ''' build pickle file name and path according following scheme:
         config.path['data']/<year>/<recTime>_<sha1>.pickle'''
-
+        
         pickleFileName = '{}-{}-{}_{}.pickle'.format(year, month, day, self.metadata['sha1'])
         pickleFileDir = os.path.join(self.cfg.path['data'],
                                      self.metadata['machine'],
                                      self.metadata['specType'],
                                      year)
+        
         self.metadata['pickleFile'] = os.path.join(pickleFileDir, pickleFileName)
         if 'cfgFileOrig' in self.metadata.keys():
             self.metadata['cfgFile'] = os.path.join(archive_dir,

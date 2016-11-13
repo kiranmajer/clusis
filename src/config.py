@@ -25,7 +25,7 @@ class Cfg(metaclass=ABCMeta):
                  'systemTags': [],
                  'userTags': [],
                  'evalTags': [],
-                 'machine': self.get_machine,
+                 'machine': self.get_machine(),
                  'delayState': {},
                  'info': ''
                 }

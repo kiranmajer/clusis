@@ -52,14 +52,13 @@ class importer():
         self.data = []
     
 
-        
-
+    '''    
 #######################################################
 # add a sha1 hash of the current File 
 # to self.metadata['sha1']
 #
 #######################################################
-
+    '''
     def get_sha1(self):
         with open(self.metadata['datFileOrig'], 'rb') as f:
             sha1 = hashlib.sha1(f.read()).hexdigest()
@@ -67,12 +66,13 @@ class importer():
         self.metadata['sha1'] = sha1
  
 
-
+    '''
 #######################################################
 # extract a timestamp 
 # from the current file
 #
 #######################################################
+    '''
     def get_recTime(self, spectype):
         '''
         Checks the recording time from time stamp against filename. 

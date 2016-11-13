@@ -231,7 +231,7 @@ def import_rawdata(cfg, datFiles, spectype=None, commonMdata={},
 
 # Get Database
     db = Db(cfg.database_name, cfg) 
-
+    '''
 ###############################################
 ## Do the same thing for all Files 
 ## 1. read a raw data object for current file 
@@ -240,7 +240,7 @@ def import_rawdata(cfg, datFiles, spectype=None, commonMdata={},
 ## 3. move/copy datafilese 
 ## 4. create pickle for data file 
 ## 5. add spectrum object to speclist
-###############################################
+###############################################'''
     for datFile in datFileList:
         read_file(datFile,cfg,db, specList=specList,movedFiles=movedFiles,failedImports=failedImports,sha1ToImport=sha1ToImport,spectype=spectype,commonMdata=commonMdata,archive_mode=archive_mode)
         
