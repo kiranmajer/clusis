@@ -67,9 +67,11 @@ class Db(object):
         '''Dictionary with specType as keys, containing a list of entries'''
         valueList = {}
         for spec in specList:
+            
             specType = spec.mdata.data('specType')
             keys = [item[0] for item in self.__dbProps['layout'][specType]]
             for key in keys:
+                print(key)
                 if key not in spec.mdata.data().keys():
                     spec.mdata.add({key: None})
             values = [spec.mdata.data(key) for key in keys]
