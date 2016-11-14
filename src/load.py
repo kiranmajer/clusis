@@ -382,13 +382,15 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
 def verify_update_mdata_version(cfg, mdata_dict):
     # testing for correct mdata version
     mdata_converted = False
+    git_log = {}
     while mdata_dict['mdataVersion'] < cfg.mdata_version:
         print('Current mdata version: {}, target version: {} -> converting...'.format(mdata_dict['mdataVersion'],
                                                                                       cfg.mdata_version))
+        git_log['Converted mdata from version {} to'.format(mdata_dict['mdataVersion'])] = cfg.mdata_version
         mdata_dict = cfg.mdata_converter[mdata_dict['mdataVersion']](mdata_dict)
         mdata_converted = True
     
-    return mdata_dict, mdata_converted
+    return mdata_dict, mdata_converted, git_log
 
 
 def spec_from_specdatadir(cfg, data_dir):
@@ -400,10 +402,11 @@ def spec_from_specdatadir(cfg, data_dir):
                      }
     
     mdata, xdata, ydata = load_spec_data(data_dir)
-    mdata, converted = verify_update_mdata_version(cfg, mdata)
+    mdata, converted, git_log = verify_update_mdata_version(cfg, mdata)
     spectrum = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
     if converted:
-        spectrum.commit()
+        spectrum.mdata.commit_msgs.update(git_log)
+        spectrum.commit(short_log='-m {} mdata conversion'.format(spectrum.mdata.data('sha1')))
     
     return spectrum
 

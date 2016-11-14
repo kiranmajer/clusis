@@ -139,10 +139,10 @@ class Spec(object):
  
     
             
-    def commit(self, update=True):
+    def commit(self, update=True, short_log=None):
         #self._commit_pickle()
         self._commit_specdatadir()
-        self._commit_change_history()
+        self._commit_change_history(short_log=short_log)
         self._commit_db(update=update)
         
         
