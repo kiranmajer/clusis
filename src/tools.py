@@ -7,6 +7,8 @@ import re
 
     
     
+    
+def parseFilenameForDate(filename):
     '''
     ###############################################
     #
@@ -15,7 +17,6 @@ import re
     #
     ###############################################
     '''
-def parseFilenameForDate(filename):
     potential_date_str = filename[0:10]
     
     dividers = {'_','-','.'}
