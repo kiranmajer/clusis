@@ -285,22 +285,24 @@ class View(object):
               
         
     def plot_time(self, ax, xdata_key, ydata_key, time_unit, xlim, xlim_scale=None,
-                 n_xticks=None, color='black'):
+                 n_xticks=None, color='black', smooth=False):
         self.xdata_key = xdata_key
         self.ydata_key = ydata_key
         self.timeunit = time_unit
         #self.xlim_scale = xlim_scale
+        if smooth:
+            ydata = moving_avg_gaussian(self.spec.ydata[ydata_key])
+        else:
+            ydata = self.spec.ydata[ydata_key]
         # plot      
-        ax.plot(self.spec.xdata[xdata_key]/time_unit, self.spec.ydata[ydata_key], color=color)
+        ax.plot(self.spec.xdata[xdata_key]/time_unit, ydata, color=color)
         #set axes limits
         xlim_auto = [self.spec.xdata[xdata_key][0]/time_unit, self.spec.xdata[xdata_key][-1]/time_unit] 
         xlim_plot = self._set_xlimit(ax, xlim, xlim_auto, n_xticks=n_xticks)
         if xlim_scale is None:
-            self._auto_ylim(ax, self.spec.xdata[xdata_key]/time_unit, self.spec.ydata[ydata_key],
-                            xlim_plot)
+            self._auto_ylim(ax, self.spec.xdata[xdata_key]/time_unit, ydata, xlim_plot)
         else:
-            self._auto_ylim(ax, self.spec.xdata[xdata_key]/time_unit, self.spec.ydata[ydata_key],
-                            xlim_scale)
+            self._auto_ylim(ax, self.spec.xdata[xdata_key]/time_unit, ydata, xlim_scale)
             
             
     def show_idx(self, ydata_key='auto', xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None,
@@ -334,14 +336,14 @@ class View(object):
     def show_time(self, xdata_key='auto', ydata_key='auto', time_label='Time',
                   time_unit=1e-6, xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None, show_mdata=False,
                   show_ytics=False, fontsize_label=12, fontsize_ref=6, export=False, show_xlabel=True,
-                  show_ylabel=True, size=None,
+                  show_ylabel=True, size=None, smooth=True,
                   key_deps={'time': ['rawVoltageSpec', 'rawVoltageRamp', 'rawVoltagePulse'],}):     
         self._single_fig_output(size=size)
         # set data keys
         xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key,
                                                         key_deps=key_deps)      
-        self.plot_time(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
-                       time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks)
+        self.plot_time(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, time_unit=time_unit,
+                       xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks, smooth=smooth)
         if show_xlabel:
             self._set_xlabel_time(self.ax, label=time_label, time_unit=time_unit, fontsize=fontsize_label)
         if show_ylabel:
@@ -363,19 +365,11 @@ class View(object):
         
         
     def add_plot(self, ax, xdata, ydata, color='blue', linestyle='-', linewidth=.5, file_id=None, unit_scale=1,
-                 rescale=True, batch_mode=False):
-#         if not hasattr(self, 'fig'):
-#             raise ValueError('No active plot. Create one first via show_XXX.')
+                 rescale=True, batch_mode=False, smooth=False):
         if file_id is not None:
             self.txt_fileid.set_text('{}, {}'.format(os.path.basename(self.spec.mdata.data('datFile')), file_id))
-#         if self.xlim_scale is None:
-#             xlim_scale = self.ax.get_xlim()
-#         else:
-#             xlim_scale = self.xlim_scale
-#         if self.timeunit:
-#             unit_scale = self.timeunit
-#         else:
-#             unit_scale = 1
+        if smooth:
+            ydata = moving_avg_gaussian(ydata)
         if rescale:
             if self._yminmax_in_xrange(xdata, ydata, np.array(self.xlim_scale)*unit_scale)[1] > self.ymax:
                 self._auto_ylim(ax, xdata, ydata, np.array(self.xlim_scale)*unit_scale)
@@ -500,13 +494,13 @@ class ViewTof(View):
                   time_unit=1e-3, xlim=[0, 'auto'], xlim_scale=None, n_xticks=None,
                   show_mdata=False, show_ytics=True, fontsize_clusterid=28, fontsize_label=12,
                   fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None,
-                  show_pulse=True):
+                  show_pulse=True, smooth=True):
         key_deps={'time': ['rawVoltageSpec', 'rawVoltagePulse'],}
         View.show_time(self, xdata_key=xdata_key, ydata_key=ydata_key, time_label=time_label, 
                        time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks,
                        show_mdata=show_mdata, show_ytics=show_ytics, fontsize_label=fontsize_label,
                        fontsize_ref=fontsize_ref, export=export, show_xlabel=show_xlabel,
-                       show_ylabel=show_ylabel, size=size, key_deps=key_deps)
+                       show_ylabel=show_ylabel, size=size, key_deps=key_deps, smooth=smooth)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(ms=True), text_pos='right',
                                  fontsize=fontsize_clusterid)    
         if show_pulse:
@@ -646,17 +640,20 @@ class ViewMs(View):
         return xlabel        
 
     
-    def plot_ms(self, ax, mass_key, mass_unit, xlim, xlim_scale=None, n_xticks=None, color='black', spec_key='voltageSpec'):
-        ax.plot(self.spec.xdata[mass_key]/mass_unit, self.spec.ydata[spec_key], color=color)
+    def plot_ms(self, ax, mass_key, mass_unit, xlim, xlim_scale=None, n_xticks=None, color='black',
+                spec_key='voltageSpec', smooth=False):
+        if smooth:
+            ydata = moving_avg_gaussian(self.spec.ydata[spec_key])
+        else:
+            ydata = self.spec.ydata[spec_key]
+        ax.plot(self.spec.xdata[mass_key]/mass_unit, ydata, color=color)
         # set axes limits
         xlim_auto = [self.spec.xdata[mass_key][0]/mass_unit, self.spec.xdata[mass_key][-1]/mass_unit]
         xlim_plot = self._set_xlimit(ax, xlim, xlim_auto, n_xticks=n_xticks)
         if xlim_scale is None:
-            self._auto_ylim(ax, self.spec.xdata[mass_key]/mass_unit, self.spec.ydata[spec_key],
-                            xlim_plot)
+            self._auto_ylim(ax, self.spec.xdata[mass_key]/mass_unit, ydata, xlim_plot)
         else:
-            self._auto_ylim(ax, self.spec.xdata[mass_key]/mass_unit, self.spec.ydata[spec_key],
-                            xlim_scale)
+            self._auto_ylim(ax, self.spec.xdata[mass_key]/mass_unit, ydata, xlim_scale)
 #         ax.relim()
 #         ax.autoscale()
      
@@ -682,13 +679,13 @@ class ViewMs(View):
                  time_unit=1e-3, xlim=[0, 'auto'], xlim_scale=None, n_xticks=None,
                  show_mdata=False, show_ytics=True, fontsize_clusterid=28, fontsize_label=12,
                  fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None,
-                 show_ramp=True):
+                 show_ramp=True, smooth=True):
         key_deps = {'time': ['voltageSpec', 'rawVoltageSpec', 'rawVoltageRamp', 'rawVoltagePulse'],}
         View.show_time(self, xdata_key=xdata_key, ydata_key=ydata_key, time_label=time_label, 
                       time_unit=time_unit, xlim=xlim, xlim_scale=xlim_scale, n_xticks=n_xticks,
                       show_mdata=show_mdata, show_ytics=show_ytics, fontsize_label=fontsize_label,
                       fontsize_ref=fontsize_ref, export=export, show_xlabel=show_xlabel,
-                      show_ylabel=show_ylabel, size=size, key_deps=key_deps)
+                      show_ylabel=show_ylabel, size=size, key_deps=key_deps, smooth=smooth)
         self._addtext_cluster_id(self.ax, self._pretty_format_clusterid(ms=True), text_pos='right',
                                  fontsize=fontsize_clusterid)        
         if show_ramp:
@@ -721,12 +718,13 @@ class ViewMs(View):
     
     def show_ramp(self, ramp_data_key='voltageRampFitted', ydata_key='auto', xlim=['auto', 'auto'],
                   xlim_scale=None, n_xticks=None, show_mdata=False, show_ytics=True, fontsize_clusterid=28,
-                  fontsize_label=12, fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None,):
+                  fontsize_label=12, fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True,
+                  size=None, smooth=True):
         self._single_fig_output(size=size)
         # set data keys
         xdata_key, ydata_key = ramp_data_key, 'voltageSpec' #self._auto_key_selection(xdata_key='idx', ydata_key=ydata_key, key_deps=key_deps)        
         self.plot_ramp(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim,
-                       xlim_scale=xlim_scale, n_xticks=n_xticks)
+                       xlim_scale=xlim_scale, n_xticks=n_xticks, smooth=smooth)
         if show_xlabel:
             self.ax.set_xlabel('Ramp Voltage (V)', fontsize=fontsize_label)
         if show_ylabel:
@@ -751,7 +749,7 @@ class ViewMs(View):
         
     def show_ms(self, mass_key='diam', mass_unit=None, xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None,
                 color='black', show_ytics=True, fontsize_clusterid=28, fontsize_label=12,
-                fontsize_ref=6, export=False, show_mdata=None, size=None):
+                fontsize_ref=6, export=False, show_mdata=None, size=None, smooth=True):
         self._single_fig_output(size=size)
         if not mass_unit:
             if mass_key=='diam':
@@ -759,7 +757,7 @@ class ViewMs(View):
             else:
                 mass_unit = 1
         self.plot_ms(ax=self.ax, mass_key=mass_key, mass_unit=mass_unit, xlim=xlim, xlim_scale=xlim_scale,
-                     n_xticks=n_xticks, color=color)
+                     n_xticks=n_xticks, color=color, smooth=smooth)
         self.ax.set_xlabel(self._xlabel_str(mass_key, mass_unit=mass_unit), fontsize=fontsize_label)
         self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
         self.ax.tick_params(labelsize=fontsize_label)
