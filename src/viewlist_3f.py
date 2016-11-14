@@ -297,7 +297,7 @@ class ViewMsList(ViewList):
         return xlabel            
             
                     
-    def show_time(self, layout=[5,1], size=[21,29.7], xdata_key='auto', ydata_key='auto', time_unit=1e-6,
+    def show_time(self, layout=[7,3], size=[21,29.7], xdata_key='auto', ydata_key='auto', time_unit=1e-6,
                  xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None, pdf=True, show_mdata=None,
                  show_yticks=False, show_ramp=True):
         self._show(self._show_time, xlabel_str=self._format_time_label('Time', time_unit),
@@ -306,7 +306,7 @@ class ViewMsList(ViewList):
                    show_mdata=show_mdata, show_yticks=show_yticks, show_ramp=show_ramp)
     
     
-    def show_ramp(self, layout=[5,1], size=[21,29.7], ramp_data_key='voltageRampFitted', ydata_key='voltageSpec',
+    def show_ramp(self, layout=[7,3], size=[21,29.7], ramp_data_key='voltageRampFitted', ydata_key='voltageSpec',
                  xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None, pdf=True, show_mdata=None,
                  show_yticks=False):
         self._show(self._show_ramp, xlabel_str='Ramp Voltage (V)',
@@ -316,7 +316,7 @@ class ViewMsList(ViewList):
     
 
         
-    def show_ms(self, layout=[5,1], size=[21,29.7], mass_key='diam', mass_unit=None, xlim=['auto', 'auto'],
+    def show_ms(self, layout=[7,3], size=[21,29.7], mass_key='diam', mass_unit=None, xlim=['auto', 'auto'],
                 xlim_scale=None, n_xticks=None, pdf=True, fontsize_clusterid=10, show_mdata=None):
         if not mass_unit:
             if mass_key=='diam':

@@ -547,8 +547,7 @@ class ViewTof(View):
                                     'color': color,
                                     'xdata_key': self.xdata_key})
         #addspec = load.load_pickle_3f(self.spec.cfg, specfile)
-        addspec = load.spec_from_specdatadir(self.spec.cfg,
-                                             os.path.join(self.spec.cfg['base'], specfile))
+        addspec = load.spec_from_specdatadir(self.spec.cfg, specfile)
         time_unit = 1
         if 'tof' in self.xdata_key:
             time_unit = self.timeunit

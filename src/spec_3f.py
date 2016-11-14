@@ -240,7 +240,7 @@ class Spec(object):
         time range before subtraction! This is NOT covert by this method. 
         '''
         #bgSpec = load.load_pickle(self.cfg, bgFile)
-        bgSpec =  load.spec_from_specdatadir(self.cfg, os.path.join(self.cfg.path['base'], bgFile))
+        bgSpec =  load.spec_from_specdatadir(self.cfg, bgFile)
         if not self.mdata.data('specTypeClass') == bgSpec.mdata.data('specTypeClass'):
             raise ValueError('Background file has different spec type class.')
         self.mdata.update({'subtractBgRef': bgSpec.mdata.data('dataStorageLocation')})

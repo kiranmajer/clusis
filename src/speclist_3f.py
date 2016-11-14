@@ -1,16 +1,16 @@
 import load
 from dbshell import Db
-import time
+#import time
 import os
-import viewlist
+#import viewlist
 # for comparison methods
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import host_subplot
-import mpl_toolkits.axisartist as AA
-import matplotlib.ticker as ticker
+#from mpl_toolkits.axes_grid1 import host_subplot
+#import mpl_toolkits.axisartist as AA
+#import matplotlib.ticker as ticker
 #from scipy.stats import linregress
-from itertools import combinations
+#from itertools import combinations
 import viewlist_3f
 
 
@@ -50,8 +50,7 @@ class SpecList(object):
         for entry in self.dbanswer:
             print(entry['dataStorageLocation'])
             #cs = load.load_pickle_3f(self.cfg, entry['pickleFile'])
-            cs = load.spec_from_specdatadir(self.cfg, os.path.join(self.cfg.path['base'],
-                                                                   entry['dataStorageLocation']))
+            cs = load.spec_from_specdatadir(self.cfg, entry['dataStorageLocation'])
             try:
                 cs.mdata.update(mdataDict)
                 if hasattr(cs, '_hv') and 'waveLength' in mdataDict.keys():
@@ -69,8 +68,7 @@ class SpecList(object):
     def remove_tag(self, tag, tagkey='userTags'):
         for entry in self.dbanswer:
             #cs = load.load_pickle_3f(self.cfg, entry['pickleFile'])
-            cs = load.spec_from_specdatadir(self.cfg, os.path.join(self.cfg.path['base'],
-                                                                   entry['dataStorageLocation']))
+            cs = load.spec_from_specdatadir(self.cfg, entry['dataStorageLocation'])
             try:
                 cs.mdata.remove_tag(tag, tagkey=tagkey)
             except ValueError:
@@ -88,10 +86,9 @@ class SpecList(object):
             keys.append(mdata_keys)
         print('datFile:', keys)
         print('-'*85)
-        for s in self.dbanswer:
+        for entry in self.dbanswer:
             #cs = load.load_pickle_3f(self.cfg, s['pickleFile'])
-            cs = load.spec_from_specdatadir(self.cfg, os.path.join(self.cfg.path['base'],
-                                                                   s['dataStorageLocation']))
+            cs = load.spec_from_specdatadir(self.cfg, entry['dataStorageLocation'])
             values = [cs.mdata.data(k) for k in keys]
             print('{}:'.format(os.path.basename(cs.mdata.data('datFile'))), values)
             del cs
@@ -145,7 +142,7 @@ class SpecList(object):
         'TODO: query for confirmation, since you can cause great damage.'
         for entry in self.dbanswer:
             #cs = load.load_pickle_3f(self.cfg, entry['pickleFile'])
-            cs = load.spec_from_specdatadir(self.cfg, os.path.join(self.cfg.path['base'], entry['dataStorageLocation']))
+            cs = load.spec_from_specdatadir(self.cfg, entry['dataStorageLocation'])
             cs.remove()
             del cs      
             
@@ -282,115 +279,3 @@ class SpecMList(SpecList):
         self.view = viewlist_3f.ViewMsList(self)
 
 
-# class Batch(object):
-#     def __init__(self, cfg, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None,
-#                  clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
-#                  inTags=None, notInTags=None, datFileName=None, waveLength=None, trapTemp=None,
-#                  trapTempRange=None):
-#         self.cfg = cfg
-#         self.query(specType, clusterBaseUnit=clusterBaseUnit,
-#                    clusterBaseUnitNumber=clusterBaseUnitNumber,
-#                    clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
-#                    recTime=recTime, recTimeRange=recTimeRange,
-#                    inTags=inTags, notInTags=notInTags,
-#                    datFileName=datFileName, waveLength=waveLength,
-#                    trapTemp=trapTemp, trapTempRange=trapTempRange)
-# 
-#         
-#     def query(self, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None,
-#               clusterBaseUnitNumberRange=None, recTime=None, recTimeRange=None,
-#               inTags=None, notInTags=None, datFileName=None, waveLength=None,
-#               trapTemp=None, trapTempRange=None):
-#         with Db('casi', self.cfg) as db:
-#             self.dbanswer = db.query(specType, clusterBaseUnit=clusterBaseUnit,
-#                                      clusterBaseUnitNumber=clusterBaseUnitNumber,
-#                                      clusterBaseUnitNumberRange=clusterBaseUnitNumberRange,
-#                                      recTime=recTime, recTimeRange=recTimeRange,
-#                                      inTags=inTags, notInTags=notInTags,
-#                                      datFileName=datFileName, waveLength=waveLength,
-#                                      trapTemp=trapTemp, trapTempRange=trapTempRange)
-#             
-# 
-# 
-#             
-#             
-#     def list_temp(self):
-#         def format_recTime(unixtime):
-#             return time.strftime('%d.%m.%Y', time.localtime(unixtime))
-#         
-#         def format_datFile(datfile):
-#             return os.path.basename(datfile)
-#         
-#         items = ['clusterBaseUnitNumber', 'waveLength', 'recTime', 'datFile', 'trapTemp']
-#         mdataList = []
-#         rowCount = 0
-#         for s in self.dbanswer:
-#             cs = load_pickle_3f(self.cfg,s[str('pickleFile')])        
-#             mdataList.append([])
-#             for key in items:
-#                 if key in cs.mdata.data().keys():
-#                     mdataList[rowCount].append(cs.mdata.data(key))
-#                 else:
-#                     mdataList[rowCount].append(0)
-#             rowCount += 1             
-#         print('size'.ljust(4+3), end=' ')
-#         print('lambda'.ljust(5+3), end=' ')
-#         print('recTime'.ljust(10+3), end=' ')
-#         print('datFile'.ljust(13+3), end=' ')
-#         print('trapTemp'.ljust(8))
-#         for row in mdataList:
-#             print(str(row[0]).ljust(4+3), end=' ')
-#             print(str(round(row[1]*1e9,1)).ljust(5+3), end=' ')
-#             print(format_recTime(row[2]).ljust(10+3), end=' ')
-#             print(format_datFile(row[3]).ljust(13+3), end=' ')
-#             print(str(round(row[4],1)).ljust(8))  
-#   
-#     
-#     
-# 
-#     
-#             
-# 
-#         
-#         
-# 
-# 
-#     
-#     
-#     
-#             
-#             
-#     def regauge_pt(self):
-#         for s in self.dbanswer:
-#             cs = load_pickle_3f(self.cfg,s[str('pickleFile')])
-#             try:
-#                 cs.gauge('tof', 
-#                          lscale=1.006,  #cs.mdata.data('fitParTof')[-1], 
-#                          Eoff=cs.mdata.data('fitParTof')[-3]#, 
-#                          #toff=63e-9  #cs.mdata.data('fitParTof')[-2]
-#                          )
-#             except:
-#                 print(cs.mdata.data('datFile'), 'Fit failed.')
-#             else:
-#                 cs.commit()
-#             del cs
-#         self.list_mdata_ptfit()
-#         
-#         
-#     def show_all(self):
-#         sl=[]
-#         for s in self.dbanswer:
-#             cs = load_pickle_3f(self.cfg,s[str('pickleFile')])
-#             cs.view.showTofFit('fitParTof')
-#             sl.append(cs)
-#         return sl
-#     
-#     def list_of_specs(self, slist):
-#         sl=[]
-#         for s in slist:
-#             cs = load_pickle_3f(self.cfg,s[str('pickleFile')])
-#             sl.append(cs)
-#         return sl    
-#             
-            
-            
