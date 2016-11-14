@@ -28,7 +28,7 @@ class SpecList(object):
                                      recTimeRange=recTimeRange, inTags=inTags,
                                      notInTags=notInTags, datFileName=datFileName,
                                      hide_trash=hide_trash, order_by=order_by)
-        self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
+        self.spec_data_dir_list = [row['dataStorageLocation'] for row in self.dbanswer]
         self.view = viewlist_3f.ViewList(self)
         
 
@@ -39,16 +39,19 @@ class SpecList(object):
 #                                     inTags=inTags, notInTags=notInTags, datFileName=datFileName)
 
     def get_spec(self, number):
-        data_dir = self.dbanswer[number]['pickleFile'].rstrip('.pickle')
-        spec = load.spec_from_specdatadir(self.cfg, data_dir)
+        #ata_dir = self.dbanswer[number]['pickleFile'].rstrip('.pickle')
+        spec = load.spec_from_specdatadir(self.cfg,
+                                          self.dbanswer[number]['dataStorageLocation'])
         #spec = load.load_pickle_3f(self.cfg, self.dbanswer[number]['pickleFile'])
         return spec
 
     def update_mdata(self, mdataDict):
         'TODO: open db only once'
         for entry in self.dbanswer:
-            print(entry['pickleFile'])
-            cs = load.load_pickle_3f(self.cfg, entry['pickleFile'])
+            print(entry['dataStorageLocation'])
+            #cs = load.load_pickle_3f(self.cfg, entry['pickleFile'])
+            cs = load.spec_from_specdatadir(self.cfg, os.path.join(self.cfg.path['base'],
+                                                                   entry['dataStorageLocation']))
             try:
                 cs.mdata.update(mdataDict)
                 if hasattr(cs, '_hv') and 'waveLength' in mdataDict.keys():
@@ -65,7 +68,9 @@ class SpecList(object):
         
     def remove_tag(self, tag, tagkey='userTags'):
         for entry in self.dbanswer:
-            cs = load.load_pickle_3f(self.cfg, entry['pickleFile'])
+            #cs = load.load_pickle_3f(self.cfg, entry['pickleFile'])
+            cs = load.spec_from_specdatadir(self.cfg, os.path.join(self.cfg.path['base'],
+                                                                   entry['dataStorageLocation']))
             try:
                 cs.mdata.remove_tag(tag, tagkey=tagkey)
             except ValueError:
@@ -84,7 +89,9 @@ class SpecList(object):
         print('datFile:', keys)
         print('-'*85)
         for s in self.dbanswer:
-            cs = load.load_pickle_3f(self.cfg, s['pickleFile'])
+            #cs = load.load_pickle_3f(self.cfg, s['pickleFile'])
+            cs = load.spec_from_specdatadir(self.cfg, os.path.join(self.cfg.path['base'],
+                                                                   s['dataStorageLocation']))
             values = [cs.mdata.data(k) for k in keys]
             print('{}:'.format(os.path.basename(cs.mdata.data('datFile'))), values)
             del cs
@@ -137,7 +144,8 @@ class SpecList(object):
     def remove_spec(self):
         'TODO: query for confirmation, since you can cause great damage.'
         for entry in self.dbanswer:
-            cs = load.load_pickle_3f(self.cfg, entry['pickleFile'])
+            #cs = load.load_pickle_3f(self.cfg, entry['pickleFile'])
+            cs = load.spec_from_specdatadir(self.cfg, os.path.join(self.cfg.path['base'], entry['dataStorageLocation']))
             cs.remove()
             del cs      
             
@@ -253,7 +261,7 @@ class SpecTofList(SpecList):
                                      recTime=recTime, recTimeRange=recTimeRange, inTags=inTags,
                                      notInTags=notInTags, datFileName=datFileName,
                                      hide_trash=hide_trash, order_by=order_by)
-        self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
+        self.pfile_list = [row['dataStorageLocation'] for row in self.dbanswer]
         self.view = viewlist_3f.ViewTofList(self)
         
         
@@ -270,7 +278,7 @@ class SpecMList(SpecList):
                                      recTime=recTime, recTimeRange=recTimeRange, inTags=inTags,
                                      notInTags=notInTags, datFileName=datFileName,
                                      hide_trash=hide_trash, order_by=order_by)
-        self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
+        self.pfile_list = [row['dataStorageLocation'] for row in self.dbanswer]
         self.view = viewlist_3f.ViewMsList(self)
 
 

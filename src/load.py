@@ -8,6 +8,7 @@ from traceback import print_tb
 from sys import exc_info
 from glob import glob
 from numpy import ndarray
+import shutil
 #from pytz.tzfile import base
 #import config
 #import mdata
@@ -20,7 +21,8 @@ from numpy import ndarray
 #    return db.tableHas(mdata['specType'], ['sha1', mdata['sha1']])
 
 def is_filestorage_possible(mdata):
-    paths = [mdata['datFile'], mdata['pickleFile']]
+    # TODO: no hard coding!
+    paths = [mdata['datFile'], mdata['dataStorageLocation']]
     if 'cfgFile' in mdata.keys():
         paths.append(mdata['cfgFile'])
     
@@ -295,8 +297,10 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
         # remove all files in our data dir, from this import
         move_back(movedFiles, mode='rm')
         for spec in specList:
-            pickleFile = os.path.join(cfg.path['base'], spec.mdata.data('pickleFile'))
-            os.remove(pickleFile)
+            #pickleFile = os.path.join(cfg.path['base'], spec.mdata.data('pickleFile'))
+            spec_data_dir = os.path.join(cfg.path['base'], spec.mdata.data('dataStorageLocation'))
+            #os.remove(pickleFile)
+            shutil.rmtree(spec_data_dir)
         raise
      
     del db
@@ -310,19 +314,19 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
     
 
 
-            
-def load_pickle(cfg, pickleFile):
-    if not os.path.isabs(pickleFile):
-        pickleFile = os.path.join(cfg.path['base'], pickleFile)
-    typeclass_map = {'spec': Spec,
-                     'specMs': SpecMs,
-                     'specPe': SpecPe,
-                     'specPePt': SpecPePt,
-                     'specPeWater': SpecPeWater,
-                     'specPf': SpecPf,
-                     }
-    with open(pickleFile, 'rb') as f:
-            mdata, xdata, ydata = pickle.load(f)
+#             
+# def load_pickle(cfg, pickleFile):
+#     if not os.path.isabs(pickleFile):
+#         pickleFile = os.path.join(cfg.path['base'], pickleFile)
+#     typeclass_map = {'spec': Spec,
+#                      'specMs': SpecMs,
+#                      'specPe': SpecPe,
+#                      'specPePt': SpecPePt,
+#                      'specPeWater': SpecPeWater,
+#                      'specPf': SpecPf,
+#                      }
+#     with open(pickleFile, 'rb') as f:
+#             mdata, xdata, ydata = pickle.load(f)
     
     # testing for correct mdata version
     mdata_converted = False
@@ -343,16 +347,16 @@ def load_pickle(cfg, pickleFile):
     
     return spectrum
 
-
-def load_pickle_3f(cfg, pickleFile):
-    if not os.path.isabs(pickleFile):
-        pickleFile = os.path.join(cfg.path['base'], pickleFile)
-    typeclass_map = {'spec': spec_3f.Spec,
-                     'specM': spec_3f.SpecM,
-                     'specTof': spec_3f.SpecTof,
-                     }
-    with open(pickleFile, 'rb') as f:
-            mdata, xdata, ydata = pickle.load(f)
+# 
+# def load_pickle_3f(cfg, pickleFile):
+#     if not os.path.isabs(pickleFile):
+#         pickleFile = os.path.join(cfg.path['base'], pickleFile)
+#     typeclass_map = {'spec': spec_3f.Spec,
+#                      'specM': spec_3f.SpecM,
+#                      'specTof': spec_3f.SpecTof,
+#                      }
+#     with open(pickleFile, 'rb') as f:
+#             mdata, xdata, ydata = pickle.load(f)
     
     # testing for correct mdata version
     mdata_converted = False
@@ -453,111 +457,111 @@ def load_spec_data(data_path):
     
     return mdata, xdata, ydata     
 
-
-def import_cludb_dir(cfg, import_dir):
-    '''Imports data from cludb dir structure: Import spectra from their pickle files
-    into database; copy archive data (*.dat, *.cfg) to current archive dir.
-    '''
-    if not os.path.isabs(import_dir):
-        import_dir = os.path.abspath(import_dir)
-    # simple check for correct dir structure
-    import_archive = os.path.join(import_dir, 'archive')
-    import_data = os.path.join(import_dir, 'data')
-    #import_db = os.path.join(import_dir,)
-    if not os.path.isdir(import_archive) or not os.path.isdir(import_data):
-        raise ValueError('"{}" does not seem to be a valid cludb dir.'.format(import_dir)) 
-    # get pickle files for import
-    pickle_list =  ls(import_data, suffix='.pickle', recursive=True)
-    # process spectra
-    for pfile in pickle_list:
-        cs = load_pickle(cfg, pfile)
-        cs.commit(update=False)
-        for key in ['datFile', 'cfgFile']:
-            if key in cs.mdata.data().keys():
-                old_file = os.path.join(import_dir, cs.mdata.data(key))
-                new_file = os.path.join(cfg.path['base'], cs.mdata.data(key))
-                if not os.path.exists(os.path.dirname(new_file)):
-                    os.makedirs(os.path.dirname(new_file))
-                print('Copying {} to {} ...'.format(old_file, new_file))
-                copy2(old_file, new_file)
-                
-    
-def export_speclist(speclist, export_base_dir, export_dir='export'):
-    if not os.path.isabs(export_base_dir):
-        export_base_dir = os.path.abspath(export_base_dir)
-    export_dir = os.path.join(export_base_dir, export_dir)
-    try:
-        os.makedirs(export_dir)
-    except FileExistsError:
-        print('Dir exists.')
-    except:
-        raise ValueError('Could not create dir at "{}".'.format(export_dir))
-    if os.listdir(export_dir):
-        raise ValueError('Export dir is not empty.')
-    for s in speclist.dbanswer:
-        cs = load_pickle(speclist.cfg, s['pickleFile'])
-        for k in ['pickleFile', 'datFile', 'cfgFile']:
-            if k in cs.mdata.data().keys():
-                old_file = os.path.join(speclist.cfg.path['base'], cs.mdata.data(k))
-                new_file = os.path.join(export_dir, os.path.basename(cs.mdata.data(k)))
-                print('Copying {} to {} ...'.format(old_file, new_file))
-                copy2(old_file, new_file)    
-
-
-def import_export_speclist(cfg, export_dir):
-    export_dir = os.path.abspath(export_dir)
-    db = Db('casi', cfg)
-    failedImports = []
-    successfulImports = []
-    filelist = ls(export_dir, suffix='.pickle', recursive=True)
-    for pfile in filelist:
-        print('Importing {} ...'.format(os.path.basename(pfile)))
-        cs = load_pickle(cfg, pfile)
-        laststep_successful = True
-        if not db.table_has_sha1(cs.mdata.data('specType'), cs.mdata.data('sha1')):
-            moved = []
-            for k in ['datFile', 'cfgFile']:
-                if k in cs.mdata.data().keys():
-                    old_file = os.path.join(export_dir, os.path.basename(cs.mdata.data(k)))
-                    if os.path.isfile(old_file):
-                        new_file = os.path.join(cfg.path['base'], cs.mdata.data(k))
-                        if not os.path.isdir(os.path.dirname(new_file)):
-                            os.makedirs(os.path.dirname(new_file))
-                        os.rename(old_file, new_file)
-                        moved.append([old_file, new_file])
-                    else:
-                        laststep_successful = False
-                        print('Import failed: Raw file is missing: ', old_file)
-                        failedImports.append([pfile, 'Raw file is missing: ' + old_file])
-                        for moved_file in moved:
-                            os.rename(moved_file[1], moved_file[0])
-                        break
-            if laststep_successful:
-                try:
-                    cs.commit(update=False)
-                except:
-                    print('Import failed: Adding spec to db failed.')
-                    failedImports.append([pfile, 'Adding spec to db failed.'])
-                    for moved_file in moved:
-                        os.rename(moved_file[1], moved_file[0])
-                os.remove(pfile)
-                successfulImports.append(pfile)
-                print('Import successful.')
-                        
-        else:
-            print('Import failed: Db has already entry with this sha1.')
-            failedImports.append([pfile, 'Db has already entry with this sha1.'])
-        del cs
-    
-    print('')
-    print('Import stats:')
-    print('Number of files to imports: ', len(filelist))
-    print('Sucessful imports: ', len(successfulImports))    
-    print('Failed imports: ', len(failedImports))
-    if len(failedImports) > 0:
-        for entry in failedImports:
-            print(os.path.basename(entry[0]), ':  ', entry[1])
-    
+# 
+# def import_cludb_dir(cfg, import_dir):
+#     '''Imports data from cludb dir structure: Import spectra from their pickle files
+#     into database; copy archive data (*.dat, *.cfg) to current archive dir.
+#     '''
+#     if not os.path.isabs(import_dir):
+#         import_dir = os.path.abspath(import_dir)
+#     # simple check for correct dir structure
+#     import_archive = os.path.join(import_dir, 'archive')
+#     import_data = os.path.join(import_dir, 'data')
+#     #import_db = os.path.join(import_dir,)
+#     if not os.path.isdir(import_archive) or not os.path.isdir(import_data):
+#         raise ValueError('"{}" does not seem to be a valid cludb dir.'.format(import_dir)) 
+#     # get pickle files for import
+#     pickle_list =  ls(import_data, suffix='.pickle', recursive=True)
+#     # process spectra
+#     for pfile in pickle_list:
+#         cs = load_pickle(cfg, pfile)
+#         cs.commit(update=False)
+#         for key in ['datFile', 'cfgFile']:
+#             if key in cs.mdata.data().keys():
+#                 old_file = os.path.join(import_dir, cs.mdata.data(key))
+#                 new_file = os.path.join(cfg.path['base'], cs.mdata.data(key))
+#                 if not os.path.exists(os.path.dirname(new_file)):
+#                     os.makedirs(os.path.dirname(new_file))
+#                 print('Copying {} to {} ...'.format(old_file, new_file))
+#                 copy2(old_file, new_file)
+#                 
+#     
+# def export_speclist(speclist, export_base_dir, export_dir='export'):
+#     if not os.path.isabs(export_base_dir):
+#         export_base_dir = os.path.abspath(export_base_dir)
+#     export_dir = os.path.join(export_base_dir, export_dir)
+#     try:
+#         os.makedirs(export_dir)
+#     except FileExistsError:
+#         print('Dir exists.')
+#     except:
+#         raise ValueError('Could not create dir at "{}".'.format(export_dir))
+#     if os.listdir(export_dir):
+#         raise ValueError('Export dir is not empty.')
+#     for s in speclist.dbanswer:
+#         cs = load_pickle(speclist.cfg, s['pickleFile'])
+#         for k in ['pickleFile', 'datFile', 'cfgFile']:
+#             if k in cs.mdata.data().keys():
+#                 old_file = os.path.join(speclist.cfg.path['base'], cs.mdata.data(k))
+#                 new_file = os.path.join(export_dir, os.path.basename(cs.mdata.data(k)))
+#                 print('Copying {} to {} ...'.format(old_file, new_file))
+#                 copy2(old_file, new_file)    
+# 
+# 
+# def import_export_speclist(cfg, export_dir):
+#     export_dir = os.path.abspath(export_dir)
+#     db = Db('casi', cfg)
+#     failedImports = []
+#     successfulImports = []
+#     filelist = ls(export_dir, suffix='.pickle', recursive=True)
+#     for pfile in filelist:
+#         print('Importing {} ...'.format(os.path.basename(pfile)))
+#         cs = load_pickle(cfg, pfile)
+#         laststep_successful = True
+#         if not db.table_has_sha1(cs.mdata.data('specType'), cs.mdata.data('sha1')):
+#             moved = []
+#             for k in ['datFile', 'cfgFile']:
+#                 if k in cs.mdata.data().keys():
+#                     old_file = os.path.join(export_dir, os.path.basename(cs.mdata.data(k)))
+#                     if os.path.isfile(old_file):
+#                         new_file = os.path.join(cfg.path['base'], cs.mdata.data(k))
+#                         if not os.path.isdir(os.path.dirname(new_file)):
+#                             os.makedirs(os.path.dirname(new_file))
+#                         os.rename(old_file, new_file)
+#                         moved.append([old_file, new_file])
+#                     else:
+#                         laststep_successful = False
+#                         print('Import failed: Raw file is missing: ', old_file)
+#                         failedImports.append([pfile, 'Raw file is missing: ' + old_file])
+#                         for moved_file in moved:
+#                             os.rename(moved_file[1], moved_file[0])
+#                         break
+#             if laststep_successful:
+#                 try:
+#                     cs.commit(update=False)
+#                 except:
+#                     print('Import failed: Adding spec to db failed.')
+#                     failedImports.append([pfile, 'Adding spec to db failed.'])
+#                     for moved_file in moved:
+#                         os.rename(moved_file[1], moved_file[0])
+#                 os.remove(pfile)
+#                 successfulImports.append(pfile)
+#                 print('Import successful.')
+#                         
+#         else:
+#             print('Import failed: Db has already entry with this sha1.')
+#             failedImports.append([pfile, 'Db has already entry with this sha1.'])
+#         del cs
+#     
+#     print('')
+#     print('Import stats:')
+#     print('Number of files to imports: ', len(filelist))
+#     print('Sucessful imports: ', len(successfulImports))    
+#     print('Failed imports: ', len(failedImports))
+#     if len(failedImports) > 0:
+#         for entry in failedImports:
+#             print(os.path.basename(entry[0]), ':  ', entry[1])
+#     
     
     
     

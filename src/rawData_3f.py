@@ -169,7 +169,7 @@ class RawData_3f(object):
     
     def set_storage_paths(self):
         """
-        Adds data storage paths for *.dat, *.cfg, and *.pickle files to metadata
+        Adds data storage paths for *.dat, *.cfg, and specdata dir files to metadata
         """
         year = str(time.localtime(self.metadata['recTime']).tm_year)
         month = str(time.localtime(self.metadata['recTime']).tm_mon)
@@ -182,15 +182,15 @@ class RawData_3f(object):
         self.metadata['datFile'] = os.path.join(archive_dir,
                                                 os.path.basename(self.metadata['datFileOrig']))
         #self.metadata['userTags'] = []
-        ''' build pickle file name and path according following scheme:
-        config.path['data']/<year>/<recTime>_<sha1>.pickle'''
+        ''' build specdata dir path according to following scheme:
+        config.path['data']/<year>/<recTime>_<sha1>'''
 
-        pickleFileName = '{}-{}-{}_{}.pickle'.format(year, month, day, self.metadata['sha1'])
-        pickleFileDir = os.path.join(self.cfg.path['data'],
-                                     self.metadata['machine'],
-                                     self.metadata['specType'],
-                                     year)
-        self.metadata['pickleFile'] = os.path.join(pickleFileDir, pickleFileName)
+        spec_data_dir_name = '{}-{}-{}_{}'.format(year, month, day, self.metadata['sha1'])
+        data_dir_base_dir = os.path.join(self.cfg.path['data'],
+                                         self.metadata['machine'],
+                                         self.metadata['specType'],
+                                         year)
+        self.metadata['dataStorageLocation'] = os.path.join(data_dir_base_dir, spec_data_dir_name)
         if 'cfgFileOrig' in self.metadata.keys():
             self.metadata['cfgFile'] = os.path.join(archive_dir,
                                                     os.path.basename(self.metadata['cfgFileOrig']))

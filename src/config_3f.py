@@ -23,7 +23,7 @@ class Cfg():
         self.db = {'3f': {'path': self.path['base'],  # path should always be absolute
                           'layout': {'tof': (['sha1', 'TEXT PRIMARY KEY'],
                                              ['clusterBaseUnit', 'TEXT'],
-                                             ['pickleFile', 'TEXT UNIQUE'],
+                                             ['dataStorageLocation', 'TEXT UNIQUE'],
                                              ['datFile', 'TEXT'],
                                              ['deflectorVoltage', 'REAL'],
                                              ['tags', 'LIST'],
@@ -31,13 +31,13 @@ class Cfg():
                                              ),
                                      'ms': (['sha1', 'TEXT PRIMARY KEY'],
                                             ['clusterBaseUnit', 'TEXT'],
-                                            ['pickleFile', 'TEXT UNIQUE'],
+                                            ['dataStorageLocation', 'TEXT UNIQUE'],
                                             ['datFile', 'TEXT'],
                                             ['tags', 'LIST'],
                                             ['recTime', 'REAL'],
                                             ),
                                      'generic': (['sha1', 'TEXT PRIMARY KEY'],
-                                                 ['pickleFile', 'TEXT UNIQUE'],
+                                                 ['dataStorageLocation', 'TEXT UNIQUE'],
                                                  ['datFile', 'TEXT'],
                                                  ['tags', 'LIST'],
                                                  ['recTime', 'REAL'],
@@ -61,7 +61,7 @@ class Cfg():
                                    'info': [str, True],
                                    'machine': [['3f'], True],
                                    'mdataVersion': [float, True],
-                                   'pickleFile': [str, True],
+                                   'dataStorageLocation': [str, True],
                                    'recTime': [float, True],
                                    'sha1': [str, True],
                                    'specType': [['ms', 'tof', 'generic'], True],
@@ -112,22 +112,20 @@ class Cfg():
                                 }
                          }       
         
-#        
-# 
+        
+ 
 #     def convert_mdata_v0p1_to_v0p2(self, mdata):
 #         start_version = 0.1
 #         target_version = 0.2
 #         if mdata['mdataVersion'] == start_version: 
 #             print('Converting mdata from version {} to {} ...'.format(start_version, target_version))
-#             if mdata['specType'] in ['generic']:
-#                 mdata['mdataVersion'] = target_version
-#             else:
-#                 mdata['delayState'] = mdata.pop('delayTimings')
-#                 mdata['mdataVersion'] = target_version
+#             spec_data_dir = mdata['pickleFile'].rsplit('.pickle')[0]
+#             del mdata['pickleFile']
+#             mdata['dataStorageLocation'] = spec_data_dir
 #         else:
 #             raise ValueError('mdata has wrong version: {}, expected {}.'.format(mdata['mdataVersion'],
 #                                                                                 start_version))
-#         
+#          
 #         return mdata 
 #     
 #     def convert_mdata_v0p2_to_v0p3(self, mdata):

@@ -516,10 +516,10 @@ class ViewTof(View):
             self.fig.canvas.draw()
             
        
-    def show_gaugeref(self):
-        gaugeRef = self.spec.mdata.data('gaugeRef')
-        gaugeSpec = load.load_pickle_3f(self.spec.cfg, gaugeRef)
-        gaugeSpec.view.show_ebin_fit()
+#     def show_gaugeref(self):
+#         gaugeRef = self.spec.mdata.data('gaugeRef')
+#         gaugeSpec = load.load_pickle_3f(self.spec.cfg, gaugeRef)
+#         gaugeSpec.view.show_ebin_fit()
         
         
     def _add_spec(self, specfile, xscale=1, yscale=1, yscale_type=None, xoffset=0, yoffset=0,
@@ -546,7 +546,9 @@ class ViewTof(View):
                                     'yoffset': yoffset,
                                     'color': color,
                                     'xdata_key': self.xdata_key})
-        addspec = load.load_pickle_3f(self.spec.cfg, specfile)
+        #addspec = load.load_pickle_3f(self.spec.cfg, specfile)
+        addspec = load.spec_from_specdatadir(self.spec.cfg,
+                                             os.path.join(self.spec.cfg['base'], specfile))
         time_unit = 1
         if 'tof' in self.xdata_key:
             time_unit = self.timeunit
@@ -608,7 +610,7 @@ class ViewTof(View):
         Method to determin charging energy by manual shift'''
         xoffset = shifted_point[0] - point[0]
         yoffset = shifted_point[1] - point[1]
-        self.add_spec(self.spec.mdata.data('pickleFile'), linewidth=linewidth,
+        self.add_spec(self.spec.mdata.data('dataStorageLocation'), linewidth=linewidth,
                       xoffset=xoffset, yoffset=yoffset, yscale=yscale)
 
        

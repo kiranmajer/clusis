@@ -16,6 +16,7 @@ import pickle
 import load
 import speclist_3f
 from git import Repo
+import shutil
 
 
 
@@ -62,16 +63,14 @@ class Spec(object):
             
     def _commit_specdatadir(self, compress=False):
         # TODO: don't exstract this from pickleFile
-        data_dir = self.mdata.data('pickleFile').rstrip('.pickle')
-        full_path = os.path.join(self.cfg.path['base'], data_dir)
+        full_path = os.path.join(self.cfg.path['base'], self.mdata.data('dataStorageLocation'))
         load.dump_spec_data(full_path, self.mdata.data(), self.xdata, self.ydata, compress=compress)
         self._add_files_to_index()
     
     
     def _add_files_to_index(self, file_ext=['json', 'dat']):
         # TODO: don't exstract this from pickleFile
-        data_dir = self.mdata.data('pickleFile').rstrip('.pickle')
-        full_path = os.path.join(self.cfg.path['base'], data_dir)
+        full_path = os.path.join(self.cfg.path['base'], self.mdata.data('dataStorageLocation'))
         #fl = os.listdir(full_path)
         #added_files = []
         staged_files = []
@@ -240,11 +239,12 @@ class Spec(object):
         In all other cases one needs to adjust both xdata and ydata sets to match a common 
         time range before subtraction! This is NOT covert by this method. 
         '''
-        bgSpec = load.load_pickle(self.cfg, bgFile)
+        #bgSpec = load.load_pickle(self.cfg, bgFile)
+        bgSpec =  load.spec_from_specdatadir(self.cfg, os.path.join(self.cfg.path['base'], bgFile))
         if not self.mdata.data('specTypeClass') == bgSpec.mdata.data('specTypeClass'):
             raise ValueError('Background file has different spec type class.')
-        self.mdata.update({'subtractBgRef': bgSpec.mdata.data('pickleFile')})
-        bgSpec.mdata.update({'subtractBgRef': self.mdata.data('pickleFile')})
+        self.mdata.update({'subtractBgRef': bgSpec.mdata.data('dataStorageLocation')})
+        bgSpec.mdata.update({'subtractBgRef': self.mdata.data('dataStorageLocation')})
         bgSpec.mdata.add_tag('background', tagkey='systemTags')
         if isUpDown:
             bgSpec.mdata.add_tag('up/down', tagkey='systemTags')
@@ -273,10 +273,18 @@ class Spec(object):
             try:
                 os.remove(f)
             except FileNotFoundError:
-                print('\nWarning: {} does not exist.\n')
+                print('\nWarning: {} does not exist.\n'.format(f))
             except:
                 print('\n##################\nRemoving of {} failed. Please remove manually.'.format(f))
                 raise
+        # remove specdata dir
+        try:
+            shutil.rmtree(os.path.join(self.cfg.path['base'], self.mdata.data('dataStorageLocation')))
+        except FileNotFoundError:
+            print('\nWarning: {} does not exist.\n'.format(self.mdata.data('dataStorageLocation')))
+        except:
+            print('\n##################\nRemoving of {} failed. Please remove manually.'.format(self.mdata.data('dataStorageLocation')))
+            raise        
         # remove db entry
         sha1 = self.mdata.data('sha1')
         tablename = self.mdata.data('specType')
@@ -421,7 +429,7 @@ class SpecM(Spec):
         
         self.mdata.add({'refFlightTime': sat_tof,
                         'refVelocity': tof.cluster_velocity(sat_tof),
-                        'refTofSpec': tof.mdata.data('pickleFile'),
+                        'refTofSpec': tof.mdata.data('dataStorageLocation'),
                         #'refDeflectorVoltage': tof.mdata.data('deflectorVoltage')
                         },
                        update=True)
