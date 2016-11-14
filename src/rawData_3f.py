@@ -13,6 +13,7 @@ from scipy.stats.mstats_basic import threshold
 sys.path.append(os.path.normpath(os.path.join(os.getcwd(), '../../delay/src')))
 #from filestorage import load_xml, load_pickle, load_json
 #import config
+from
 
 
 
@@ -133,10 +134,25 @@ class RawData_3f(object):
         Checks the recording time from time stamp against filename. 
         pes, ms data files only (for now).
         '''
+        
         timeStamp = os.stat(self.metadata['datFileOrig']).st_mtime        
-        if spectype in ['generic', 'ms', 'tof']:
+        
+        datFileName = os.path.basename(self.metadata['datFileOrig'])
+        if parseFilenameForDate(datFileName) is not False:
+            year,month,day = parseFilenameForDate(datFileName)
+        else:
+            year, month, day = 1970, 1, 1 # dummy date
+    
+        startDate = '%s %s %s' % (day, month, year)
+        dayStarts = time.mktime(time.strptime(startDate, '%d %m %Y'))
+        dayEnds = dayStarts + 86400
+        if dayStarts <= timeStamp <= dayEnds :
             self.metadata['recTime'] = timeStamp
-
+        else:
+            self.metadata['recTime'] = dayStarts
+            self.metadata['userTags'].append('Import warning: Invalid time stamp')
+            print('Warning: %s has invalid time stamp. Got recTime from filename.' % (datFileName))
+        
     
 
     def eval_element_name(self, element, reference):
