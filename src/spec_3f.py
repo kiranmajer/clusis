@@ -125,7 +125,9 @@ class Spec(object):
         
         # init repo instance
         repo_instance = Repo(self.cfg.path['base'])
-        repo_instance.git.commit(git_options)
+        try:
+            repo_instance.git.commit(git_options)
+        except:
         
         # clear up commit_stuff
         del repo_instance

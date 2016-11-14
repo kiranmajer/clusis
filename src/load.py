@@ -382,8 +382,9 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
 def verify_update_mdata_version(cfg, mdata_dict):
     # testing for correct mdata version
     mdata_converted = False
-    print('Current mdata version: {}, target version: {}'.format(mdata_dict['mdataVersion'], cfg.mdata_version))
     while mdata_dict['mdataVersion'] < cfg.mdata_version:
+        print('Current mdata version: {}, target version: {} -> converting...'.format(mdata_dict['mdataVersion'],
+                                                                                      cfg.mdata_version))
         mdata_dict = cfg.mdata_converter[mdata_dict['mdataVersion']](mdata_dict)
         mdata_converted = True
     

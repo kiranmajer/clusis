@@ -25,7 +25,7 @@ class Db(object):
         #print('__del__: Db connection closed.')
         
     def __enter__(self):
-        #print('__enter__: Entering Db instance.')
+        print('__enter__: Entering Db instance of {}.'.format(self.__dbFile))
         return self
     
     def __exit__(self, exc_type, exc_value, traceback):
