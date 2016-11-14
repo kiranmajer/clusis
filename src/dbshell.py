@@ -8,10 +8,10 @@ import time
 class Db(object):
     def __init__(self, dbName, cfg):
         #print('__init__: Init Db instance.')
-        self.__dbName = dbName
-        dbFileName = '%s.db' % dbName
+        #self.__dbName = dbName
         self.__cfg = cfg
         self.__dbProps = cfg.db[dbName]
+        dbFileName = '{}_v{}.db'.format(dbName, self.__dbProps['version'])
         self.__dbFile = os.path.join(self.__dbProps['path'], dbFileName)
         'TODO: into config?'        
 #        sqlite3.register_adapter(time.struct_time, self.__timeAdapter)
@@ -112,12 +112,7 @@ class Db(object):
         return hasSha1
     
     
-    def rebuild_db(self, spectra):
-        '''
-        Basically already implemented over add. Integrate scan pickle dir, build spec list, add.
-        clear tables?
-        check for missing entries? -> consistency check: each table entry has corresponding pickleFile'''
-        pass
+
         
 
     def query(self, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None, clusterBaseUnitNumberRange=None,

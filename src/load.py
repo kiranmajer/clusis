@@ -379,6 +379,17 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
     return spectrum
 
 
+def verify_update_mdata_version(cfg, mdata_dict):
+    # testing for correct mdata version
+    mdata_converted = False
+    print('Current mdata version: {}, target version: {}'.format(mdata_dict['mdataVersion'], cfg.mdata_version))
+    while mdata_dict['mdataVersion'] < cfg.mdata_version:
+        mdata_dict = cfg.mdata_converter[mdata_dict['mdataVersion']](mdata_dict)
+        mdata_converted = True
+    
+    return mdata_dict, mdata_converted
+
+
 def spec_from_specdatadir(cfg, data_dir):
     if not os.path.isabs(data_dir):
         data_dir = os.path.join(cfg.path['base'], data_dir)
@@ -388,7 +399,10 @@ def spec_from_specdatadir(cfg, data_dir):
                      }
     
     mdata, xdata, ydata = load_spec_data(data_dir)
+    mdata, converted = verify_update_mdata_version(cfg, mdata)
     spectrum = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
+    if converted:
+        spectrum.commit()
     
     return spectrum
 

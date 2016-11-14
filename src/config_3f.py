@@ -21,6 +21,7 @@ class Cfg():
         
         'TODO: Db should be machine independent in long term.'             
         self.db = {'3f': {'path': self.path['base'],  # path should always be absolute
+                          'version': 0.1,
                           'layout': {'tof': (['sha1', 'TEXT PRIMARY KEY'],
                                              ['clusterBaseUnit', 'TEXT'],
                                              ['dataStorageLocation', 'TEXT UNIQUE'],
@@ -55,7 +56,7 @@ class Cfg():
         '''
 #         self.wavelengths = [157.63e-9, 193.35e-9, 248.4e-9, 308e-9, 590e-9, 800e-9] # 157.63e-9, 193.35e-9, 248.4e-9
         'When modified -> increase mdata_version!'
-        self.mdata_version = 0.1
+        self.mdata_version = 0.2
         self.mdata_ref = {'spec': {'datFile': [str, True],
                                    'evalTags': [list, True],
                                    'info': [str, True],
@@ -113,20 +114,25 @@ class Cfg():
                          }       
         
         
- 
-#     def convert_mdata_v0p1_to_v0p2(self, mdata):
-#         start_version = 0.1
-#         target_version = 0.2
-#         if mdata['mdataVersion'] == start_version: 
-#             print('Converting mdata from version {} to {} ...'.format(start_version, target_version))
-#             spec_data_dir = mdata['pickleFile'].rsplit('.pickle')[0]
-#             del mdata['pickleFile']
-#             mdata['dataStorageLocation'] = spec_data_dir
-#         else:
-#             raise ValueError('mdata has wrong version: {}, expected {}.'.format(mdata['mdataVersion'],
-#                                                                                 start_version))
-#          
-#         return mdata 
+        self.mdata_converter = {0.1: self.convert_mdata_v0p1_to_v0p2,
+                                }
+        
+        
+    def convert_mdata_v0p1_to_v0p2(self, mdata):
+        start_version = 0.1
+        target_version = 0.2
+        if mdata['mdataVersion'] == start_version: 
+            print('Converting mdata from version {} to {} ...'.format(start_version, target_version))
+            spec_data_dir = mdata['pickleFile'].rsplit('.pickle')[0]
+            del mdata['pickleFile']
+            mdata['dataStorageLocation'] = spec_data_dir
+            # update mdata version
+            mdata['mdataVersion'] = target_version
+        else:
+            raise ValueError('mdata has wrong version: {}, expected {}.'.format(mdata['mdataVersion'],
+                                                                                start_version))
+          
+        return mdata 
 #     
 #     def convert_mdata_v0p2_to_v0p3(self, mdata):
 #         start_version = 0.2

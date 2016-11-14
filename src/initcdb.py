@@ -35,16 +35,33 @@ def setup_sqlite3():
 def init_db(cfg):
     for dbName, dbProps in cfg.db.items():
         ensure_path(dbProps['path'])
-        dbFileName = '%s.db' % dbName
-        dbFile = os.path.join(dbProps['path'],dbFileName)
-        if not os.path.exists(dbFile):
+        dbFileName = '{}_v{}.db'.format(dbName, dbProps['version'])
+        dbFilePath = os.path.join(dbProps['path'],dbFileName)
+        if not os.path.exists(dbFilePath):
+            print('Database does not exist, creating it.')
             with Db(dbName, cfg) as db:
                 for specType in dbProps['layout'].keys():
                     db.create_table(specType)
+            data_storage_path = os.path.join(cfg.path['base'], cfg.path['data'], dbName)
+            if os.listdir(os.path.join(cfg.path['base'], cfg.path['data'])):
+                repopulate_db(cfg, dbName, dbFileName, data_storage_path)
     
-    return dbFile 
+    return dbFilePath
+
             
-    
+def repopulate_db(cfg, db_name, db_filename, data_storage_path):
+    '''
+    Basically already implemented over add. Integrate scan pickle dir, build spec list, add.
+    clear tables?
+    check for missing entries? -> consistency check: each table entry has corresponding pickleFile'''
+    print('Repopulating database "{}" from: {}'.format(db_filename, data_storage_path))
+    mdata_json_list = load.ls(data_storage_path, 'json', recursive=True)
+    specdata_dir_list = [os.path.dirname(jf) for jf in mdata_json_list]
+    # TODO: this can be a huge list so memory may run out -> split into managable chunks?
+    spec_list = [spec_from_specdatadir(cfg, dir_path) for dir_path in specdata_dir_list]
+    with Db(db_name, cfg)as db:
+        db.add(spec_list, update=True)
+        
         
         
 def init_cludb(user_storage_dir, base_dir_name):
