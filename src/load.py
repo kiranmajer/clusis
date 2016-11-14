@@ -284,8 +284,8 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
                 #print 'some files already exist'
                 failedImports.append([datFile, 'Some raw files were already imported'])
         else:
-            print(os.path.basename(datFile), ': Db has already sha1 entry')
-            failedImports.append([datFile, 'Db or earlier import has already entry with this sha1'])
+            print(os.path.basename(datFile), ': Db or earlier import has already this sha1: {}'.format(mi.mdata.data('sha1')))
+            failedImports.append([datFile, 'Db or earlier import has already this sha1: {}'.format(mi.mdata.data('sha1'))])
             
     try:
         print('\nStarting db import ....')
