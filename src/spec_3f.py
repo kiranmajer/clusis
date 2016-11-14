@@ -16,6 +16,7 @@ import pickle
 import load
 import speclist_3f
 from git import Repo
+from git.exc import GitCommandError
 import shutil
 
 
@@ -127,8 +128,10 @@ class Spec(object):
         repo_instance = Repo(self.cfg.path['base'])
         try:
             repo_instance.git.commit(git_options)
-        except:
-        
+        except GitCommandError as e:
+            print('Git error: {}'.format(e))
+            
+            
         # clear up commit_stuff
         del repo_instance
         self.commit_msgs.clear()

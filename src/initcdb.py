@@ -56,7 +56,9 @@ def repopulate_db(cfg, db_name, db_filename, data_storage_path):
     check for missing entries? -> consistency check: each table entry has corresponding pickleFile'''
     print('Repopulating database "{}" from: {}'.format(db_filename, data_storage_path))
     mdata_json_list = load.ls(data_storage_path, 'json', recursive=True)
+    print(mdata_json_list)
     specdata_dir_list = [os.path.dirname(jf) for jf in mdata_json_list]
+    print(specdata_dir_list)
     # TODO: this can be a huge list so memory may run out -> split into managable chunks?
     spec_list = [spec_from_specdatadir(cfg, dir_path) for dir_path in specdata_dir_list]
     with Db(db_name, cfg)as db:
