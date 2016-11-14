@@ -1,9 +1,9 @@
 import re
 
 
-def parseFilename(filename):
-    
-    date = parseFilenameForData(filename)
+#def parseFilename(filename):
+#    
+#    return parseFilenameForData(filename)
 
     
     
