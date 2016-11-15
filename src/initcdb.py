@@ -91,18 +91,21 @@ def init_cludb(user_storage_dir, base_dir_name):
     
     setup_sqlite3()
     db_filename = os.path.basename(init_db(cfg))
-    # if .gitignore does not exist init git and make an initial commit
-    git_ignore_path = os.path.join(cfg.path['base'], '.gitignore')
-    if not os.path.exists(git_ignore_path):
+    # if the .git folder does not exist init git repository and make an initial commit
+    git_dir_path = os.path.join(cfg.path['base'], '.git')
+    if not os.path.exists(git_dir_path):
         # init git repository
         rep = Repo.init(cfg.path['base'])
-        # create .gitignore with few defaults if it does not exist already
-        with open(git_ignore_path, 'w') as f:
-            f.write('\n'.join([db_filename]))
-        # add .gitignore to index and commit
-        rep.index.add([git_ignore_path])
-        rep.git.commit('-a', '-m Repository initialization: adding ".gitignore".')
         del rep
+        # create .gitignore with few defaults
+        with Vcs(cfg.path['base']) as vcs:
+            vcs.update_gitignore(db_filename)
+#         with open(git_ignore_path, 'w') as f:
+#             f.write('\n'.join([db_filename]))
+#         # add .gitignore to index and commit
+#         rep.index.add([git_ignore_path])
+#         rep.git.commit('-a', '-m Repository initialization: adding ".gitignore".')
+#         del rep
     
     return cfg
                 
