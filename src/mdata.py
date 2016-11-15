@@ -1,5 +1,6 @@
 import numpy as np
 import re
+from tools import *
 
 class Mdata(object):
     
@@ -183,6 +184,9 @@ class Mdata(object):
                         mdata[k].update(self.__validate_value(k, v))
                     elif k == 'info' and not mdata[k]: # info contains already a string
                         mdata[k] = mdata[k] + self.__validate_value(k, v)
+                    elif k == 'recTime':
+                        unix_time = convertToUnixTime(v)
+                        mdata[k]= self.__validate_value(k, unix_time)
                     elif update: #key exists, is not tags not compSpecs
                         mdata[k] = self.__validate_value(k, v)
                         self.commit_msgs['mdata entry {} changed to:'.format(k)] = v

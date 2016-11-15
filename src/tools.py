@@ -1,5 +1,5 @@
 import re
-
+import time
 
 #def parseFilename(filename):
 #    
@@ -53,3 +53,13 @@ def parseFilenameForDate(filename):
         
     return [year,month,day] if ret else False ;
         
+def checkStringForDate(filename):
+    return parseFilenameForDate(filename)
+
+def convertToUnixTime(string):
+    if parseFilenameForDate(string) is not False:
+            year,month,day = parseFilenameForDate(string)
+    else:
+        raise ValueError("Couldn't add to database: "+string+"is not a valid recTime")        
+    startDate = '%s %s %s' % (day, month, year)
+    return time.mktime(time.strptime(startDate, '%d %m %Y'))

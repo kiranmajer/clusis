@@ -419,6 +419,7 @@ class SpecM(Spec):
     
     def calibrate(self, tof_tags=[]):
         tof_spectra = speclist_3f.SpecTofList(self.cfg, inTags=tof_tags)
+        print('Current Mass Spec File: '+self.mdata.data('datFile'))
         spec_idx = int(input('Choose index of tof spectrum for tof extraction: '))
         
         tof = tof_spectra.get_spec(spec_idx)
