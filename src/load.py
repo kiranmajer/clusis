@@ -9,6 +9,8 @@ from sys import exc_info
 from glob import glob
 from numpy import ndarray
 import shutil
+from git import Repo
+from vcs_shell import Vcs
 #from pytz.tzfile import base
 #import config
 #import mdata
@@ -275,6 +277,11 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
                         raise
                     else:
                         movedFiles.extend(moved)
+                        # add archived files to git index
+                        print('Adding archived files to index:')
+                        print([p[0] for p in moved])
+                        with Vcs(cfg.path['base']) as vcs:
+                            vcs.add_to_index([p[0] for p in moved])                            
                         #spec._commit_pickle()
                         spec._commit_specdatadir()
                         spec._commit_change_history(short_log='-m {} initial commit'.format(spec.mdata.data('sha1')))

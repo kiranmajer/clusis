@@ -18,6 +18,8 @@ import speclist_3f
 from git import Repo
 from git.exc import GitCommandError
 import shutil
+from vcs_shell import Vcs
+from numpy import short
 
 
 
@@ -93,16 +95,17 @@ class Spec(object):
                 
             
     
-    def _commit_change_history(self, git_options=['-a'], short_log=None):
+    def _commit_change_history(self, git_options='-a', short_log=None):
         # biulding commit message strings
         # log summary
-        git_options = list(git_options)
+        #git_options = list(git_options)
         git_msgs = []
-        short_log_auto = '-m {} changed: '.format(self.mdata.data('sha1'))
+        short_log_auto = '{} changed: '.format(self.mdata.data('sha1'))
         short_log_items = []
-        git_msgs.append(short_log_auto)
+        #git_msgs.append(short_log_auto)
         # mdata changes
         if self.mdata.commit_msgs:
+            print('mdata has commit msgs:', self.mdata.commit_msgs)
             mdata_log_entries = []
             for k,v in self.mdata.commit_msgs.items():
                 if v:
@@ -114,26 +117,32 @@ class Spec(object):
             short_log_items.append('mdata')
         # data changes    
         if self.commit_msgs:
+            print('spec data has commit msgs:', self.commit_msgs)
             commit_msgs = ['spec data updated with idx: {}'.format(i) for i in self.commit_msgs]
             data_log = '-m ' + '\n '.join(commit_msgs)
             git_msgs.append(data_log)
             short_log_items.append('spec data')
         
-        git_msgs[0] = git_msgs[0] + ', '.join(short_log_items)
-        if short_log:
-            git_msgs[0] = short_log
-        git_options.extend(git_msgs)
+        print('short log items:', short_log_items)
+        short_log_auto = short_log_auto + ', '.join(short_log_items)
+        if not short_log:
+            short_log = short_log_auto
+        #git_options.extend(git_msgs)
         
-        # init repo instance
-        repo_instance = Repo(self.cfg.path['base'])
-        try:
-            repo_instance.git.commit(git_options)
-        except GitCommandError as e:
-            print('Git error: {}'.format(e))
+        print('short log:', short_log)
+        print('log:', git_msgs)
+        with Vcs(self.cfg.path['base']) as vcs:
+            vcs.commit_changes(short_log=short_log, git_options=git_options, log=git_msgs)
+#         # init repo instance
+#         repo_instance = Repo(self.cfg.path['base'])
+#         try:
+#             repo_instance.git.commit(git_options)
+#         except GitCommandError as e:
+#             print('Git error: {}'.format(e))
             
             
         # clear up commit_stuff
-        del repo_instance
+#         del repo_instance
         self.commit_msgs.clear()
         self.mdata.commit_msgs = {}
  
