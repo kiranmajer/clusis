@@ -26,18 +26,31 @@ class GeneralMeasurementData(Base):
         toolbox      = Column(String(250), nullable=True)
         datapath     = Column(String(250), nullable=False)
         date         = Column(Date, nullable=False, default=func.now())
+        addDate      = Column(Date, nullable=False, default=func.now())
+
+class ClusterData(Base):
+        __tablename__='clusterData'
+
+        id = Column(Integer, primary_key=True)
+        comment    = Column(String(250))
+        dataset_id = Column(Integer, ForeignKey('generalmeasurementdata.id'))
+        clusterType_id = Column(Integer, ForeignKey('clusterType.id'))
+        tags       = Column(String(250), nullable=True)
+        ionType    = Column(Integer, nullable=True)
+        general_measurement_data = relationship(GeneralMeasurementData)
+        cluster_data = relationship(ClusterType)
+
 
 
 class MassSpec(Base):
         __tablename__='massspectrum'
 
         id = Column(Integer, primary_key=True)
-        comment = Column(String(250))
-        dataset_id= Column(Integer, ForeignKey('generalmeasurementdata.id'))
+        comment    = Column(String(250))
+        dataset_id = Column(Integer, ForeignKey('generalmeasurementdata.id'))
+        tags       = Column(String(250), nullable=True)
+        ionType    = Column(Integer, nullable=True)
         general_measurement_data = relationship(GeneralMeasurementData)
-        tags      = Column(String(250), nullable=True)
-        ionType      = Column(Integer, nullable=True)
-        
 
 class ClusterType(Base):
         __tablename__='clusterType'
