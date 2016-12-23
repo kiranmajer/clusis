@@ -251,8 +251,11 @@ class View(object):
         xub = np.argmin(abs(xdata-xlim_scale[1]))
         ydata_sorted = np.sort(ydata[xlb:xub])
         # exclude infinite values
-        ymin = ydata_sorted[np.isfinite(ydata_sorted)][0]
-        ymax = ydata_sorted[np.isfinite(ydata_sorted)][-1]
+        if len(ydata_sorted) > 0:
+            ymin = ydata_sorted[np.isfinite(ydata_sorted)][0]
+            ymax = ydata_sorted[np.isfinite(ydata_sorted)][-1]
+        else: # no data in selected xrange, so we scale to -1, 1, to prevent index errors.
+            ymin, ymax = -1, 1
         return ymin, ymax
                
     
