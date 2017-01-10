@@ -284,7 +284,7 @@ def import_rawdata_3f(cfg, datFiles, spectype=None, commonMdata={},
                             vcs.add_to_index([p[0] for p in moved])                            
                         #spec._commit_pickle()
                         spec._commit_specdatadir()
-                        spec._commit_change_history(short_log='-m {} initial commit'.format(spec.mdata.data('sha1')))
+                        spec._commit_change_history(short_log='{} initial commit'.format(spec.mdata.data('sha1')))
                         specList.append(spec)
                         sha1ToImport.append(mi.mdata.data('sha1'))
             else:

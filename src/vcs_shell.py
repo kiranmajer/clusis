@@ -85,22 +85,26 @@ class Vcs:
         
         short_log: string containing the first log entry or header; obligatory
         git_options: string containing further options for git commit beside log msgs
-        log: list containing the extended log entries. Each list item will be a new
-             paragraph, e.g '-m log[0], -m log[1]...'. If the list item is a list, 
-             each of its elements will be seperated by a new line 
+        log: list or str containing the extended log entries:
+             i) a str will just be piped through to git
+             ii) in case of a list each list item will be a new paragraph, 
+                 e.g '-m log[0], -m log[1]...'. If the list item itself is a list, 
+                 each of its elements will be seperated by a new line 
         '''
         if not type(git_options) is str:
             raise ValueError('git_options must be a string.')
-        short_log = '-m "{}"'.format(short_log)
+        short_log = '-m {}'.format(short_log)
         commit_options_list = [git_options, short_log]
         if type(log) is str:
-            commit_options_list.append('-m "{}"'.format(log))
+            commit_options_list.append(log)
         elif type(log) is list:
             for p in log:
                 if type(p) is list:
-                    commit_options_list.append('-m "{}"'.format('\n '.join(p)))
+                    commit_options_list.append('-m {}'.format('\n '.join(p)))
                 else:
-                    commit_options_list.append('m "{}"'.format(p))
+                    commit_options_list.append('m {}'.format(p))
+        elif log:
+            raise ValueError('"log" must be a list or str.')
   
         try:
             print('Commiting with options.')

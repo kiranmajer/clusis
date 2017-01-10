@@ -112,15 +112,15 @@ class Spec(object):
                     mdata_log_entries.append('{} {}'.format(k,v))
                 else:
                     mdata_log_entries.append(str(k))
-            mdata_log = '-m ' + '\n '.join(mdata_log_entries)
-            git_msgs.append(mdata_log)
+            #mdata_log = '-m ' + '\n '.join(mdata_log_entries)
+            git_msgs.append(mdata_log_entries)
             short_log_items.append('mdata')
         # data changes    
         if self.commit_msgs:
             print('spec data has commit msgs:', self.commit_msgs)
-            commit_msgs = ['spec data updated with idx: {}'.format(i) for i in self.commit_msgs]
-            data_log = '-m ' + '\n '.join(commit_msgs)
-            git_msgs.append(data_log)
+            commit_msgs = ['spec data updated with index: {}'.format(i) for i in self.commit_msgs]
+            #data_log = '-m ' + '\n '.join(commit_msgs)
+            git_msgs.append(commit_msgs)
             short_log_items.append('spec data')
         
         print('short log items:', short_log_items)
