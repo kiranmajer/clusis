@@ -160,6 +160,16 @@ class Mdata(object):
         
         TODO: if k == wavelength self._hv needs to be adapted and specdata needs to be recalculated!
         """
+        
+        # low level method to add/update items to/of mdata dict
+        def __mdata_dict_add_item(mdata_dict, verified_key, verified_value):
+            mdata_dict[verified_key] = verified_value
+            self.commit_msgs['mdata entry {} added with value:'.format(verified_key)] = verified_value
+        #low level method to update existing items of mdata data 
+        def __mdata_dict_update_item(mdata_dict, verified_key, verified_value):
+            mdata_dict[verified_key] = verified_value
+            self.commit_msgs['mdata entry {} changed to:'.format(verified_key)] = verified_value
+            
         mdata = self.__mdata
         if type(newMdata) is dict:
             #self.failedKeys = {}
@@ -170,8 +180,9 @@ class Mdata(object):
                     if k == 'fitData': # fit data needs to be handled separately
                         self.__add_fit_data(v)
                     elif k not in mdata.keys(): # key not yet in mdata, so we just add them
-                        mdata[k] = self.__validate_value(k, v)
-                        self.commit_msgs['mdata entry {} added with value:'.format(k)] = v
+#                         mdata[k] = self.__validate_value(k, v)
+#                         self.commit_msgs['mdata entry {} added with value:'.format(k)] = v
+                        __mdata_dict_add_item(mdata, k, self.__validate_value(k, v))
                     elif k in ['tags', 'userTags', 'systemTags', 'evalTags']: 
                         if k == 'tags': # 'tags' is treated like 'userTags' for convenience
                             k = 'userTags'
@@ -182,14 +193,16 @@ class Mdata(object):
                             self.add_tag(v, tagkey=k)
                     elif k == 'compSpecs':
                         mdata[k].update(self.__validate_value(k, v))
-                    elif k == 'info' and not mdata[k]: # info contains already a string
+                        self.commit_msgs['mdata entry {} changed to:'.format(k)] = mdata[k]
+                    elif k == 'info' and mdata[k]: # info contains already a string
+                        # TODO: handle info strings more robustly
                         mdata[k] = mdata[k] + self.__validate_value(k, v)
+                        self.commit_msgs['mdata entry {} changed to:'.format(k)] = '"{}"'.format(mdata[k])
                     elif k == 'recTime':
                         unix_time = convertToUnixTime(v)
-                        mdata[k]= self.__validate_value(k, unix_time)
+                        __mdata_dict_add_item(mdata, k, self.__validate_value(k, unix_time))
                     elif update: #key exists, is not tags not compSpecs
-                        mdata[k] = self.__validate_value(k, v)
-                        self.commit_msgs['mdata entry {} changed to:'.format(k)] = v
+                        __mdata_dict_update_item(mdata, k, self.__validate_value(k, v))
                     else:
                         v = self.__validate_value(k, v)
                         overwrite=''
@@ -197,7 +210,7 @@ class Mdata(object):
                             q = 'Key "%s" already exists. Overwrite "%s" with "%s"? [y|n]: ' % (k, str(mdata[k]), str(v))
                             overwrite = input(q)
                         if overwrite == 'y':# else keep
-                            mdata[k]=self.__validate_value(k, v)
+                            __mdata_dict_add_item(mdata, k, self.__validate_value(k, v))
                 else:
                     print('Failed to add "%s: %s". Key not allowed.' % (k, str(v)))
             self.__update_tags()
