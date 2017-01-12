@@ -4,7 +4,7 @@ import os.path
 #from numpy import log10,sqrt, abs, argmin, arange, sort
 import numpy as np
 
-import load_3f
+import load
 from matplotlib.pyplot import xlim
 from smooth import moving_avg_gaussian
 
@@ -544,7 +544,7 @@ class ViewTof(View):
                                     'color': color,
                                     'xdata_key': self.xdata_key})
         #addspec = load.load_pickle_3f(self.spec.cfg, specfile)
-        addspec = load_3f.spec_from_specdatadir(self.spec.cfg, specfile)
+        addspec = load.spec_from_specdatadir(self.spec.cfg, specfile)
         time_unit = 1
         if 'tof' in self.xdata_key:
             time_unit = self.timeunit
