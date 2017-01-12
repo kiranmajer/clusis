@@ -316,13 +316,6 @@ class LegacyData(object):
     def eval_element_name(self, element, reference):
         '''Returns a well capitalized string of an element name, if in reference.
         '''
-    #         i=0
-    #         valid_name = None
-    #         for e in reference:
-    #             if element.lower() == e.lower():
-    #                 valid_name = reference[i]
-    #                 break
-    #             i+=1   
         ref_lower = [e.lower() for e in reference]
         valid_name = ''
         pg=re.compile(r'(^\D+)(\d*)(\D*)(\d*)')
@@ -451,13 +444,3 @@ class LegacyData(object):
         
 
 
-
-
-
-
-
-
-
-
-
-   
