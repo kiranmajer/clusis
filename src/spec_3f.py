@@ -13,7 +13,7 @@ from scipy.optimize import leastsq
 import view
 import view_3f
 import pickle
-import load
+import load_3f
 import speclist_3f
 from git import Repo
 from git.exc import GitCommandError
@@ -67,7 +67,7 @@ class Spec(object):
     def _commit_specdatadir(self, compress=False):
         # TODO: don't exstract this from pickleFile
         full_path = os.path.join(self.cfg.path['base'], self.mdata.data('dataStorageLocation'))
-        load.dump_spec_data(full_path, self.mdata.data(), self.xdata, self.ydata, compress=compress)
+        load_3f.dump_spec_data(full_path, self.mdata.data(), self.xdata, self.ydata, compress=compress)
         self._add_files_to_index()
     
     
@@ -254,7 +254,7 @@ class Spec(object):
         time range before subtraction! This is NOT covert by this method. 
         '''
         #bgSpec = load.load_pickle(self.cfg, bgFile)
-        bgSpec =  load.spec_from_specdatadir(self.cfg, bgFile)
+        bgSpec =  load_3f.spec_from_specdatadir(self.cfg, bgFile)
         if not self.mdata.data('specTypeClass') == bgSpec.mdata.data('specTypeClass'):
             raise ValueError('Background file has different spec type class.')
         self.mdata.update({'subtractBgRef': bgSpec.mdata.data('dataStorageLocation')})

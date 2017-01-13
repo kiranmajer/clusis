@@ -1,4 +1,4 @@
-import load
+import load_3f
 from dbshell import Db
 #import time
 import os
@@ -40,7 +40,7 @@ class SpecList(object):
 
     def get_spec(self, number):
         #ata_dir = self.dbanswer[number]['pickleFile'].rstrip('.pickle')
-        spec = load.spec_from_specdatadir(self.cfg,
+        spec = load_3f.spec_from_specdatadir(self.cfg,
                                           self.dbanswer[number]['dataStorageLocation'])
         #spec = load.load_pickle_3f(self.cfg, self.dbanswer[number]['pickleFile'])
         return spec
@@ -50,7 +50,7 @@ class SpecList(object):
         for entry in self.dbanswer:
             print(entry['dataStorageLocation'])
             #cs = load.load_pickle_3f(self.cfg, entry['pickleFile'])
-            cs = load.spec_from_specdatadir(self.cfg, entry['dataStorageLocation'])
+            cs = load_3f.spec_from_specdatadir(self.cfg, entry['dataStorageLocation'])
             try:
                 cs.mdata.update(mdataDict)
                 if hasattr(cs, '_hv') and 'waveLength' in mdataDict.keys():
@@ -68,7 +68,7 @@ class SpecList(object):
     def remove_tag(self, tag, tagkey='userTags'):
         for entry in self.dbanswer:
             #cs = load.load_pickle_3f(self.cfg, entry['pickleFile'])
-            cs = load.spec_from_specdatadir(self.cfg, entry['dataStorageLocation'])
+            cs = load_3f.spec_from_specdatadir(self.cfg, entry['dataStorageLocation'])
             try:
                 cs.mdata.remove_tag(tag, tagkey=tagkey)
             except ValueError:
@@ -88,7 +88,7 @@ class SpecList(object):
         print('-'*85)
         for entry in self.dbanswer:
             #cs = load.load_pickle_3f(self.cfg, s['pickleFile'])
-            cs = load.spec_from_specdatadir(self.cfg, entry['dataStorageLocation'])
+            cs = load_3f.spec_from_specdatadir(self.cfg, entry['dataStorageLocation'])
             values = [cs.mdata.data(k) for k in keys]
             print('{}:'.format(os.path.basename(cs.mdata.data('datFile'))), values)
             del cs
@@ -142,7 +142,7 @@ class SpecList(object):
         'TODO: query for confirmation, since you can cause great damage.'
         for entry in self.dbanswer:
             #cs = load.load_pickle_3f(self.cfg, entry['pickleFile'])
-            cs = load.spec_from_specdatadir(self.cfg, entry['dataStorageLocation'])
+            cs = load_3f.spec_from_specdatadir(self.cfg, entry['dataStorageLocation'])
             cs.remove()
             del cs      
             
