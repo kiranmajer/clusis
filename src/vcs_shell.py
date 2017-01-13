@@ -107,8 +107,8 @@ class Vcs:
             raise ValueError('"log" must be a list or str.')
   
         try:
-            print('Commiting changes:')
-            #print(commit_options_list)
+            print('Commiting with options.')
+            print(commit_options_list)
             s = self._repo.git.commit(commit_options_list)
             print(s)
         except git.exc.GitCommandError as e:
