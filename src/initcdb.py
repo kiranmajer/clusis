@@ -2,7 +2,7 @@ import os
 import sqlite3
 from dbshell import Db
 import config_3f
-from load_3f import *
+from load import *
 from speclist_3f import *
 from git import Repo
 #import ConfigParser
