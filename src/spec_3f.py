@@ -105,7 +105,7 @@ class Spec(object):
         #git_msgs.append(short_log_auto)
         # mdata changes
         if self.mdata.commit_msgs:
-            print('mdata has commit msgs:', self.mdata.commit_msgs)
+            #print('mdata has commit msgs:', self.mdata.commit_msgs)
             mdata_log_entries = []
             for k,v in self.mdata.commit_msgs.items():
                 if v:
@@ -117,20 +117,20 @@ class Spec(object):
             short_log_items.append('mdata')
         # data changes    
         if self.commit_msgs:
-            print('spec data has commit msgs:', self.commit_msgs)
+            #print('spec data has commit msgs:', self.commit_msgs)
             commit_msgs = ['spec data updated with index: {}'.format(i) for i in self.commit_msgs]
             #data_log = '-m ' + '\n '.join(commit_msgs)
             git_msgs.append(commit_msgs)
             short_log_items.append('spec data')
         
-        print('short log items:', short_log_items)
+        #print('short log items:', short_log_items)
         short_log_auto = short_log_auto + ', '.join(short_log_items)
         if not short_log:
             short_log = short_log_auto
         #git_options.extend(git_msgs)
         
-        print('short log:', short_log)
-        print('log:', git_msgs)
+        #print('short log:', short_log)
+        #print('log:', git_msgs)
         with Vcs(self.cfg.path['base']) as vcs:
             vcs.commit_changes(short_log=short_log, git_options=git_options, log=git_msgs)
 #         # init repo instance

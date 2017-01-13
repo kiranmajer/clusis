@@ -1,5 +1,4 @@
 import numpy as np
-import re
 from tools import *
 
 class Mdata(object):
