@@ -40,7 +40,7 @@ class Db(object):
 #        return time.gmtime(utime)
     
         
-    def create_table(self, specType):
+    def create_table_old(self, specType):
         
         sql = "CREATE TABLE IF NOT EXISTS " + specType + " (" + "%s, "*(len(self.__dbProps['layout'][specType])-1) + "%s)"
         tableHead = [' '.join(entry) for entry in self.__dbProps['layout'][specType]]
@@ -50,7 +50,15 @@ class Db(object):
         db_cursor.execute(sql)
         db_cursor.close()
         del db_cursor
-
+        
+    def create_table(self, table_name, table_layout):
+        sql = "CREATE TABLE IF NOT EXISTS {} ({})".format(table_name, ", ".join(table_layout))
+        
+        print(sql)
+        db_cursor = self.__db.cursor()
+        db_cursor.execute(sql)
+        db_cursor.close()
+        del db_cursor
 
     def add(self, spectra, update=False):
         '''Make a list, so we can work only with lists'''
@@ -268,7 +276,7 @@ class Db(object):
              'recTimeRange': [sqlformat_RecTimeRange, recTimeRange, 'recTime'],
              'inTags': [sqlformat_InTags, inTags, 'tags'],
              'notInTags': [sqlformat_NotInTags, notInTags, 'tags'],
-             'datFileName': [sqlformat_DatFileName, datFileName, 'datFile'],
+             'datFileName': [sqlformat_DatFileName, datFileName, 'rawDataFile'],
              'waveLength': [sqlformat_WaveLength, waveLength, 'waveLength'],
              'trapTemp': [sqlformat_number, trapTemp, 'trapTemp'],
              'trapTempRange': [sqlformat_number_range, trapTempRange, 'trapTemp']
@@ -335,7 +343,7 @@ class Db(object):
                       'waveLength'.ljust(10+3),
                       'temp'.ljust(4+3),
                       'recTime'.ljust(19),
-                      'datFile'.ljust(16),
+                      'rawDataFile'.ljust(16),
                       'tags')
                 
             def print_data_pes(row):
@@ -345,7 +353,7 @@ class Db(object):
                       str(round(row['waveLength']*1e9, 1)).ljust(10+3),
                       str(row['trapTemp']).ljust(4+3),
                       format_RecTime(row['recTime']).ljust(19),
-                      format_DatFile(row['datFile']).ljust(16),
+                      format_DatFile(row['rawDataFile']).ljust(16),
                       end=" "
                       )                
                 
@@ -353,27 +361,27 @@ class Db(object):
                 print('Idx'.rjust(6),
                       'element'.ljust(7+3),
                       'recTime'.ljust(19),
-                      'datFile'.ljust(28+3),
+                      'rawDataFile'.ljust(28+3),
                       'tags')
                 
             def print_data_ms(row):
                 print(('%s  '%idx).rjust(6),
                       row['clusterBaseUnit'].ljust(7+3),    
                       format_RecTime(row['recTime']).ljust(19),
-                      format_DatFile(row['datFile']).ljust(28+3),
+                      format_DatFile(row['rawDataFile']).ljust(28+3),
                       end=" "
                       )            
                 
             def print_head_generic():
                 print('Idx'.rjust(6),
                       'recTime'.ljust(19),
-                      'datFile'.ljust(16),
+                      'rawDataFile'.ljust(16),
                       'tags')               
              
             def print_data_generic(row):
                 print(('%s  '%idx).rjust(6),   
                       format_RecTime(row['recTime']).ljust(19),
-                      format_DatFile(row['datFile']).ljust(16),
+                      format_DatFile(row['rawDataFile']).ljust(16),
                       end=" "
                       )                
             
@@ -498,7 +506,7 @@ class Db(object):
 #                      'clusterDopant': keepit,
 #                      'clusterDopantNumber': keepit,
 #                      'pickleFile': keepit,
-#                      'datFile': keepit,
+#                      'rawDataFile': keepit,
 #                      'tags':str,
 #                      'waveLength': keepit,
 #                      'recordingTime':calendar.timegm
@@ -517,7 +525,7 @@ class Db(object):
 #                      'clusterDopant': keepit,
 #                      'clusterDopantNumber': keepit,
 #                      'pickleFile': keepit,
-#                      'datFile': keepit,
+#                      'rawDataFile': keepit,
 #                      'tags':str,
 #                      'recordingTime':calendar.timegm
 #                      }

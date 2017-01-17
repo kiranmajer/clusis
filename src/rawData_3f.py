@@ -196,7 +196,7 @@ class RawData_3f(object):
                                    self.metadata['machine'],
                                    self.metadata['specType'],
                                    year)
-        self.metadata['datFile'] = os.path.join(archive_dir,
+        self.metadata['rawDataFile'] = os.path.join(archive_dir,
                                                 os.path.basename(self.metadata['datFileOrig']))
         #self.metadata['userTags'] = []
         ''' build specdata dir path according to following scheme:

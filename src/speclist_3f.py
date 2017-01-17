@@ -90,7 +90,7 @@ class SpecList(object):
             #cs = load.load_pickle_3f(self.cfg, s['pickleFile'])
             cs = load.spec_from_specdatadir(self.cfg, entry['dataStorageLocation'])
             values = [cs.mdata.data(k) for k in keys]
-            print('{}:'.format(os.path.basename(cs.mdata.data('datFile'))), values)
+            print('{}:'.format(os.path.basename(cs.mdata.data('rawDataFile'))), values)
             del cs
             
     def _export(self, fname='export.pdf', export_dir=os.path.expanduser('~'), size='p1h',
@@ -166,11 +166,11 @@ class SpecList(object):
                 fname = '{}{}{}_{}.pdf'.format(cs.mdata.data('clusterBaseUnit'),
                                              cs.mdata.data('clusterBaseUnitNumber'),
                                              'comp',
-                                             os.path.splitext(os.path.basename(cs.mdata.data('datFile')))[0])
+                                             os.path.splitext(os.path.basename(cs.mdata.data('rawDataFile')))[0])
             else:
                 fname = '{}{}_{}.pdf'.format(cs.mdata.data('clusterBaseUnit'),
                                              cs.mdata.data('clusterBaseUnitNumber'),
-                                            os.path.splitext(os.path.basename(cs.mdata.data('datFile')))[0])
+                                            os.path.splitext(os.path.basename(cs.mdata.data('rawDataFile')))[0])
             if not skip_plots:
                 print('Exporting {} ...'.format(fname))
                 cs.view.export(fname=fname, export_dir=export_dir, size=size, overwrite=overwrite,

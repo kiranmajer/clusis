@@ -25,7 +25,7 @@ class Cfg():
                           'layout': {'tof': (['sha1', 'TEXT PRIMARY KEY'],
                                              ['clusterBaseUnit', 'TEXT'],
                                              ['dataStorageLocation', 'TEXT UNIQUE'],
-                                             ['datFile', 'TEXT'],
+                                             ['rawDataFile', 'TEXT'],
                                              ['deflectorVoltage', 'REAL'],
                                              ['tags', 'LIST'],
                                              ['recTime', 'REAL'],
@@ -33,13 +33,13 @@ class Cfg():
                                      'ms': (['sha1', 'TEXT PRIMARY KEY'],
                                             ['clusterBaseUnit', 'TEXT'],
                                             ['dataStorageLocation', 'TEXT UNIQUE'],
-                                            ['datFile', 'TEXT'],
+                                            ['rawDataFile', 'TEXT'],
                                             ['tags', 'LIST'],
                                             ['recTime', 'REAL'],
                                             ),
                                      'generic': (['sha1', 'TEXT PRIMARY KEY'],
                                                  ['dataStorageLocation', 'TEXT UNIQUE'],
-                                                 ['datFile', 'TEXT'],
+                                                 ['rawDataFile', 'TEXT'],
                                                  ['tags', 'LIST'],
                                                  ['recTime', 'REAL'],
                                                  ['info', 'TEXT'],
@@ -57,7 +57,7 @@ class Cfg():
 #         self.wavelengths = [157.63e-9, 193.35e-9, 248.4e-9, 308e-9, 590e-9, 800e-9] # 157.63e-9, 193.35e-9, 248.4e-9
         'When modified -> increase mdata_version!'
         self.mdata_version = 0.2
-        self.mdata_ref = {'spec': {'datFile': [str, True],
+        self.mdata_ref = {'spec': {'rawDataFile': [str, True],
                                    'evalTags': [list, True],
                                    'info': [str, True],
                                    'machine': [['3f'], True],

@@ -1,0 +1,40 @@
+'''
+Mdata layout definition
+base configuration: should be generic enough to fit all possible spec types
+'''
+
+mdata_ref = {'spec': {'dataStorageLocation': {'mdata_type': str, 
+                                              'mdata_required': True,
+                                              'db_included': False},
+                      'info': {'mdata_type': str, 
+                               'mdata_required': False,
+                               'db_included': False},
+                      'experimentId': {'mdata_type': str, 
+                                  'mdata_required': True,
+                                  'db_included': False},
+                      'mdataVersion': {'mdata_type': float, 
+                                       'mdata_required': True,
+                                       'db_included': False},
+                      'rawDataFile': {'mdata_type': str,
+                                      'mdata_required': True,
+                                      'db_included': True},
+                      'recTime': {'mdata_type': float, 
+                                  'mdata_required': True,
+                                  'db_included': True},
+                      'sha1': {'mdata_type': str, 
+                               'mdata_required': True,
+                               'db_included': 'TEXT PRIMARY KEY UNIQUE'},
+                      'specType': {'mdata_type': 'generic', 
+                                   'mdata_required': True,
+                                   'db_included': True},
+                      'specTypeClass': {'mdata_type': 'spec', 
+                                        'mdata_required': True,
+                                        'db_included': False},
+                      'sweeps': {'mdata_type': int, 
+                                 'mdata_required': False,
+                                 'db_included': False},
+                      'tags': {'mdata_type': dict, # replace lists with keys: user, system, eval
+                               'mdata_required': True,
+                               'db_included': 'LIST'},
+                      },
+             }

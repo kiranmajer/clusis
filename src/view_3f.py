@@ -74,7 +74,7 @@ class View(object):
         ypos_offset = self.__scale_text_vpos(ax, offset=1.3)        
         ypos = 1 + ypos_offset
         #print('Adding file_id at relative height: {}'.format(ypos))
-        self.txt_fileid = ax.text(1.0, ypos, '%s'%(os.path.basename(self.spec.mdata.data('datFile'))),
+        self.txt_fileid = ax.text(1.0, ypos, '%s'%(os.path.basename(self.spec.mdata.data('rawDataFile'))),
                                   transform = ax.transAxes, fontsize=fontsize, horizontalalignment='right',
                                   verticalalignment='bottom')  
 
@@ -97,7 +97,7 @@ class View(object):
             stats.append('background')
         if len(stats) > 0:
             stat_text = ', '.join(stats)
-            #print(self.spec.mdata.data('datFile'), 'Adding status marker(s): ', stat_text)
+            #print(self.spec.mdata.data('rawDataFile'), 'Adding status marker(s): ', stat_text)
             self.txt_statusmarker = ax.text(xpos[text_pos], ypos, stat_text, transform = ax.transAxes,
                                             fontsize=fontsize, horizontalalignment=text_pos,
                                             verticalalignment='bottom')
@@ -370,7 +370,7 @@ class View(object):
     def add_plot(self, ax, xdata, ydata, color='blue', linestyle='-', linewidth=.5, file_id=None, unit_scale=1,
                  rescale=True, batch_mode=False, smooth=False):
         if file_id is not None:
-            self.txt_fileid.set_text('{}, {}'.format(os.path.basename(self.spec.mdata.data('datFile')), file_id))
+            self.txt_fileid.set_text('{}, {}'.format(os.path.basename(self.spec.mdata.data('rawDataFile')), file_id))
         if smooth:
             ydata = moving_avg_gaussian(ydata)
         if rescale:
@@ -588,7 +588,7 @@ class ViewTof(View):
         #cluster_ids = '{}\n{}'.format(self._pretty_format_clusterid(), addspec.view._pretty_format_clusterid())
         #self.txt_clusterid.set_text(cluster_ids)
         self.add_plot(ax, xdata, ydata, color=color, linestyle=linestyle, linewidth=linewidth,
-                      file_id=os.path.basename(addspec.mdata.data('datFile')))
+                      file_id=os.path.basename(addspec.mdata.data('rawDataFile')))
         
         
     def add_spec(self, specfile, xscale=1, yscale=1, yscale_type=None, xoffset=0, yoffset=0, color='blue',

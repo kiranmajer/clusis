@@ -24,7 +24,7 @@ from vcs_shell import Vcs
 
 def is_filestorage_possible(mdata):
     # TODO: no hard coding!
-    paths = [mdata['datFile'], mdata['dataStorageLocation']]
+    paths = [mdata['rawDataFile'], mdata['dataStorageLocation']]
     if 'cfgFile' in mdata.keys():
         paths.append(mdata['cfgFile'])
     
@@ -52,7 +52,7 @@ def archive(cfg, mdata, mode):
     Update mdata with file location.
     """
     old_file = abs_path(cfg, mdata['datFileOrig'])
-    new_file = abs_path(cfg, mdata['datFile'])
+    new_file = abs_path(cfg, mdata['rawDataFile'])
     if not os.path.exists(os.path.dirname(new_file)):
         os.makedirs(os.path.dirname(new_file))
     'TODO: catch io exceptions'
@@ -501,7 +501,7 @@ def load_spec_data(data_path):
 #     for pfile in pickle_list:
 #         cs = load_pickle(cfg, pfile)
 #         cs.commit(update=False)
-#         for key in ['datFile', 'cfgFile']:
+#         for key in ['rawDataFile', 'cfgFile']:
 #             if key in cs.mdata.data().keys():
 #                 old_file = os.path.join(import_dir, cs.mdata.data(key))
 #                 new_file = os.path.join(cfg.path['base'], cs.mdata.data(key))
@@ -525,7 +525,7 @@ def load_spec_data(data_path):
 #         raise ValueError('Export dir is not empty.')
 #     for s in speclist.dbanswer:
 #         cs = load_pickle(speclist.cfg, s['pickleFile'])
-#         for k in ['pickleFile', 'datFile', 'cfgFile']:
+#         for k in ['pickleFile', 'rawDataFile', 'cfgFile']:
 #             if k in cs.mdata.data().keys():
 #                 old_file = os.path.join(speclist.cfg.path['base'], cs.mdata.data(k))
 #                 new_file = os.path.join(export_dir, os.path.basename(cs.mdata.data(k)))
@@ -545,7 +545,7 @@ def load_spec_data(data_path):
 #         laststep_successful = True
 #         if not db.table_has_sha1(cs.mdata.data('specType'), cs.mdata.data('sha1')):
 #             moved = []
-#             for k in ['datFile', 'cfgFile']:
+#             for k in ['rawDataFile', 'cfgFile']:
 #                 if k in cs.mdata.data().keys():
 #                     old_file = os.path.join(export_dir, os.path.basename(cs.mdata.data(k)))
 #                     if os.path.isfile(old_file):
