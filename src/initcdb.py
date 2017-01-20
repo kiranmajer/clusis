@@ -8,7 +8,7 @@ import io_tools
 #import load
 import os
 from vcs_shell import Vcs
-import sql_tools
+import db_tools
 
 
 
@@ -58,7 +58,7 @@ def init_cludb(user_storage_dir, base_dir_name):
             p = os.path.join(cfg.path['base'], p)
             io_tools.ensure_path(p)
     
-    sql_tools.setup_sqlite3()
+    db_tools.setup_sqlite3()
     db_filename = os.path.basename(init_db(cfg))
     # if the .git folder does not exist init git repository and make an initial commit
     git_dir_path = os.path.join(cfg.path['base'], '.git')
