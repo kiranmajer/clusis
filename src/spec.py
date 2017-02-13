@@ -13,6 +13,7 @@ from scipy.optimize import leastsq
 import view
 import pickle
 import load
+from smoothing import savitzky_golay
 
 
 
@@ -120,6 +121,10 @@ class Spec(object):
         So it's safe to set them to 0. 
         """
         self.ydata[new_int_key] = self._set_neg_int_zero(self.ydata[int_key])
+    
+    def sg_smooth_intensity(self, int_key='intensity', new_int_key='smoothedIntensity', window_size=231,
+                            order=4):
+        self.ydata[new_int_key] = savitzky_golay(self.ydata[int_key], window_size=window_size, order=order)
         
         
     def calc_spec_data(self):

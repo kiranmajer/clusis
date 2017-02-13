@@ -25,6 +25,7 @@ class LegacyData(object):
                          'tags': [],
                          'systemTags': [],
                          'userTags': [],
+                         'evalTags': [],
                          'machine': machine,
                          'delayState': {},
                          'info': ''}
