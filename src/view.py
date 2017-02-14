@@ -200,6 +200,11 @@ class View(object):
             k_sub = [i for i in key_deps[xdata_key] if 'Sub' in i]
             if 'subtracted' in self.spec.mdata.data('systemTags') and len(k_sub) > 0:
                 auto_y = k_sub[0]
+            # TODO: make this more general, maybe system tag 'smoothed'
+            elif 'jIntensitySmoothed' in self.spec.ydata.keys() and 'ebin' in xdata_key:
+                auto_y = 'jIntensitySmoothed'
+            elif 'smoothedIntensity' in self.spec.ydata.keys() and 'tof' in xdata_key:
+                auto_y = 'smoothedIntensity'
             else:
                 auto_y =  [i for i in key_deps[xdata_key] if 'Sub' not in i][0]
             return auto_y
@@ -295,7 +300,7 @@ class View(object):
                  export=False, show_xlabel=True, show_ylabel=True, size=None):
         self._single_fig_output(size=size)
         # set data keys
-        key_deps = {'idx': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']}
+        key_deps = {'idx': ['intensity', 'intensitySub', 'smoothedIntensity', 'rawIntensity', 'intensitySubRaw']}
         xdata_key, ydata_key = self._auto_key_selection(xdata_key='idx', ydata_key=ydata_key, key_deps=key_deps)        
         self.plot_idx(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim,
                       xlim_scale=xlim_scale, n_xticks=n_xticks)
@@ -324,8 +329,8 @@ class View(object):
                  show_ylabel=True, size=None):     
         self._single_fig_output(size=size)
         # set data keys
-        key_deps = {'tof': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'],
-                    'tofGauged': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']} 
+        key_deps = {'tof': ['intensity', 'intensitySub', 'smoothedIntensity', 'rawIntensity', 'intensitySubRaw'],
+                    'tofGauged': ['intensity', 'intensitySub', 'smoothedIntensity', 'rawIntensity', 'intensitySubRaw']} 
         xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key,
                                                         key_deps=key_deps)      
         self.plot_tof(self.ax, xdata_key=xdata_key, ydata_key=ydata_key,
@@ -560,8 +565,9 @@ class ViewPes(View):
                   fontsize_ref=6, export=False, show_xlabel=True, show_ylabel=True, size=None):
         self._single_fig_output(size=size)
         # set data keys
-        key_deps = {'ebin': ['jIntensity', 'jIntensitySub'],
-                    'ebinGauged': ['jIntensityGauged', 'jIntensityGaugedSub']} 
+        key_deps = {'ebin': ['jIntensity', 'jIntensitySub', 'jIntensitySmoothed'],
+                    'ebinGauged': ['jIntensityGauged', 'jIntensityGaugedSub'],
+                    'ebinCalibrated': ['jIntensitySmoothedCalibrated']} 
         xdata_key, ydata_key = self._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key,
                                                         key_deps=key_deps)         
         self.plot_ebin(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim,
@@ -917,7 +923,7 @@ class ViewPt(ViewPes):
         if 'Sub' in self.spec.mdata.data('fitYdataKey'):
             ydata_key = 'jIntensitySub'
         else:
-            ydata_key = 'jIntensity'
+            ydata_key = 'jIntensitySmoothed'
         self._single_fig_output(size=size)
         plot_method[xdata_key](self.ax, xdata_key=xdata_key, ydata_key=ydata_key, xlim=xlim,
                                xlim_scale=xlim_scale, n_xticks=n_xticks)

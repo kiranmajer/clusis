@@ -78,7 +78,7 @@ class Cfg():
         Mdata reference: 'key': [type|value list, obligatory]
         Only keys listed are allowed in mdata. Should prevent mdata from being tainted with typos.
         '''
-        self.wavelengths = [157.63e-9, 193.35e-9, 248.4e-9, 308e-9, 590e-9, 800e-9] # 157.63e-9, 193.35e-9, 248.4e-9
+        self.wavelengths = [157.63e-9, 193.35e-9, 248.4e-9, 266e-9, 308e-9, 590e-9, 800e-9] # 157.63e-9, 193.35e-9, 248.4e-9
         'When modified -> increase mdata_version!'
         self.mdata_version = 0.3
         self.mdata_ref = {'spec': {'datFile': [str, True],
@@ -127,7 +127,7 @@ class Cfg():
                                      'electronAffinity': [float, False],
                                      'energyOffset': [float, True],
                                      'energyOffsetImport': [float, True],
-                                     'flightLength': [[1.6], True],
+                                     'flightLength': [[1.605], True],
                                      'flightLengthScale': [float, True],
                                      'flightLengthScaleImport': [float, True],
                                      'gaugeRef': [str, False],
@@ -146,7 +146,7 @@ class Cfg():
                                        'fitPar0': [np.ndarray, False],
                                        'fitPeakPos': [list, False],
                                        'fitXdataKey': [['tof'], False],
-                                       'fitYdataKey': [['intensity', 'intensitySub'], False]
+                                       'fitYdataKey': [['intensity', 'intensitySub', 'smoothedIntensity'], False]
                                        },
                           'specPeWater': {'fitData': [dict, False],
 #                                           fitData dict should have following structure:
@@ -186,7 +186,7 @@ class Cfg():
         ''' Values used when importing legacy data'''
         self.defaults = {'casi': {'pes': {'energyOffset': 0,
                                           'energyOffsetImport': 0,
-                                          'flightLength': 1.6,
+                                          'flightLength': 1.605,
                                           'flightLengthScale': 1.0,
                                           'flightLengthScaleImport': 1.0,
                                           'mdataVersion': self.mdata_version,
@@ -201,7 +201,8 @@ class Cfg():
                                           },
                                   'generic': {'mdataVersion': self.mdata_version
                                               },
-                                  }
+                                  },
+                         
                          }       
         
         
@@ -279,6 +280,15 @@ class Cfg():
                                     (2.93937, 0.47, 0.01),
                                     (3.37942, 0.27, 0.01), 
                                     (3.79843, 1.14, 0.001)
+                                    ],
+                           266e-9: [(2.12510, 1.00, 0.01), # changed to new ea value
+                                    (2.22130, 0.91, 0.01),
+                                    (2.88636, 0.06, 0.01),
+                                    (2.93937, 0.25, 0.01),
+                                    (3.37942, 0.22, 0.01), # exchanged with lower level for better overall fit
+                                    (3.79843, 1.05, 0.001),
+                                    (4.04708, 1.05, 0.001),
+                                    (4.42705, 0.57, 0.001)
                                     ],
                            248.4e-9: [(2.12510, 1.00, 0.01), # changed to new ea value
                                       (2.22130, 0.91, 0.01),

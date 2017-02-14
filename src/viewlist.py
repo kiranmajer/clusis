@@ -172,7 +172,7 @@ class ViewPesList(ViewList):
         
     def _show_ebin(self, spec, ax, xdata_key='auto', ydata_key='auto', xlim=['auto', 'auto'],
                    xlim_scale=None, n_xticks=None, show_mdata=None):
-        key_deps = {'ebin': ['jIntensity', 'jIntensitySub'],
+        key_deps = {'ebin': ['jIntensity', 'jIntensitySub', 'jIntensitySmoothed'],
                     'ebinGauged': ['jIntensityGauged', 'jIntensityGaugedSub']} 
         xdata_key, ydata_key = spec._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key,
                                                         key_deps=key_deps)         

@@ -1,11 +1,19 @@
 import numpy as np
 from hashlib import sha1
-from os.path import splitext
+from os.path import splitext,abspath
 from os import stat
 
 class CasiNewData():
     def __init__(self, datafile_path):
-        self.xdata, self.ydata = self.read_data(datafile_path)
+        self.xdata, self.ydata = self.read_data(self.datafile_path)
+        self.metadata = {'datFileOrig': abspath(datafile_path),
+                         'tags': [],
+                         'systemTags': [],
+                         'userTags': [],
+                         'evalTags': [],
+                         'machine': 'casi',
+                         'delayState': {},
+                         'info': ''}
 
 
     def read_data(self, datafile_path):

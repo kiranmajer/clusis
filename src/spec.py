@@ -125,6 +125,7 @@ class Spec(object):
     def sg_smooth_intensity(self, int_key='intensity', new_int_key='smoothedIntensity', window_size=231,
                             order=4):
         self.ydata[new_int_key] = savitzky_golay(self.ydata[int_key], window_size=window_size, order=order)
+        # TODO: add system tag 'smoothed'?
         
         
     def calc_spec_data(self):
@@ -463,7 +464,8 @@ class SpecPePt(SpecPe):
 #        return fitValues
 
 
-    def __fit_multi_gauss_trans(self, xdata_key, ydata_key, peakParRef, Eoff, toff, lscale, rel_y_min, cutoff, constrain_par, constrain):
+    def __fit_multi_gauss_trans(self, xdata_key, ydata_key, peakParRef, Eoff, toff, lscale,
+                                rel_y_min, cutoff, constrain_par, constrain):
         xdata = self.xdata[xdata_key]
         ydata = self.ydata[ydata_key]
         constrain_par_map = {'lscale': -1, 'toff': -2,'Eoff': -3}
@@ -520,8 +522,8 @@ class SpecPePt(SpecPe):
             ydata_key = 'intensity'
         if peakpar_ref is None:
             peakpar_ref = self.cfg.pt_peakpar[self.mdata.data('waveLength')]
-        fitValues = self.__fit_multi_gauss_trans(xdata_key, ydata_key, peakpar_ref, Eoff, toff, lscale, rel_y_min, cutoff,
-                                                  constrain_par, constrain)
+        fitValues = self.__fit_multi_gauss_trans(xdata_key, ydata_key, peakpar_ref, Eoff, toff, lscale,
+                                                 rel_y_min, cutoff, constrain_par, constrain)
         self.mdata.update(fitValues)
         self.mdata.add_tag('fitted', tagkey='systemTags')
         

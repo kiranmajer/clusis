@@ -3,6 +3,7 @@ from legacyData import LegacyData
 from shutil import copy2
 from traceback import print_tb
 from sys import exc_info
+from legacyDataNew import LegacyDataNew 
 #import config
 #import mdata
 #import pickle
@@ -88,7 +89,7 @@ def ls_recursive(rootdir, suffix='.dat'):
     return fileList
 
  
-def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filename_mdata=False):
+def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, data_type='new', prefer_filename_mdata=False):
     '''Build a list, so we can work with lists only'''
     datFileList = []
     if type(datFiles) is list:
@@ -114,7 +115,10 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
         print('\n######################')
         print('Importing: '+datFile+' with ', commonMdata)
         try:
-            mi = LegacyData(datFile, cfg, spectype, commonMdata, prefer_filename_mdata=prefer_filename_mdata)
+            if data_type == 'new':
+                mi = LegacyDataNew(datFile, cfg, spectype, commonMdata, prefer_filename_mdata=prefer_filename_mdata)
+            else:
+                mi = LegacyData(datFile, cfg, spectype, commonMdata, prefer_filename_mdata=prefer_filename_mdata)
         except Exception as e:
             print('LegacyData creation failed:', e)
             failedImports.append([datFile, 'LegacyData creation failed: {}'.format(e)])
