@@ -483,7 +483,7 @@ class SpecPePt(SpecPe):
                      'fitConstrains': {constrain_par: constrain},
                      'fitCutoff': cutoff}
         xcenter = peakParRef[0][0]
-        yscale = self.__get_y_scale(self.xdata['ebin'], self.ydata['jIntensity'], xcenter, .6) # better use actual intensity values
+        yscale = self.__get_y_scale(self.xdata['ebin'], self.ydata['jIntensity'], xcenter, 1) # better use actual intensity values
         fitValues['fitPar0'] = self.__fit_par0_trans(peakPar, yscale, Eoff, toff, lscale)
         try:
             p, covar, info, mess, ierr = leastsq(self.__err_multi_gauss_trans, fitValues['fitPar0'], 
@@ -569,6 +569,14 @@ class SpecPePt(SpecPe):
                    cutoff=cutoff,
                    peakpar_ref=None)
 
+    def calc_calibrated_spectra(self):
+        lscale=self.mdata.data('fitPar')[-1]
+        Eoff=self.mdata.data('fitPar')[-3]
+        toff=self.mdata.data('fitPar')[-2]
+        self._calc_time_data('tofCalibrated', lscale=lscale, Eoff=Eoff, toff=toff)
+        self._calc_jacoby_intensity(new_key='jIntensitySmoothed', intensity_key='smoothedIntensity')
+        self._calc_jacoby_intensity('jIntensitySmoothedCalibrated', 'jIntensitySmoothed', 'tofCalibrated')
+        self._calc_ebin('ebinCalibrated', 'tofCalibrated')
 
 
 class SpecPeIr(SpecPePt):
