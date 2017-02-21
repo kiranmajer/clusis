@@ -24,18 +24,18 @@ class View(object):
 #                 self.fig.show()
 #             except Exception:
 #                 del self.fig
-#         if size:
-#             'TODO: presets are mere personal. For a general approach probably not suitable.'
-#             presets = {'p1': [14, 14*3/7],
-#                        'p2': [7, 7*5/7],
-#                        'p3': [4.8, 4.8*5/6]}
-#             if isinstance(size, str) and size in presets.keys():
-#                 size = presets[size]
-#             else:
-#                 raise ValueError('size must be either a list [width, height] or one of the following presets: '.format(list(presets.keys())))
-#             w = size[0]/2.54
-#             h = size[1]/2.54
-#             size = (w,h)
+        if size:
+            'TODO: presets are mere personal. For a general approach probably not suitable.'
+            presets = {'p1': [14, 14*3/7],
+                       'p2': [7, 7*5/7],
+                       'p3': [4.8, 4.8*5/6]}
+            if isinstance(size, str) and size in presets.keys():
+                size = presets[size]
+            else:
+                raise ValueError('size must be either a list [width, height] or one of the following presets: '.format(list(presets.keys())))
+            w = size[0]/2.54
+            h = size[1]/2.54
+            size = (w,h)
                 
         if hasattr(self, 'fig'):      
             self.ax.lines = []
@@ -1211,9 +1211,10 @@ class ViewWater(ViewPes):
                              fit_xdata_key=self.spec.mdata.data('fitData')[fit_id]['xdataKey'])
         if show_ylabel:
             self.ax.set_ylabel('Intensity (a.u.)', fontsize=fontsize_label)
-        self.ax.tick_params(labelsize=fontsize_label)        
-        self._addtext_file_id(self.ax, fontsize=fontsize_ref)
-        self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fontsize=fontsize_ref)
+        self.ax.tick_params(labelsize=fontsize_label)
+        if fontsize_ref > 0:        
+            self._addtext_file_id(self.ax, fontsize=fontsize_ref)
+            self._addtext_statusmarker(self.ax, xdata_key=xdata_key, ydata_key=ydata_key, fontsize=fontsize_ref)
         if show_ytics:
             self.ax.yaxis.set_major_locator(plt.AutoLocator())
         else:
