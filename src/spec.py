@@ -369,7 +369,7 @@ class SpecPePt(SpecPe):
         l = [i for p in peakPar if p[0] for i in [p[1]*yscale,p[2]]]
         #l = [i for p in peakPar if p[0] for i in [self.jtrans_inv(p[1]*yscale, np.sqrt(self._pFactor/(self._hv-p[0]))),p[2]]]
         l.extend([Eoff, toff, lscale])
-        #print(l)
+        print(l)
         return np.array(l)
     
     
@@ -436,8 +436,10 @@ class SpecPePt(SpecPe):
     def __err_multi_gauss_trans(self, p,t,y,peak_pos, constrain_par, constrain):
         c_par = constrain_par # -1: lscale, -2: toff, -3: Eoff
         c = constrain
-        if c[0]<p[c_par]<c[1]: # only allow fits with toff (47-5)ns +- 5ns
+        amplitudes = p[:-3][::2]
+        if c[0]<p[c_par]<c[1] and (amplitudes > 0).all(): # only allow fits with toff (47-5)ns +- 5ns
         #if 1.0<p[-1]<1.007: # limit effective flight length to a maximum +0.007% 
+            #print(amplitudes)
             return self._multi_gauss_trans(t, peak_pos, p)-y
         else:
             return 1e6

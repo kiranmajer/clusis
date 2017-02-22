@@ -105,7 +105,7 @@ class ViewList(object):
         
     def _show_tof(self, spec, ax, xdata_key='auto', ydata_key='auto', time_unit=1e-6,
                   xlim=['auto', 'auto'], xlim_scale=None, n_xticks=None, show_mdata=None):
-        key_deps = {'tof': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'],
+        key_deps = {'tof': ['intensity', 'smoothedIntensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw'],
                     'tofGauged': ['intensity', 'intensitySub', 'rawIntensity', 'intensitySubRaw']} 
         xdata_key, ydata_key = spec._auto_key_selection(xdata_key=xdata_key, ydata_key=ydata_key, key_deps=key_deps)      
         spec.view.plot_tof(ax, xdata_key=xdata_key, ydata_key=ydata_key, time_unit=time_unit, 
