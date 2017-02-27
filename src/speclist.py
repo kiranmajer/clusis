@@ -87,7 +87,7 @@ class SpecList(object):
             del cs
             
     def _export(self, fname='export.pdf', export_dir=os.path.expanduser('~'), size='p1h',
-                figure=None, twin_axes=True, xy_labels=False):
+                figure=None, twin_axes=True, xy_labels=False, margins=None):
         if export_dir.startswith('~'):
             export_dir = os.path.expanduser(export_dir)
         f = os.path.join(export_dir, fname)
@@ -106,7 +106,10 @@ class SpecList(object):
             figure = self.fig
         figure.set_size_inches(w,h)
         'TODO: hard coded margins are not a good idea.'
-        if twin_axes:
+        if margins:
+            figure.subplots_adjust(left=margins[3]/size[0], bottom=margins[2]/size[1],
+                                   right=1-margins[1]/size[0], top=1-margins[0]/size[1])
+        elif twin_axes:
             figure.subplots_adjust(left=1.3/size[0], bottom=0.8/size[1],
                                    right=1-0.15/size[0], top=1-0.85/size[1])
         elif xy_labels: # size == presets['p2']:
@@ -715,9 +718,9 @@ class SpecPeWaterFitList(SpecPeWaterList):
                            color=None, alpha=1.0, markeredgecolor='black',
                            markertype_comp_data=None, markersize_comp_data=None,
                            fade_color=False,
-                           color_comp_data=None, show_own_data_legend=True,
+                           color_comp_data=None, show_legend=True, show_own_data_legend=True,
                            show_sigma=False, generic_legend_labels=False,
-                           show_fit_results=True, add_slopes=None, hw_data=None):
+                           show_fit_results=True, add_slopes=None, hw_data=None, margins=None):
         
         fit_id = self._eval_fit_id()
         # get linear parameters depending on water type
@@ -815,7 +818,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
             ax2.axis['top'].label.set_fontsize(fontsize_label)
             ax2.axis['top'].major_ticklabels.set_fontsize(fontsize_label)
             ax2.axis["right"].major_ticklabels.set_visible(False)
-            ax2.grid(b=True)
+            ax2.grid(b=True, color='grey', linestyle=':', linewidth=.5)
             # write fit values
             if show_fit_results:
                 if len(fit_par) > 0:
@@ -876,8 +879,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
                 c = cutoff**(-1/3)            
             for par_set in fit_par:
                 lin_fit = np.poly1d(par_set)
-                ax.plot([xlim[0], c], lin_fit([xlim[0], c]), '-', color='grey')
-                ax.plot([c, xlim[1]], lin_fit([c, xlim[1]]), '--', color='grey')
+                ax.plot([xlim[0], c], lin_fit([xlim[0], c]), '-', color='grey', lw=.5)
+                ax.plot([c, xlim[1]], lin_fit([c, xlim[1]]), '--', color='grey', lw=.5)
             # plot comparison data
             if comp_data is not None:
                 idx = 0
@@ -919,7 +922,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
                                    markersize=markersize_comp_data, color=color_comp_data[idx])
                     ext_data.append(eds)
                     idx += 1
-                ax.legend(handles=ext_data, loc=0, fontsize=fontsize_label, numpoints=1)
+                if show_legend:
+                    ax.legend(handles=ext_data, loc=0, fontsize=fontsize_label, numpoints=1)
                 
             # add slopes for comparison
             slope_legend = []
@@ -954,7 +958,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
             if fname is None:
                 fig.show()
             else:
-                self._export(fname, export_dir, size, figure=fig)
+                self._export(fname, export_dir, size, figure=fig, xy_labels=True, margins=margins)
                  
                           
         # main method
