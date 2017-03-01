@@ -143,7 +143,8 @@ class SpecList(object):
             
     def export_single_plots(self, plot_fct, export_dir='~/test', latex_fname=None, overwrite=True, 
                             linewidth=.8, layout=[8,4], size='latex', latex=True, firstpage_offset=0,
-                            xlabel_str='Binding energy (eV)', skip_plots=False, **keywords):
+                            margins=None, xlabel_str='Binding energy (eV)', skip_plots=False,
+                            **keywords):
         export_fnames = []
         total_plots = len(self.pfile_list)
         #print('number of spec to export:', total_plots)
@@ -169,7 +170,7 @@ class SpecList(object):
             if not skip_plots:
                 print('Exporting {} ...'.format(fname))
                 cs.view.export(fname=fname, export_dir=export_dir, size=size, overwrite=overwrite,
-                               linewidth=linewidth)
+                               linewidth=linewidth, margins=margins)
                 plt.close(plt.gcf())
             export_fnames.append(fname)
         #print('number of fnames to export:', len(export_fnames))
@@ -226,7 +227,7 @@ class SpecList(object):
                                 label_col = col_idx
                                 use_raisebox = True
                             else:
-                                lf.write('\\makebox[{}cm]{{}}\n'.format(page_width/col))
+                                lf.write('\\makebox[{}cm]{{}}\n'.format(size[0]))
                             col_idx += 1
                             plotidx += 1
                         row_idx += 1
@@ -236,7 +237,7 @@ class SpecList(object):
                                               plotcount%plotidx == 0):
                         label_col = col
                     for c in range(label_col):
-                        lf.write('\\makebox[{}cm]{{\\textsf{{\\scriptsize {}}}}}\n'.format(page_width/col, xlabel_str))
+                        lf.write('\\makebox[{}cm]{{\\textsf{{\\scriptsize {}}}}}\n'.format(size[0], xlabel_str))
                     #lf.write('\\end{center}\n')
                     pagecount += 1
                     fnames = export_fnames[plotcount:]
@@ -812,13 +813,18 @@ class SpecPeWaterFitList(SpecPeWaterList):
             ax.set_ylim(ylim[0], ylim[1])
             # setup upper axis
             ax2 = ax.twin()
-            ax2.set_xticks(np.array(ax2_ticks)**(-1/3))
-            ax2.set_xticklabels([str(t) for t in ax2_ticks])
+            x2_ticks_list = np.array(ax2_ticks)**(-1/3)
+            x2_ticklabel_list = [str(t) for t in ax2_ticks]
+            if xlim[0] < 0:
+                x2_ticks_list = np.append(x2_ticks_list, 0)
+                x2_ticklabel_list.append('bulk')
+            ax2.set_xticks(x2_ticks_list)
+            ax2.set_xticklabels(x2_ticklabel_list)
             ax2.set_xlabel('number of water molecules (n)')
             ax2.axis['top'].label.set_fontsize(fontsize_label)
             ax2.axis['top'].major_ticklabels.set_fontsize(fontsize_label)
             ax2.axis["right"].major_ticklabels.set_visible(False)
-            ax2.grid(b=True, color='grey', linestyle=':', linewidth=.5)
+            ax2.grid(b=True, color='black', linestyle=':', linewidth=.1)
             # write fit values
             if show_fit_results:
                 if len(fit_par) > 0:
@@ -917,9 +923,14 @@ class SpecPeWaterFitList(SpecPeWaterList):
                              'barnett_interior': 'interior (Landman)',
                              'barnett_diffuse': 'diffuse (Landman)',
                              }
-                    eds, = ax.plot(peak_set[0], -1*peak_set[1], markertype_comp_data[idx],
-                                   label=label[key],
-                                   markersize=markersize_comp_data, color=color_comp_data[idx])
+                    if key == 'water_jets' and xlim[0] == 0:
+                        eds, = ax.plot(peak_set[0], -1*peak_set[1], markertype_comp_data[idx],
+                                       label=label[key], markersize=markersize_comp_data+1, 
+                                       color=color_comp_data[idx])
+                    else:
+                        eds, = ax.plot(peak_set[0], -1*peak_set[1], markertype_comp_data[idx],
+                                       label=label[key], markersize=markersize_comp_data,
+                                       color=color_comp_data[idx])
                     ext_data.append(eds)
                     idx += 1
                 if show_legend:
@@ -939,8 +950,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     vde1=vde0 + ir1*slope[0]
                     vde2=vde0 + ir2*slope[0]
                     eds, = ax.plot([ir0, ir1], [vde0, vde1], '-', color=slope[2],
-                                   label='A={}'.format(slope[0]))
-                    ax.plot([ir1, ir2], [vde1, vde2], '--', color=slope[2])
+                                   label='A={}'.format(slope[0]), lw=1)
+                    ax.plot([ir1, ir2], [vde1, vde2], '--', color=slope[2], lw=1)
                     if slope[0] not in slope_legend_ref:
                         slope_legend_ref.append(slope[0])
                         slope_legend.append(eds)
@@ -1079,7 +1090,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                             size=[20,14], fontsize_label=12, markersize=6, xlim=[0,0.42],
                             ylim=[0,1.2], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
                             color=None, show_legend=True, n_xticks=None, sfactor=1,
-                            comp_legend_loc=0):
+                            comp_legend_loc=0, margins=None):
         
         fit_id = self._eval_fit_id()
         # TODO: hard coded == bad idea
@@ -1157,7 +1168,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         ax2.axis['top'].label.set_fontsize(fontsize_label)
         ax2.axis['top'].major_ticklabels.set_fontsize(fontsize_label)
         ax2.axis["right"].major_ticklabels.set_visible(False)
-        ax2.grid(b=True)
+        ax2.grid(b=True, color='black', linestyle=':', linewidth=.1)
         # plot data
         own_data = []
         for k,v in sorted(plot_data.items()):
@@ -1222,7 +1233,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         if fname is None:
             fig.show()
         else:
-            self._export(fname=fname, export_dir=export_dir, size=size, figure=fig)
+            self._export(fname=fname, export_dir=export_dir, size=size, figure=fig, margins=margins)
  
     
     def plot_temp_peakpos(self, iso_keys=['1a', '1b'], xlim=[0, 425], fname_prefix=None,
@@ -1758,7 +1769,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
             
     def export_single_plots(self, plot_fct, export_dir='~/test', latex_fname=None,
                             overwrite=True, linewidth=.8, layout=[8,4], size='latex',
-                            latex=True, firstpage_offset=0,
+                            latex=True, firstpage_offset=0, margins=None,
                             xlabel_str='Binding energy (eV)', skip_plots=False,
                             **keywords):
         '''Specialized version using fit_id'''
@@ -1766,6 +1777,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                                      latex_fname=latex_fname, overwrite=overwrite,
                                      linewidth=linewidth, layout=layout, size=size,
                                      latex=latex, firstpage_offset=firstpage_offset,
+                                     margins=margins,
                                      xlabel_str=xlabel_str, skip_plots=skip_plots,
                                      fit_id=self.fit_id, **keywords)  
 

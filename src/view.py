@@ -388,7 +388,7 @@ class View(object):
 
 
     def export(self, fname='export.pdf', export_dir='~/test', size=[20,14], overwrite=False,
-               linewidth=.8):
+               linewidth=.8, margins=None):
         'validate export dir'
         'TODO: put this in helper library for reuse.'
         if export_dir.startswith('~'):
@@ -407,18 +407,26 @@ class View(object):
 #         if figure is None:
 #             figure = self.fig
         self.fig.set_size_inches(w,h)
-        'TODO: some of these margins are font size related, so they need to be adapted accordingly'
-        t = 0.2/size[1]
-        r = 0.3/size[0]
-        if self.ax.get_xlabel():
-            b = 0.9/size[1] # 0.9 fits for font size 8
+        if margins:
+            t = margins[0]/size[1]
+            r = margins[1]/size[0]
+            b = margins[2]/size[1]
+            l = margins[3]/size[0]
+            #print(t,r,b,l)
         else:
-            b = 0.4/size[1]
-        if self.ax.get_ylabel():
-            l = 0.4/size[0] # 0.4 dito
-        else:
-            l = 0.15/size[0]
-            r = 0.15/size[0]
+            'TODO: some of these margins are font size related, so they need to be adapted accordingly'
+            t = 0.2/size[1]
+            r = 0.3/size[0]
+            if self.ax.get_xlabel():
+                b = 0.9/size[1] # 0.9 fits for font size 8
+            else:
+                b = 0.4/size[1]
+            if self.ax.get_ylabel():
+                l = 0.4/size[0] # 0.4 dito
+            else:
+                l = 0.15/size[0]
+                r = 0.15/size[0]
+        
         self.fig.subplots_adjust(left=l, bottom=b, right=1-r, top=1-t)
 
         self.ax.yaxis.labelpad = 3
