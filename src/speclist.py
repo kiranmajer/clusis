@@ -930,7 +930,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     else:
                         eds, = ax.plot(peak_set[0], -1*peak_set[1], markertype_comp_data[idx],
                                        label=label[key], markersize=markersize_comp_data,
-                                       color=color_comp_data[idx])
+                                       color=color_comp_data[idx], mfc='none', markeredgewidth=.1)
                     ext_data.append(eds)
                     idx += 1
                 if show_legend:
