@@ -1086,7 +1086,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
 
     def compare_peak_widths(self, comp_data=None, color_comp_data=None, fname=None,
                             export_dir=os.path.expanduser('~'), fade_color=False,
-                            markeredgecolor='black', add_own_data_legend=False,
+                            markeredgecolor='black', markeredgewidth=.1, add_own_data_legend=False,
                             size=[20,14], fontsize_label=12, markersize=6, xlim=[0,0.42],
                             ylim=[0,1.2], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
                             color=None, show_legend=True, n_xticks=None, sfactor=1,
@@ -1176,10 +1176,12 @@ class SpecPeWaterFitList(SpecPeWaterList):
             "TODO: remove scale factor later."
             if k == 's_l':
                 ods, = ax.plot(xdata, v[1]*sfactor, 's', label=labels[k], markersize=markersize,
-                               color=color[k], markeredgecolor=markeredgecolor_dict[k])
+                               color=color[k], markeredgecolor=markeredgecolor_dict[k],
+                               markeredgewidth=markeredgewidth)
             else:
                 ods, = ax.plot(xdata, v[1], 's', label=labels[k], markersize=markersize,
-                               color=color[k], markeredgecolor=markeredgecolor_dict[k])
+                               color=color[k], markeredgecolor=markeredgecolor_dict[k],
+                               markeredgewidth=markeredgewidth)
             
             own_data.append(ods)
 # linear fits make no sense here, its something asymptotic.
