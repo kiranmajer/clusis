@@ -718,7 +718,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                            ylim=[-4,0], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
                            color=None, alpha=1.0, markeredgecolor='black',
                            markertype_comp_data=None, markersize_comp_data=None,
-                           fade_color=False,
+                           fade_color=False, comp_data_hollow_marker=False,
                            color_comp_data=None, show_legend=True, show_own_data_legend=True,
                            show_sigma=False, generic_legend_labels=False,
                            show_fit_results=True, add_slopes=None, hw_data=None, margins=None):
@@ -796,7 +796,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
                          
         def plot_comp(plot_data, fit_par, fit_res, cutoff, fontsize_label, markersize,
                       xlim, ylim, ax2_ticks, markertype_comp_data, markersize_comp_data,
-                      comp_data=None, add_slopes=None, hw_plot_data=None):
+                      comp_data=None, comp_data_hollow_marker=False, add_slopes=None,
+                      hw_plot_data=None):
             fig = plt.figure()
             # setup lower axis
             ax = host_subplot(111, axes_class=AA.Axes)
@@ -927,10 +928,15 @@ class SpecPeWaterFitList(SpecPeWaterList):
                         eds, = ax.plot(peak_set[0], -1*peak_set[1], markertype_comp_data[idx],
                                        label=label[key], markersize=markersize_comp_data+1, 
                                        color=color_comp_data[idx])
-                    else:
+                    elif comp_data_hollow_marker:
                         eds, = ax.plot(peak_set[0], -1*peak_set[1], markertype_comp_data[idx],
                                        label=label[key], markersize=markersize_comp_data,
                                        color=color_comp_data[idx], mfc='none', markeredgewidth=.1)
+                    else:
+                        eds, = ax.plot(peak_set[0], -1*peak_set[1], markertype_comp_data[idx],
+                                       label=label[key], markersize=markersize_comp_data,
+                                       color=color_comp_data[idx], markeredgewidth=.1,
+                                       markeredgecolor='black')
                     ext_data.append(eds)
                     idx += 1
                 if show_legend:
