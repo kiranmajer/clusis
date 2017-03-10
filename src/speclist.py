@@ -1179,6 +1179,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
         ax2.grid(b=True, color='black', linestyle=':', linewidth=.1)
         # plot data
         own_data = []
+        fit_par = []
+        fit_res = []
         for k,v in sorted(plot_data.items()):
             xdata = v[0]**(-1/3)
             "TODO: remove scale factor later."
@@ -1192,6 +1194,13 @@ class SpecPeWaterFitList(SpecPeWaterList):
                                markeredgewidth=markeredgewidth)
             
             own_data.append(ods)
+            if len(v[1]) > 2: # use at least 3 points for linear fit
+                fitpar, cov = np.polyfit(v[1], xdata, 1, cov=True)
+                fit_par.append(fitpar)
+                res=np.sqrt(np.diag(cov))
+                fit_res.append(res)
+            # make linear extrapolation
+            
 # linear fits make no sense here, its something asymptotic.
 #             # linear fit
 #             if len(v[0]) > 2 and np.abs(v[0][0] - v[0][-1]) > 20: 
@@ -1244,6 +1253,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
             fig.show()
         else:
             self._export(fname=fname, export_dir=export_dir, size=size, figure=fig, margins=margins)
+        
+        print(fit_par, fit_res)
  
     
     def plot_temp_peakpos(self, iso_keys=['1a', '1b'], xlim=[0, 425], fname_prefix=None,
