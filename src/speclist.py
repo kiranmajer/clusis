@@ -1098,7 +1098,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                             size=[20,14], fontsize_label=12, markersize=6, xlim=[0,0.42],
                             ylim=[0,1.2], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
                             color=None, show_legend=True, n_xticks=None, sfactor=1,
-                            comp_legend_loc=0, margins=None):
+                            comp_legend_loc=0, margins=None, cutoff=None, show_fits=False):
         
         fit_id = self._eval_fit_id()
         # TODO: hard coded == bad idea
@@ -1108,6 +1108,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                        'red': '#ffbfbf'}
         
         widths = {1: [], 2: [], 3: [], 4: []}
+        widths_all = []
         width_pars_s_g = []
         width_pars_s_l = []
         for s in self.dbanswer:
@@ -1119,6 +1120,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
             peak_n = (len(cs.mdata.data('fitData')[fit_id]['par']) -2)/2
             #if 0.01 < width < 1.5:
             widths[peak_n].append([csize, width])
+            widths_all.append([csize, width])
             width_pars_s_g.append([csize, width_pars[0]])
             width_pars_s_l.append([csize, width_pars[1]])
             del cs
@@ -1194,12 +1196,30 @@ class SpecPeWaterFitList(SpecPeWaterList):
                                markeredgewidth=markeredgewidth)
             
             own_data.append(ods)
-            if len(v[1]) > 2: # use at least 3 points for linear fit
-                fitpar, cov = np.polyfit(v[1], xdata, 1, cov=True)
+        
+        # make linear extrapolation to the data
+        for v in [np.transpose(widths_all), plot_data['s_g'], plot_data['s_l']]:
+            xdata = v[0]**(-1/3)
+            xdata_fit = np.array(xdata)
+            ydata_fit = np.array(v[1])
+            if cutoff:
+                b = xdata <= cutoff**(-1/3)
+                xdata_fit = xdata[b]
+                ydata_fit = v[1][b]
+            if len(ydata_fit) > 2: # use at least 3 points for linear fit
+                fitpar, cov = np.polyfit(xdata_fit, ydata_fit, 1, cov=True)
                 fit_par.append(fitpar)
                 res=np.sqrt(np.diag(cov))
                 fit_res.append(res)
-            # make linear extrapolation
+        # plot fits
+        if show_fits:
+            c = 0.5
+            if cutoff:
+                c = cutoff**(-1/3)            
+            for par_set in fit_par:
+                lin_fit = np.poly1d(par_set)
+                ax.plot([xlim[0], c], lin_fit([xlim[0], c]), '-', color='grey', lw=.5)
+                ax.plot([c, xlim[1]], lin_fit([c, xlim[1]]), '--', color='grey', lw=.5)
             
 # linear fits make no sense here, its something asymptotic.
 #             # linear fit
@@ -1254,7 +1274,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         else:
             self._export(fname=fname, export_dir=export_dir, size=size, figure=fig, margins=margins)
         
-        print(fit_par, fit_res)
+        return fit_par, fit_res
  
     
     def plot_temp_peakpos(self, iso_keys=['1a', '1b'], xlim=[0, 425], fname_prefix=None,
