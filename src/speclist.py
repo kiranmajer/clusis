@@ -940,7 +940,18 @@ class SpecPeWaterFitList(SpecPeWaterList):
                                        markeredgecolor='black')
                     ext_data.append(eds)
                     idx += 1
-                if show_legend:
+                if show_legend and show_legend in ['r', 'b']:
+                    lpar = {'fig_hscale':{'r': 2.25, 'b': 2},
+                            'margins': {'r': [.08, .07, .66, .98], # [left, bottom, right, top]
+                                        'b': [.08, .48, .98, .98]},
+                            'legend_anchor': {'r': (1.04, 1), 'b': (.48, -.13)},
+                            'legend_loc': {'r':2, 'b': 9},
+                            'legend_col': {'r': 1, 'b': 2}
+                            }
+                    leg = ax.legend(handles=ext_data, bbox_to_anchor=lpar['legend_anchor'][show_legend],
+                                    loc=lpar['legend_loc'][show_legend], borderaxespad=0.,
+                                    ncol=lpar['legend_col'][show_legend], fontsize=fontsize_label)
+                elif show_legend:
                     ax.legend(handles=ext_data, loc=0, fontsize=fontsize_label, numpoints=1)
                 
             # add slopes for comparison
