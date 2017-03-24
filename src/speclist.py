@@ -874,7 +874,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     idx += 1            
             
             # optionally add legend for our data points
-            if show_own_data_legend and not comp_data:
+            if show_own_data_legend and show_legend in ['r', 'b']:
                 # handles argument requires matplotlib >= 1.4(.2)
                 if hw_data is not None:
                     own_data = hw_own_data
@@ -903,27 +903,35 @@ class SpecPeWaterFitList(SpecPeWaterList):
 #                     else:
 #                         marker='D'
                     # TODO: this is shoulden't be hard coded
-                    label = {'bowen_iso1_origin': 'Isomer I (Bowen)',
-                             'bowen_iso1_stretch': 'Vibrational (Bowen)',
-                             'neumark_iso1': 'Isomer I (Neumark)',
-                             'neumark_iso1_high_press': 'Isomer I [Ne] (Neumark)',
-                             'neumark_iso2': 'Isomer II (Neumark)',
-                             'neumark_iso3': 'Isomer III (Neumark)',
+                    label = {'bowen_iso1_origin': 'Isomer I (Coe et al.)',
+                             'bowen_iso1_stretch': 'Vibrational (Coe et al.)',
+                             'neumark_iso1': 'Isomer I (Verlet et al.)',
+                             'neumark_iso1_high_press': 'Isomer I [Ne] (Young et al.)',
+                             'neumark_iso2': 'Isomer II (Verlet et al.)',
+                             'neumark_iso3': 'Isomer III (Verlet et al.)',
+                             'neumark_iso1_digitized': 'Isomer I (Verlet et al.) [digitized]',
+                             'neumark_iso1_high_press_digitized': 'Isomer I [Ne] (Young et al.) [digitized]',
+                             'neumark_iso2_digitized': 'Isomer II (Verlet et al.) [digitized]',
+                             'neumark_iso3_digitized': 'Isomer III (Verlet et al.) [digitized]',
                              'water_jets': 'Water jets (several)',
                              'bowen_d2o_origin_1fit': 'Isomer I [1 fit] (Bowen)',
                              'bowen_d2o_origin_2fit': 'Isomer I [2 fit] (Bowen)',
                              'bowen_d2o_stretch': 'Vibrational (Bowen)',
-                             'herbert_surface': 'surface (Herbert)',
-                             'herbert_partial': 'part. embeded (Herbert)',
-                             'herbert_cavity': 'Cavity (Herbert)',
-                             'herbert_cavity_aneal': 'Cavity init. (Herbert)',
+                             'herbert_surface': 'surface (Jacobson et al.)',
+                             'herbert_partial': 'part. embedded (Jacobson at al.)',
+                             'herbert_cavity': 'cavity (Jacobson, Herbert)',
+                             'herbert_cavity_aneal': 'cavity init. (Jacobson et al.)',
                              'turi_tb_surface': 'TB surface (Turi)',
                              'turi_tb_interior': 'TB interior (Turi)',
                              'turi_lgs_surface': 'LGS surface (Turi)',
                              'turi_lgs_interior': 'LGS interior (Turi)',
-                             'barnett_surface': 'surface (Landman)',
-                             'barnett_interior': 'interior (Landman)',
-                             'barnett_diffuse': 'diffuse (Landman)',
+                             'barnett_surface': 'surface (Barnett et al.)',
+                             'barnett_interior': 'interior (Barnett et al.)',
+                             'barnett_diffuse': 'diffuse (Barnett et al.)',
+                             'turi_tb_surface_digitized': 'TB surface (Turi) [digitized]',
+                             'turi_tb_interior_digitized': 'TB interior (Turi) [digitized]',
+                             'turi_lgs_surface_digitized': 'LGS surface (Turi) [digitized]',
+                             'turi_lgs_interior_digitized': 'LGS interior (Turi) [digitized]',
                              }
                     if key == 'water_jets' and xlim[0] == 0:
                         eds, = ax.plot(peak_set[0], -1*peak_set[1], markertype_comp_data[idx],
@@ -1098,7 +1106,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
                   markersize=markersize, xlim=xlim, ylim=ylim, ax2_ticks=ax2_ticks,
                   markertype_comp_data=markertype_comp_data,
                   markersize_comp_data=markersize_comp_data,
-                  comp_data=comp_data, add_slopes=add_slopes, slope_lw=slope_lw,
+                  comp_data=comp_data, comp_data_hollow_marker=comp_data_hollow_marker,
+                  add_slopes=add_slopes, slope_lw=slope_lw,
                   hw_plot_data=hw_plot_data)
         return fit_par, fit_res
 
