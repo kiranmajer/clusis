@@ -788,7 +788,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
             color_comp_data = ['indigo', 'red', 'limegreen', 'blue', 'red','orange',
                                'yellow', 'pink', 'blue', 'green', 'yellow']
         if markertype_comp_data == 'theo':
-            markertype_comp_data = ['D','D','D','o','o','o','o','<','<','<','<']
+            markertype_comp_data = ['D','D','D','o','o','o','o','>','>','<','<']
             
         if markeredgecolor == 'same':
             markeredgecolor = color
@@ -917,7 +917,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                              'bowen_d2o_origin_1fit': 'Isomer I [1 fit] (Bowen)',
                              'bowen_d2o_origin_2fit': 'Isomer I [2 fit] (Bowen)',
                              'bowen_d2o_stretch': 'Vibrational (Bowen)',
-                             'herbert_surface': 'surface (Jacobson et al.)',
+                             'herbert_surface': 'surface (Jacobson, Herbert)',
                              'herbert_partial': 'part. embedded (Jacobson, Herbert)',
                              'herbert_cavity': 'cavity (Jacobson, Herbert)',
                              'herbert_cavity_aneal': 'cavity init. (Jacobson, Herbert)',
@@ -952,13 +952,14 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     lpar = {'fig_hscale':{'r': 2.25, 'b': 2},
                             'margins': {'r': [.08, .07, .66, .98], # [left, bottom, right, top]
                                         'b': [.08, .48, .98, .98]},
-                            'legend_anchor': {'r': (1.04, 1), 'b': (.48, -.13)},
+                            'legend_anchor': {'r': (1.04, 1), 'b': (0.46, -.13)},
                             'legend_loc': {'r':2, 'b': 9},
                             'legend_col': {'r': 1, 'b': 2}
                             }
                     leg = ax.legend(handles=ext_data, bbox_to_anchor=lpar['legend_anchor'][show_legend],
                                     loc=lpar['legend_loc'][show_legend], borderaxespad=0.,
-                                    ncol=lpar['legend_col'][show_legend], fontsize=fontsize_label)
+                                    ncol=lpar['legend_col'][show_legend], fontsize=fontsize_label,
+                                    columnspacing=0)
                 elif show_legend:
                     ax.legend(handles=ext_data, loc=0, fontsize=fontsize_label, numpoints=1)
                 
