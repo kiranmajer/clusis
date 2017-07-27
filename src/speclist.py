@@ -874,7 +874,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     idx += 1            
             
             # optionally add legend for our data points
-            if show_own_data_legend and show_legend in ['r', 'b']:
+            if show_own_data_legend and (show_legend in ['r', 'b'] or add_slopes):
                 # handles argument requires matplotlib >= 1.4(.2)
                 if hw_data is not None:
                     own_data = hw_own_data
