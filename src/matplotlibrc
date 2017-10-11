@@ -29,7 +29,9 @@
 # You can also deploy your own backend outside of matplotlib by
 # referring to the module name (which must be in the PYTHONPATH) as
 # 'module://my_backend'
-backend      : Qt5Agg
+backend      : Qt5Agg	# make sure pyqt5 with folowing modules is
+						# available: QtCore, QtGui, QtSvg, QtWidgets
+						# ubuntu might requiere package python3-pyqt5.qtsvg
 
 # If you are using the Qt4Agg backend, you can choose here
 # to use the PyQt4 bindings or the newer PySide bindings to
