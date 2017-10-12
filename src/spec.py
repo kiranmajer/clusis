@@ -271,6 +271,7 @@ class SpecPe(Spec):
         
     def gauge(self, gaugeRef, ignore_wavelength=False):
         gaugeSpec = load.load_pickle(self.cfg, gaugeRef)
+        # make some simple tests for valid data
         if gaugeSpec.mdata.data('specTypeClass') not in ['specPePt']:
             raise ValueError('Gauge reference is not a Pt-spectrum.')
         if not gaugeSpec.mdata.data('waveLength') == self.mdata.data('waveLength') and not ignore_wavelength:
@@ -561,6 +562,28 @@ class SpecPePt(SpecPe):
                    constrain=next(iter(self.mdata.data('fitConstrains').values())),
                    cutoff=cutoff,
                    peakpar_ref=None)
+        
+    
+    def calibrate(self):
+        '''
+        aplies own fit parameters to calculated a calibrated spectrum
+        '''
+        lscale = self.mdata.data('fitPar')[-1]
+        toff = self.mdata.data('fitPar')[-2]
+        Eoff = self.mdata.data('fitPar')[-3]
+        # calc xdata gauged
+        self._calc_time_data(timedata_key='tofGauged', lscale=lscale, Eoff=Eoff, toff=toff)
+        self._calc_ekin(new_key='ekinGauged', timedata_key='tofGauged')  #, lscale=lscale, Eoff=Eoff, toff=toff)
+        self._calc_ebin(new_key='ebinGauged', timedata_key='tofGauged')  #, lscale=lscale, Eoff=Eoff, toff=toff)
+        # calc ydata gauged
+        self._calc_jacoby_intensity(new_key='jIntensityGauged',
+                                    intensity_key='intensity', timedata_key='tofGauged')
+        if 'subtracted' in self.mdata.data('systemTags'):
+            self._calc_jacoby_intensity(new_key='jIntensityGaugedSub',
+                                        intensity_key='intensitySub', timedata_key='tofGauged')
+        self.mdata.add_tag('gauged', 'systemTags')
+        self.commit()
+        self._ea_changed_warning()
 
 
 
