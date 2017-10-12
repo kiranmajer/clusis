@@ -350,7 +350,8 @@ class View(object):
             self.fig.canvas.draw()
         
         
-    def add_plot(self, ax, xdata, ydata, color='blue', linestyle='-', linewidth=.5, file_id=None):
+    def add_plot(self, ax, xdata, ydata, color='blue', linestyle='-', linewidth=.5, file_id=None,
+                 update_fig=False):
 #         if not hasattr(self, 'fig'):
 #             raise ValueError('No active plot. Create one first via show_XXX.')
         if file_id is not None:
@@ -364,7 +365,8 @@ class View(object):
         added_line = ax.plot(xdata, ydata, color=color, linestyle=linestyle, linewidth=linewidth)[0]
         if linestyle in ['--', ':']:
             added_line.set_dashes((1,1))
-        self.fig.canvas.draw()
+        if update_fig:
+            self.fig.canvas.draw()
         
         
     def _scalefactor_equal_area(self, xdata_ref, ydata_ref, xdata, ydata, yoffset):
@@ -774,7 +776,7 @@ class ViewPes(View):
                                self.spec.mdata.data('compSpecs')[csid]['yoffset'],
                                self.spec.mdata.data('compSpecs')[csid]['color'],
                                fontsize_clusterid=fontsize_clusterid)
-            
+        self.fig.canvas.draw()   
         
 
 
