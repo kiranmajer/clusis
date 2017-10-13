@@ -2,5 +2,3 @@
 /.project
 /.pydevproject
 /src/ase/__pycache__
-/.settings/
-/src/matplotlibrc
