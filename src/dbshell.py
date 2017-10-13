@@ -8,10 +8,10 @@ import time
 class Db(object):
     def __init__(self, dbName, cfg):
         #print('__init__: Init Db instance.')
-        self.__dbName = dbName
-        dbFileName = '%s.db' % dbName
+        #self.__dbName = dbName
         self.__cfg = cfg
         self.__dbProps = cfg.db[dbName]
+        dbFileName = '{}_v{}.db'.format(dbName, self.__dbProps['version'])
         self.__dbFile = os.path.join(self.__dbProps['path'], dbFileName)
         'TODO: into config?'        
 #        sqlite3.register_adapter(time.struct_time, self.__timeAdapter)
@@ -25,7 +25,7 @@ class Db(object):
         #print('__del__: Db connection closed.')
         
     def __enter__(self):
-        #print('__enter__: Entering Db instance.')
+        #print('__enter__: Entering Db instance of {}.'.format(self.__dbFile))
         return self
     
     def __exit__(self, exc_type, exc_value, traceback):
@@ -112,12 +112,7 @@ class Db(object):
         return hasSha1
     
     
-    def rebuild_db(self, spectra):
-        '''
-        Basically already implemented over add. Integrate scan pickle dir, build spec list, add.
-        clear tables?
-        check for missing entries? -> consistency check: each table entry has corresponding pickleFile'''
-        pass
+
         
 
     def query(self, specType, clusterBaseUnit=None, clusterBaseUnitNumber=None, clusterBaseUnitNumberRange=None,
@@ -304,6 +299,7 @@ class Db(object):
                 sql += i
             sql = sql.rstrip(' AND ')
         
+        # TODO: move to config
         # build order part
         if order_by in ['recTime', 'trapTemp']:
             pes_order = ' ORDER BY clusterBaseUnit, clusterBaseUnitNumber, {}, datFile'.format(order_by)
@@ -312,6 +308,7 @@ class Db(object):
         
         orderResults = {'pes': pes_order,
                         'ms': ' ORDER BY clusterBaseUnit, recTime, datFile',
+                        'tof': ' ORDER BY clusterBaseUnit, recTime, datFile',
                         'generic': ' ORDER BY recTime, datFile'}
         sql += orderResults[specType]
         
@@ -323,6 +320,7 @@ class Db(object):
         db_cursor.close()
         del db_cursor
         
+        # TODO: move fromating stuff to config or make it more generic
         def print_answer(fetch):
             def format_RecTime(unixtime):
                 return time.strftime('%d.%m.%Y  %H:%M', time.localtime(unixtime))
@@ -381,10 +379,12 @@ class Db(object):
             
             printHead = {'pes': print_head_pes,
                          'ms': print_head_ms,
+                         'tof': print_head_ms,
                          'generic': print_head_generic}
                            
             printData = {'pes': print_data_pes,
                          'ms': print_data_ms,
+                         'tof': print_data_ms,
                          'generic': print_data_generic}
             
             

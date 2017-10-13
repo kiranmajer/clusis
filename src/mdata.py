@@ -1,5 +1,5 @@
 import numpy as np
-import re
+from tools import *
 
 class Mdata(object):
     
@@ -8,6 +8,7 @@ class Mdata(object):
         self.__reference = mdata_ref
         self.__mdata = mdataDict
         self.__systemtags_ref = systemtags_ref
+        self.commit_msgs = {}
     
      
 #    def __key_isvalid(self, key):
@@ -21,9 +22,9 @@ class Mdata(object):
         '''
         Returns a valid value or raises an error.
         '''
-#         print('Starting new validation run.')
-#         print('Checking: ', key, value)
-#         print('type: ', type(value))
+        #print('Starting new validation run.')
+        #print('Checking: ', key, value)
+        #print('type: ', type(value))
         ref = self.__reference
         if ref[key][0] is np.ndarray and type(value) is np.ndarray:
             v = value
@@ -60,25 +61,25 @@ class Mdata(object):
     def check_completeness(self):
         '''
         '''
-        print('Starting mdata check ...')
+        #print('Starting mdata check ...')
         ref = self.__reference
         mdata = self.__mdata
         for k, v in ref.items():
             if v[1]: # obligatory?
-                print('{} is obligatory. Checking value ...'.format(k))
+                #print('{} is obligatory. Checking value ...'.format(k))
                 hasChanged = True
                 while hasChanged:
                     if k in mdata:
                         try:
                             mdata[k] = self.__validate_value(k, mdata[k])
                             hasChanged = False
-                            print('{}: exists and has a valid value.'.format(k))
+                            #print('{}: exists and has a valid value.'.format(k))
                         except:
                             mdata.update(self.__ask_for_key_value(k))
                             hasChanged = True
                             
                     else:
-                        print('Missing obligatory mdata detected: {}'.format(k))
+                        #print('Missing obligatory mdata detected: {}'.format(k))
                         mdata.update(self.__ask_for_key_value(k))
                         hasChanged = True
 
@@ -96,6 +97,7 @@ class Mdata(object):
         current_tags = self.__mdata[tagkey]
         if current_tags.count(tag) == 0:
             current_tags.append(tag)
+            self.commit_msgs['mdata entry {}: added new tag: {}'.format(tagkey, tag)] = '' 
             self.__update_tags()
 #         else:
 #             print('Tag already exists.')
@@ -112,6 +114,7 @@ class Mdata(object):
         current_tags = self.__mdata[tagkey]
         if tag in current_tags:
             current_tags.remove(tag)
+            self.commit_msgs['mdata entry {}: removed tag: {}'.format(tagkey, tag)] = ''
             self.__update_tags()
         else:
             raise ValueError('Tag does not exist: {}'.format(tag))
@@ -127,20 +130,24 @@ class Mdata(object):
                 
     def __add_fit_data(self, fdata_dict):
         mdata = self.__mdata
+        mdata_key = 'fitData'
         #print('Got fit data.')
-        if 'fitData' not in mdata:
-            mdata['fitData'] = {}
-        mdata['fitData'].update(fdata_dict)
+        if mdata_key not in mdata:
+            mdata[mdata_key] = {}
+        mdata[mdata_key].update(fdata_dict)
+        self.commit_msgs['mdata entry {} updated with fit id(s):'.format(mdata_key)] = sorted(fdata_dict.keys)
         for fid in fdata_dict.keys():
             self.add_tag(fid, 'evalTags')
         
             
     def _rm_fit_data(self, fit_id):
+        mdata_key = 'fitData'
         "TODO: how do we handle 'default_fit'"
-        if len(self.__mdata['fitData']) > 1:
-            del self.__mdata['fitData'][fit_id]
+        if len(self.__mdata[mdata_key]) > 1:
+            del self.__mdata[mdata_key][fit_id]
+            self.commit_msgs['mdata entry {}: removed fit id:'.format(mdata_key)] = fit_id
         else:
-            self.rm('fitData')
+            self.rm(mdata_key)
             self.remove_tag('fitted', 'systemTags')
         self.remove_tag(fit_id, 'evalTags')
         
@@ -152,6 +159,16 @@ class Mdata(object):
         
         TODO: if k == wavelength self._hv needs to be adapted and specdata needs to be recalculated!
         """
+        
+        # low level method to add/update items to/of mdata dict
+        def __mdata_dict_add_item(mdata_dict, verified_key, verified_value):
+            mdata_dict[verified_key] = verified_value
+            self.commit_msgs['mdata entry {} added with value:'.format(verified_key)] = verified_value
+        #low level method to update existing items of mdata data 
+        def __mdata_dict_update_item(mdata_dict, verified_key, verified_value):
+            mdata_dict[verified_key] = verified_value
+            self.commit_msgs['mdata entry {} changed to:'.format(verified_key)] = verified_value
+            
         mdata = self.__mdata
         if type(newMdata) is dict:
             #self.failedKeys = {}
@@ -162,7 +179,9 @@ class Mdata(object):
                     if k == 'fitData': # fit data needs to be handled separately
                         self.__add_fit_data(v)
                     elif k not in mdata.keys(): # key not yet in mdata, so we just add them
-                        mdata[k] = self.__validate_value(k, v)
+#                         mdata[k] = self.__validate_value(k, v)
+#                         self.commit_msgs['mdata entry {} added with value:'.format(k)] = v
+                        __mdata_dict_add_item(mdata, k, self.__validate_value(k, v))
                     elif k in ['tags', 'userTags', 'systemTags', 'evalTags']: 
                         if k == 'tags': # 'tags' is treated like 'userTags' for convenience
                             k = 'userTags'
@@ -173,10 +192,16 @@ class Mdata(object):
                             self.add_tag(v, tagkey=k)
                     elif k == 'compSpecs':
                         mdata[k].update(self.__validate_value(k, v))
-                    elif k == 'info' and not mdata[k]: # info contains already a string
+                        self.commit_msgs['mdata entry {} changed to:'.format(k)] = mdata[k]
+                    elif k == 'info' and mdata[k]: # info contains already a string
+                        # TODO: handle info strings more robustly
                         mdata[k] = mdata[k] + self.__validate_value(k, v)
+                        self.commit_msgs['mdata entry {} changed to:'.format(k)] = '"{}"'.format(mdata[k])
+                    elif k == 'recTime':
+                        unix_time = convertToUnixTime(v)
+                        __mdata_dict_add_item(mdata, k, self.__validate_value(k, unix_time))
                     elif update: #key exists, is not tags not compSpecs
-                        mdata[k] = self.__validate_value(k, v)
+                        __mdata_dict_update_item(mdata, k, self.__validate_value(k, v))
                     else:
                         v = self.__validate_value(k, v)
                         overwrite=''
@@ -184,7 +209,7 @@ class Mdata(object):
                             q = 'Key "%s" already exists. Overwrite "%s" with "%s"? [y|n]: ' % (k, str(mdata[k]), str(v))
                             overwrite = input(q)
                         if overwrite == 'y':# else keep
-                            mdata[k]=self.__validate_value(k, v)
+                            __mdata_dict_add_item(mdata, k, self.__validate_value(k, v))
                 else:
                     print('Failed to add "%s: %s". Key not allowed.' % (k, str(v)))
             self.__update_tags()
@@ -201,6 +226,7 @@ class Mdata(object):
     
     def rm(self, key):
         del self.__mdata[key]
+        self.commit_msgs['removed mdata entry:'] = key
         
         
     def eval_element_name(self, element, reference):

@@ -68,9 +68,6 @@ def repopulate_db(cfg, db_name, db_filename, data_storage_path):
         
 def init_cludb(user_storage_dir, base_dir_name):
     'TODO: provide global cfg object.'
-<<<<<<< HEAD
-    cfg = config.Cfg(user_storage_dir, base_dir_name)
-=======
     cfg = config_3f.Cfg(user_storage_dir, base_dir_name)
 #    cfg = ConfigParser.SafeConfigParser()
 #    "set base path where all cludb files live"
@@ -85,7 +82,6 @@ def init_cludb(user_storage_dir, base_dir_name):
 #            with open(userCfgFile) as f:
 #            
 #    config.mainStorageDir = mainStorageDir
->>>>>>> refs/heads/third_floor
     for p in cfg.path.values():
         if os.path.isabs(p):
             ensure_path(p)
