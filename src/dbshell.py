@@ -11,7 +11,8 @@ class Db(object):
         #self.__dbName = dbName
         self.__cfg = cfg
         self.__dbProps = cfg.db[dbName]
-        dbFileName = '{}_v{}.db'.format(dbName, self.__dbProps['version'])
+        #dbFileName = '{}_v{}.db'.format(dbName, self.__dbProps['version'])
+        dbFileName = '{}.db'.format(dbName)
         self.__dbFile = os.path.join(self.__dbProps['path'], dbFileName)
         'TODO: into config?'        
 #        sqlite3.register_adapter(time.struct_time, self.__timeAdapter)
