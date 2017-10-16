@@ -1,13 +1,17 @@
-from spec import *
+import spec
 from legacyData import LegacyData
 from shutil import copy2
 from traceback import print_tb
 from sys import exc_info
+from vcs_shell import Vcs
+import os.path
+from dbshell import Db
 #import config
 #import mdata
-#import pickle
+import pickle
 #import os
-#import numpy as np
+import numpy as np
+import json
 
 
 #def sha1Unique(mdata):
@@ -29,11 +33,12 @@ def is_filestorage_possible(mdata):
         filestoragepossible = True
     finally:
         return filestoragepossible
-    
+
+
 def abs_path(cfg, p):
     if not os.path.isabs(p):
         p = os.path.join(cfg.path['base'], p)
-        
+
     return p
 
 
@@ -51,8 +56,7 @@ def archive(cfg, mdata):
         movedFiles = [[new_file, old_file]]
     else:
         raise ValueError('Archive contains already a file with this file name.')
-        
-    
+
     if 'cfgFileOrig' in mdata and mdata['specTypeClass'] not in ['spec']:
         old_cfg = abs_path(cfg, mdata['cfgFileOrig'])
         new_cfg = abs_path(cfg, mdata['cfgFile'])
@@ -60,7 +64,7 @@ def archive(cfg, mdata):
             os.makedirs(os.path.dirname(new_cfg))
         os.rename(old_cfg, new_cfg)
         movedFiles.append([new_cfg, old_cfg])
-    
+
     return movedFiles
 
 
@@ -87,6 +91,10 @@ def ls_recursive(rootdir, suffix='.dat'):
             
     return fileList
 
+
+def ls(rootdir, suffix='.csv', recursive=False):
+    ls_recursive(rootdir=rootdir, suffix=suffix, recursive=recursive)
+
  
 def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filename_mdata=False):
     '''Build a list, so we can work with lists only'''
@@ -97,12 +105,12 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
         datFileList.append(datFiles)
     
     '''Build a list of spec objects'''
-    typeclass_map = {'spec': Spec,
-                     'specMs': SpecMs,
-                     'specPe': SpecPe,
-                     'specPePt': SpecPePt,
-                     'specPeWater': SpecPeWater,
-                     'specPf': SpecPf}
+    typeclass_map = {'spec': spec.Spec,
+                     'specMs': spec.SpecMs,
+                     'specPe': spec.SpecPe,
+                     'specPePt': spec.SpecPePt,
+                     'specPeWater': spec.SpecPeWater,
+                     'specPf': spec.SpecPf}
     specList = []
     movedFiles =[]
     failedImports = []
@@ -184,13 +192,13 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
 def load_pickle(cfg, pickleFile):
     if not os.path.isabs(pickleFile):
         pickleFile = os.path.join(cfg.path['base'], pickleFile)
-    typeclass_map = {'spec': Spec,
-                     'specMs': SpecMs,
-                     'specPe': SpecPe,
-                     'specPePt': SpecPePt,
-                     'specPeIr': SpecPeIr,
-                     'specPeWater': SpecPeWater,
-                     'specPf': SpecPf
+    typeclass_map = {'spec': spec.Spec,
+                     'specMs': spec.SpecMs,
+                     'specPe': spec.SpecPe,
+                     'specPePt': spec.SpecPePt,
+                     'specPeIr': spec.SpecPeIr,
+                     'specPeWater': spec.SpecPeWater,
+                     'specPf': spec.SpecPf
                      }
     with open(pickleFile, 'rb') as f:
             mdata, xdata, ydata = pickle.load(f)
@@ -213,6 +221,108 @@ def load_pickle(cfg, pickleFile):
         spectrum.commit()
     
     return spectrum
+
+
+
+def verify_update_mdata_version(cfg, mdata_dict):
+    # testing for correct mdata version
+    mdata_converted = False
+    git_log = {}
+    while mdata_dict['mdataVersion'] < cfg.mdata_version:
+        print('Current mdata version: {}, target version: {} -> converting...'.format(mdata_dict['mdataVersion'],
+                                                                                      cfg.mdata_version))
+        git_log['Converted mdata from version {} to'.format(mdata_dict['mdataVersion'])] = cfg.mdata_version
+        mdata_dict = cfg.mdata_converter[mdata_dict['mdataVersion']](mdata_dict)
+        mdata_converted = True
+    
+    return mdata_dict, mdata_converted, git_log
+
+
+
+def spec_from_specdatadir(cfg, data_dir):
+    if not os.path.isabs(data_dir):
+        data_dir = os.path.join(cfg.path['base'], data_dir)
+# trying getattr instead
+#     typeclass_map = {'spec': spec_3f.Spec,
+#                      'specM': spec_3f.SpecM,
+#                      'specTof': spec_3f.SpecTof,
+#                      }
+    
+    mdata, xdata, ydata = load_spec_data(data_dir)
+    mdata, converted, git_log = verify_update_mdata_version(cfg, mdata)
+    #spectrum = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
+    spec_class = getattr(spec, mdata['specTypeClass'])
+    spectrum = spec_class(mdata, xdata, ydata, cfg)
+    if converted:
+        spectrum.mdata.commit_msgs.update(git_log)
+        spectrum.commit(short_log='-m {} mdata conversion'.format(spectrum.mdata.data('sha1')))
+    
+    return spectrum
+
+
+def dump_spec_data(data_path, mdata, xdata, ydata, compress=False):
+    if not os.path.isabs(data_path):
+        raise ValueError('base_dir must contain absolute path, got intead: {}'.format(data_path))
+    if not os.path.exists(data_path):
+        os.makedirs(data_path)
+
+    def modify_dict(d):
+        '''
+        In d recursively change ndarrays to lists.
+        '''
+        for k,v in d.items():
+            if isinstance(v, dict):
+                modify_dict(v)
+            elif isinstance(v, np.ndarray):
+                d[k] = list(v)
+            else:
+                pass
+            
+    modify_dict(mdata)
+    
+    # TODO. handle io exceptions and rollback
+    # dump mdata
+    mdata_file_path = os.path.join(data_path, 'mdata.json')
+    with open(mdata_file_path, 'w') as f:
+        json.dump(mdata, f, indent=4, sort_keys=True)
+    
+    if compress:
+        file_ext = 'dat.gz'
+    else:
+        file_ext = 'dat'
+    # dump x-, ydata
+    for k in xdata.keys():
+        data_file_path = os.path.join(data_path, 'xdata_{}.{}'.format(k, file_ext))
+        np.savetxt(data_file_path, xdata[k])
+    
+    for k in ydata.keys():
+        data_file_path = os.path.join(data_path, 'ydata_{}.{}'.format(k, file_ext))
+        np.savetxt(data_file_path, ydata[k])
+        
+ 
+def load_spec_data(data_path):
+    if not os.path.isabs(data_path):
+        raise ValueError('data_path must contain absolute path, got intead: {}'.format(data_path))
+    # load mdata
+    mdata_file_path = os.path.join(data_path, 'mdata.json')
+    with open(mdata_file_path, 'r') as f:
+        mdata = json.load(f)
+    
+    # load x-, ydata into dicts
+    files = [os.path.join(data_path, f) for f in os.listdir(data_path)]
+    xdata = {}
+    xdata_files = [f for f in files if os.path.isfile(f) and os.path.basename(f).startswith('xdata_')]
+    for data_file in xdata_files:
+        data_key = os.path.basename(data_file).split('xdata_',1)[1].rsplit('.dat',1)[0]
+        xdata[data_key] = np.loadtxt(data_file)
+    
+    ydata = {}
+    ydata_files = [f for f in files if os.path.isfile(f) and 'ydata_' in os.path.basename(f)]
+    for data_file in ydata_files:
+        data_key = os.path.basename(data_file).split('ydata_',1)[1].rsplit('.dat',1)[0]
+        ydata[data_key] = np.loadtxt(data_file)
+    
+    return mdata, xdata, ydata     
 
 
 
