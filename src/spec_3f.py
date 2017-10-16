@@ -13,7 +13,7 @@ from scipy.optimize import leastsq
 import view
 import view_3f
 import pickle
-import load
+import load_3f as load
 import speclist_3f
 from git import Repo
 from git.exc import GitCommandError

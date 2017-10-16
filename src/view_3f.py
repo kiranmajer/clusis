@@ -4,7 +4,7 @@ import os.path
 #from numpy import log10,sqrt, abs, argmin, arange, sort
 import numpy as np
 
-import load
+import load_3f as load
 from matplotlib.pyplot import xlim
 from smooth import moving_avg_gaussian
 

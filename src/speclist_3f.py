@@ -1,4 +1,4 @@
-import load
+import load_3f as load
 from dbshell import Db
 #import time
 import os
