@@ -13,6 +13,8 @@ from scipy.optimize import leastsq
 import view
 import pickle
 import load
+from git import Repo
+from vcs_shell import Vcs
 
 
 
@@ -56,8 +58,94 @@ class Spec(object):
             pickle.dump((self.mdata.data(), self.xdata, self.ydata), f)
             
             
-    def commit(self, update=True):
-        self._commit_pickle()
+    def _commit_specdatadir(self, compress=False):
+        # TODO: don't exstract this from pickleFile
+        full_path = os.path.join(self.cfg.path['base'], self.mdata.data('dataStorageLocation'))
+        load.dump_spec_data(full_path, self.mdata.data(), self.xdata, self.ydata, compress=compress)
+        self._add_files_to_index()
+    
+    
+    def _add_files_to_index(self, file_ext=['json', 'dat']):
+        # TODO: don't exstract this from pickleFile
+        full_path = os.path.join(self.cfg.path['base'], self.mdata.data('dataStorageLocation'))
+        #fl = os.listdir(full_path)
+        #added_files = []
+        staged_files = []
+        # init repo instance
+        repo_instance = Repo(self.cfg.path['base'])
+        for ext in file_ext:
+            #added = 
+            repo_instance.index.add([os.path.join(full_path, '*.{}'.format(ext))])
+            #added_files.extend(added)
+        
+        # get staged files
+        diff_to_head = repo_instance.index.diff('HEAD')
+        for diff in diff_to_head:
+            staged_files.append(diff.a_path)
+        added_files = [os.path.basename(f) for f in staged_files]
+        data_idcs = [f.split('data_',1)[-1].rsplit('.dat')[0] for f in added_files if f not in ['mdata.json']]
+        
+        self.commit_msgs.update(data_idcs)
+                
+            
+    
+    def _commit_change_history(self, git_options='-a', short_log=None):
+        # biulding commit message strings
+        # log summary
+        #git_options = list(git_options)
+        git_msgs = []
+        short_log_auto = '{} changed: '.format(self.mdata.data('sha1'))
+        short_log_items = []
+        #git_msgs.append(short_log_auto)
+        # mdata changes
+        if self.mdata.commit_msgs:
+            #print('mdata has commit msgs:', self.mdata.commit_msgs)
+            mdata_log_entries = []
+            for k,v in self.mdata.commit_msgs.items():
+                if v:
+                    mdata_log_entries.append('{} {}'.format(k,v))
+                else:
+                    mdata_log_entries.append(str(k))
+            #mdata_log = '-m ' + '\n '.join(mdata_log_entries)
+            git_msgs.append(mdata_log_entries)
+            short_log_items.append('mdata')
+        # data changes    
+        if self.commit_msgs:
+            #print('spec data has commit msgs:', self.commit_msgs)
+            commit_msgs = ['spec data updated with index: {}'.format(i) for i in self.commit_msgs]
+            #data_log = '-m ' + '\n '.join(commit_msgs)
+            git_msgs.append(commit_msgs)
+            short_log_items.append('spec data')
+        
+        #print('short log items:', short_log_items)
+        short_log_auto = short_log_auto + ', '.join(short_log_items)
+        if not short_log:
+            short_log = short_log_auto
+        #git_options.extend(git_msgs)
+        
+        #print('short log:', short_log)
+        #print('log:', git_msgs)
+        with Vcs(self.cfg.path['base']) as vcs:
+            vcs.commit_changes(short_log=short_log, git_options=git_options, log=git_msgs)
+#         # init repo instance
+#         repo_instance = Repo(self.cfg.path['base'])
+#         try:
+#             repo_instance.git.commit(git_options)
+#         except GitCommandError as e:
+#             print('Git error: {}'.format(e))
+            
+            
+        # clear up commit_stuff
+#         del repo_instance
+        self.commit_msgs.clear()
+        self.mdata.commit_msgs = {}
+ 
+                
+            
+    def commit(self, update=True, short_log=None):
+        #self._commit_pickle()
+        self._commit_specdatadir()
+        self._commit_change_history(short_log=short_log)
         self._commit_db(update=update)
         
     def _auto_key_selection(self, xdata_key, ydata_key, key_deps):

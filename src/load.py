@@ -68,9 +68,14 @@ def archive(cfg, mdata):
     return movedFiles
 
 
-def move_back(movedFiles):
+def move_back(movedFiles, mode):
     for pair in movedFiles:
-        os.rename(pair[0], pair[1])
+        if mode == 'mv':
+            os.rename(pair[0], pair[1])
+        elif mode == 'rm':
+            os.remove(pair[0])
+        else:
+            raise ValueError('"mode" must be one of ["mv", "rm"].')
 
 
 def ls_recursive(rootdir, suffix='.dat'):
@@ -104,13 +109,13 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
     else:
         datFileList.append(datFiles)
     
-    '''Build a list of spec objects'''
-    typeclass_map = {'spec': spec.Spec,
-                     'specMs': spec.SpecMs,
-                     'specPe': spec.SpecPe,
-                     'specPePt': spec.SpecPePt,
-                     'specPeWater': spec.SpecPeWater,
-                     'specPf': spec.SpecPf}
+#     '''Build a list of spec objects'''
+#     typeclass_map = {'spec': spec.Spec,
+#                      'specMs': spec.SpecMs,
+#                      'specPe': spec.SpecPe,
+#                      'specPePt': spec.SpecPePt,
+#                      'specPeWater': spec.SpecPeWater,
+#                      'specPf': spec.SpecPf}
     specList = []
     movedFiles =[]
     failedImports = []
@@ -147,17 +152,27 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
                         mdata = mi.mdata.data()
                         ydata = {'rawIntensity': mi.data}
                         xdata = {'idx': np.arange(0,len(ydata['rawIntensity']))+1/2} # intensity for [i,i+1] will be displayed at i+0.5
-                        spec = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
-                        spec._commit_pickle()
+                        #spectrum = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
+                        spec_class = getattr(spec, mdata['specTypeClass'])
+                        spectrum = spec_class(mdata, xdata, ydata, cfg)
+                        #spectrum._commit_pickle()
+                        spectrum._commit_specdatadir()
                     except Exception as e:
                         print('%s failed to import:'%datFile, e)
                         failedImports.append([datFile, 'Import error: %s.'%e])
-                        move_back(moved)
+                        move_back(moved, 'mv')
                         raise
                     else:
                         movedFiles.extend(moved)
-                        spec._commit_pickle()
-                        specList.append(spec)
+                        # add archived files to git index
+                        print('Adding archived files to index:')
+                        print([p[0] for p in moved])
+                        with Vcs(cfg.path['base']) as vcs:
+                            vcs.add_to_index([p[0] for p in moved])
+                        #spectrum._commit_pickle()
+                        spectrum._commit_specdatadir()
+                        spectrum._commit_change_history(short_log='{} initial commit'.format(spectrum.mdata.data('sha1')))
+                        specList.append(spectrum)
                         sha1ToImport.append(mi.mdata.data('sha1'))
             else:
                 #print 'some files already exist'
@@ -172,9 +187,9 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
     except Exception as e:
         print('Db population failed:', e)
         # remove all files in our data dir, from this import
-        move_back(movedFiles)
-        for spec in specList:
-            pickleFile = os.path.join(cfg.path['base'], spec.mdata.data('pickleFile'))
+        move_back(movedFiles, 'mv')
+        for spectrum in specList:
+            pickleFile = os.path.join(cfg.path['base'], spectrum.mdata.data('pickleFile'))
             os.remove(pickleFile)
         raise
     
@@ -204,6 +219,7 @@ def load_pickle(cfg, pickleFile):
             mdata, xdata, ydata = pickle.load(f)
     
     # testing for correct mdata version
+    # TODO: make this self-executing for all conversion methods in cfg
     mdata_converted = False
     if mdata['mdataVersion'] < cfg.mdata_version:
         if mdata['mdataVersion'] == 0.1:

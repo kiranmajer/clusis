@@ -26,7 +26,7 @@ class Cfg():
                                                ['clusterBaseUnitNumber', 'INTEGER'],
                                                ['clusterDopant', 'TEXT'],
                                                ['clusterDopantNumber', 'INTEGER'],
-                                               ['pickleFile', 'TEXT UNIQUE'],
+                                               ['dataStorageLocation', 'TEXT UNIQUE'],
                                                ['datFile', 'TEXT'],
                                                ['tags', 'LIST'],
                                                ['waveLength', 'REAL'],
@@ -40,7 +40,7 @@ class Cfg():
                                               ['clusterBaseUnitNumberEnd', 'INTEGER'],
                                               ['clusterDopant', 'TEXT'],
                                               ['clusterDopantNumber', 'INTEGER'],
-                                              ['pickleFile', 'TEXT UNIQUE'],
+                                              ['dataStorageLocation', 'TEXT UNIQUE'],
                                               ['datFile', 'TEXT'],
                                               ['tags', 'LIST'],
                                               ['recTime', 'REAL'],
@@ -52,7 +52,7 @@ class Cfg():
                                                ['clusterBaseUnitNumber', 'INTEGER'],
                                                ['clusterDopant', 'TEXT'],
                                                ['clusterDopantNumber', 'INTEGER'],
-                                               ['pickleFile', 'TEXT UNIQUE'],
+                                               ['dataStorageLocation', 'TEXT UNIQUE'],
                                                ['datFile', 'TEXT'],
                                                ['tags', 'LIST'],
                                                ['waveLength', 'REAL'],
@@ -61,7 +61,7 @@ class Cfg():
                                                ['trapTemp', 'REAL']
                                                ),
                                        'generic': (['sha1', 'TEXT PRIMARY KEY'],
-                                                   ['pickleFile', 'TEXT UNIQUE'],
+                                                   ['dataStorageLocation', 'TEXT UNIQUE'],
                                                    ['datFile', 'TEXT'],
                                                    ['tags', 'LIST'],
                                                    ['recTime', 'REAL'],
@@ -80,17 +80,17 @@ class Cfg():
         '''
         self.wavelengths = [157.63e-9, 193.35e-9, 248.4e-9, 308e-9, 590e-9, 800e-9] # 157.63e-9, 193.35e-9, 248.4e-9
         'When modified -> increase mdata_version!'
-        self.mdata_version = 0.3
+        self.mdata_version = 0.4
         self.mdata_ref = {'spec': {'datFile': [str, True],
                                    'evalTags': [list, True],
                                    'info': [str, True],
                                    'machine': [['casi'], True],
                                    'mdataVersion': [float, True],
-                                   'pickleFile': [str, True],
+                                   'dataStorageLocation': [str, True],
                                    'recTime': [float, True],
                                    'sha1': [str, True],
                                    'specType': [['ms', 'pes', 'pfs', 'generic'], True],
-                                   'specTypeClass': [['spec', 'specMs', 'specPe', 'specPePt', 'specPeIr', 'specPeWater', 'specPf'], True],
+                                   'specTypeClass': [['Spec', 'SpecMs', 'SpecPe', 'SpecPePt', 'SpecPeIr', 'SpecPeWater', 'SpecPf'], True],
                                    'sweeps': [int, False],
                                    'systemTags': [list, True],
                                    'tags': [list, True], # combined tags of *Tags (for db)
@@ -477,4 +477,19 @@ class Cfg():
                                                                                 start_version))
         
         return mdata
+
+
+    def convert_mdata_v0p3_to_v0p4(self, mdata):
+        start_version = 0.3
+        target_version = 0.4
+        if mdata['mdataVersion'] == start_version:
+            print('Converting mdata from version {} to {} ...'.format(start_version, target_version))
+            mdata['specTypeClass'] = mdata['specTypeClass'].replace('s', 'S', 1)
+            data_storage_location = mdata.pop('pickleFile').rsplit('.pickle')[0]
+            mdata['dataStorageLocation'] = data_storage_location 
+            mdata['mdataVersion'] = target_version
+        else:
+            raise ValueError('mdata has wrong version: {}, expected {}.'.format(mdata['mdataVersion'],
+                                                                                start_version))
         
+        return mdata

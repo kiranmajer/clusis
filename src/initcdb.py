@@ -3,8 +3,9 @@ import sqlite3
 from dbshell import Db
 import config
 import load
+from vcs_shell import Vcs
 #import ConfigParser
-
+from git import Repo
 
 
 def ensure_path(p):
@@ -74,7 +75,20 @@ def init_cludb(user_storage_dir, base_dir_name):
             ensure_path(p)
     
     setup_sqlite3()
-    init_db(cfg)
+    db_filename = os.path.basename(init_db(cfg))
+    # if the .git folder does not exist init git repository and make an initial commit
+    git_dir_path = os.path.join(cfg.path['base'], '.git')
+    if not os.path.exists(git_dir_path):
+        init_repo = input('Git repo does not exist. Initialize it? [y/n]:')
+        if init_repo == 'y':
+            # init git repository
+            rep = Repo.init(cfg.path['base'])
+            del rep
+        else:
+            raise ValueError('Can not continue without a git repository. Aborting ...')
+        # create .gitignore with few defaults
+        with Vcs(cfg.path['base']) as vcs:
+            vcs.update_gitignore(db_filename)
     
     return cfg
                 

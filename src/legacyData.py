@@ -25,6 +25,7 @@ class LegacyData(object):
                          'tags': [],
                          'systemTags': [],
                          'userTags': [],
+                         'evalTags': [],
                          'machine': machine,
                          'delayState': {},
                          'info': ''}
@@ -416,27 +417,27 @@ class LegacyData(object):
 
 
     def set_spectype_class(self):
-        classtype_map = {'generic': 'spec',
-                         'ms': 'specMs',
-                         'pes': 'specPe',
-                         'pfs': 'specPf'}
+        classtype_map = {'generic': 'Spec',
+                         'ms': 'SpecMs',
+                         'pes': 'SpecPe',
+                         'pfs': 'SpecPf'}
         if self.metadata['specType'] == 'pes' and self.metadata['clusterBaseUnit'] in ['Pt']:
-            self.metadata['specTypeClass'] = 'specPePt'
+            self.metadata['specTypeClass'] = 'SpecPePt'
         elif self.metadata['specType'] == 'pes' and self.metadata['clusterBaseUnit'] in ['Ir']:
-            self.metadata['specTypeClass'] = 'specPeIr'
+            self.metadata['specTypeClass'] = 'SpecPeIr'
         elif self.metadata['specType'] == 'pes' and self.metadata['clusterBaseUnit'] in ['H2O', 'D2O']:
-            self.metadata['specTypeClass'] = 'specPeWater'
+            self.metadata['specTypeClass'] = 'SpecPeWater'
         else:
             self.metadata['specTypeClass'] = classtype_map[self.metadata['specType']]
             
     def build_mdata_ref(self, spec_type_class):
-        ref_map = {'spec': ['spec'],
-                   'specMs': ['spec', 'specMs'],
-                   'specPe': ['spec', 'specPe'],
-                   'specPePt': ['spec', 'specPe', 'specPePt'],
-                   'specPeIr': ['spec', 'specPe', 'specPePt'],
-                   'specPeWater': ['spec', 'specPe', 'specPeWater'],
-                   'specPf': ['spec', 'specPf']}
+        ref_map = {'Spec': ['spec'],
+                   'SpecMs': ['spec', 'specMs'],
+                   'SpecPe': ['spec', 'specPe'],
+                   'SpecPePt': ['spec', 'specPe', 'specPePt'],
+                   'SpecPeIr': ['spec', 'specPe', 'specPePt'],
+                   'SpecPeWater': ['spec', 'specPe', 'specPeWater'],
+                   'SpecPf': ['spec', 'specPf']}
         mdata_ref = {}
         for k in ref_map[spec_type_class]:
             mdata_ref.update(self.cfg.mdata_ref[k])
