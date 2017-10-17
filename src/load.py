@@ -18,7 +18,7 @@ import json
 #    return db.tableHas(mdata['specType'], ['sha1', mdata['sha1']])
 
 def is_filestorage_possible(mdata):
-    paths = [mdata['datFile'], mdata['pickleFile']]
+    paths = [mdata['datFile'], mdata['dataStorageLocation']]
     if 'cfgFile' in mdata.keys():
         paths.append(mdata['cfgFile'])
     
@@ -155,6 +155,8 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
                         #spectrum = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
                         spec_class = getattr(spec, mdata['specTypeClass'])
                         spectrum = spec_class(mdata, xdata, ydata, cfg)
+                        spectrum.mdata.commit_msgs.update(mi.mdata.commit_msgs)
+                        spectrum.commit_msgs.update(['idx', 'rawIntensity'])
                         #spectrum._commit_pickle()
                         spectrum._commit_specdatadir()
                     except Exception as e:

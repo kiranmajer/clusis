@@ -1,4 +1,4 @@
-from load import load_pickle
+from load import load_pickle, spec_from_specdatadir
 from dbshell import Db
 import time
 import os
@@ -27,7 +27,7 @@ class SpecList(object):
                                      recTimeRange=recTimeRange, inTags=inTags,
                                      notInTags=notInTags, datFileName=datFileName,
                                      hide_trash=hide_trash, order_by=order_by)
-        self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
+        self.pfile_list = [row['dataStorageLocation'] for row in self.dbanswer]
         self.view = viewlist.ViewList(self)
         
 
@@ -37,15 +37,20 @@ class SpecList(object):
 #            self.dbanswer = db.query(self.spec_type, recTime=recTime, recTimeRange=recTimeRange,
 #                                     inTags=inTags, notInTags=notInTags, datFileName=datFileName)
 
-    def get_spec(self, number):
-        spec = load_pickle(self.cfg, self.dbanswer[number]['pickleFile'])
+    def get_spec(self, number, storage_type='json'):
+        if storage_type is 'json':
+            spec = spec_from_specdatadir(self.cfg, self.dbanswer[number]['dataStorageLocation'])
+        elif storage_type is 'pickle':
+            spec = load_pickle(self.cfg, self.dbanswer[number]['dataStorageLocation'])
+        else:
+            raise ValueError("storage_type must be either 'json' or 'pickle'. Got {} instead.".format(storage_type))
         return spec
 
     def update_mdata(self, mdataDict):
         'TODO: open db only once'
         for entry in self.dbanswer:
-            print(entry['pickleFile'])
-            cs = load_pickle(self.cfg, entry['pickleFile'])
+            print(entry['dataStorageLocation'])
+            cs = load_pickle(self.cfg, entry['dataStorageLocation'])
             try:
                 cs.mdata.update(mdataDict)
                 if hasattr(cs, '_hv') and 'waveLength' in mdataDict.keys():
@@ -62,7 +67,7 @@ class SpecList(object):
         
     def remove_tag(self, tag, tagkey='userTags'):
         for entry in self.dbanswer:
-            cs = load_pickle(self.cfg, entry['pickleFile'])
+            cs = load_pickle(self.cfg, entry['dataStorageLocation'])
             try:
                 cs.mdata.remove_tag(tag, tagkey=tagkey)
             except ValueError:
@@ -81,7 +86,7 @@ class SpecList(object):
         print('datFile:', keys)
         print('-'*85)
         for s in self.dbanswer:
-            cs = load_pickle(self.cfg, s['pickleFile'])
+            cs = load_pickle(self.cfg, s['dataStorageLocation'])
             values = [cs.mdata.data(k) for k in keys]
             print('{}:'.format(os.path.basename(cs.mdata.data('datFile'))), values)
             del cs
@@ -137,7 +142,7 @@ class SpecList(object):
     def remove_spec(self):
         'TODO: query for confirmation, since you can cause great damage.'
         for entry in self.dbanswer:
-            cs = load_pickle(self.cfg, entry['pickleFile'])
+            cs = load_pickle(self.cfg, entry['dataStorageLocation'])
             cs.remove()
             del cs      
             
@@ -260,7 +265,7 @@ class SpecPeList(SpecList):
                                      waveLength=waveLength, trapTemp=trapTemp,
                                      trapTempRange=trapTempRange,
                                      hide_trash=hide_trash, order_by=order_by)
-        self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
+        self.pfile_list = [row['dataStorageLocation'] for row in self.dbanswer]
         self.view = viewlist.ViewPesList(self)
         
         
@@ -270,7 +275,7 @@ class SpecPeList(SpecList):
         re-gauge them with their previous gauge_ref.
         '''
         for s in self.dbanswer:
-            cs = load_pickle(self.cfg, s['pickleFile'])
+            cs = load_pickle(self.cfg, s['dataStorageLocation'])
             if gauge_ref is not None:
                 cs.gauge(gauge_ref, ignore_wavelength=ignore_wavelength)
             elif 'gaugeRef' in cs.mdata.data().keys():
@@ -292,7 +297,7 @@ class SpecPeList(SpecList):
         csize = []
         ea = []
         for s in self.dbanswer:
-            cs = load_pickle(self.cfg,s[str('pickleFile')])
+            cs = load_pickle(self.cfg,s[str('dataStorageLocation')])
             if 'electronAffinity' in cs.mdata.data().keys():
                 csize.append(cs.mdata.data('clusterBaseUnitNumber'))
                 ea.append(cs.mdata.data('electronAffinity'))
@@ -362,7 +367,7 @@ class SpecPePtFitList(SpecPeList):
         mdataList = []
         rowCount = 0
         for s in self.dbanswer:
-            cs = load_pickle(self.cfg,s[str('pickleFile')])
+            cs = load_pickle(self.cfg,s[str('dataStorageLocation')])
             'TODO: cant we remove the if clause?' 
             if cs.mdata.data('specTypeClass') == 'specPePt' and \
             'background' not in cs.mdata.data('systemTags') and \
@@ -456,7 +461,7 @@ class SpecPePtFitList(SpecPeList):
             return color
         
         for s in self.dbanswer:
-            cs = load_pickle(self.cfg,s[str('pickleFile')])
+            cs = load_pickle(self.cfg,s[str('dataStorageLocation')])
             if cs.mdata.data('specTypeClass') == 'specPePt' and \
             'background' not in cs.mdata.data('systemTags') and \
             'fitted' in cs.mdata.data('systemTags'):
@@ -494,7 +499,7 @@ class SpecPePtFitList(SpecPeList):
 
     def regauge(self, rel_y_min=None, cutoff=None):
         for s in self.dbanswer:
-            cs = load_pickle(self.cfg,s[str('pickleFile')])
+            cs = load_pickle(self.cfg,s[str('dataStorageLocation')])
             cs._regauge(rel_y_min=rel_y_min, cutoff=cutoff)
             cs.commit()
             del cs
@@ -523,7 +528,7 @@ class SpecPeWaterList(SpecPeList):
         re-gauge them with their previous gauge_ref.
         '''
         for s in self.dbanswer:
-            cs = load_pickle(self.cfg, s['pickleFile'])
+            cs = load_pickle(self.cfg, s['dataStorageLocation'])
             if gauge_ref is not None:
                 cs.gauge(gauge_ref, refit=refit, ignore_wavelength=ignore_wavelength)
             elif 'gaugeRef' in cs.mdata.data().keys():
@@ -536,7 +541,7 @@ class SpecPeWaterList(SpecPeList):
     def fit(self, fit_par, fit_id='default_fit', cutoff=None, asym_par=None,
             use_boundaries=True):
         for s in self.dbanswer:
-            cs = load_pickle(self.cfg,s[str('pickleFile')])
+            cs = load_pickle(self.cfg,s[str('dataStorageLocation')])
             cs.fit(fitPar0=fit_par, fit_id=fit_id, cutoff=cutoff, asym_par=asym_par,
                    use_boundaries=use_boundaries)
             cs.commit()
@@ -606,7 +611,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         mdataList = []
         rowCount = 0
         for s in self.dbanswer:
-            cs = load_pickle(self.cfg,s[str('pickleFile')])
+            cs = load_pickle(self.cfg,s[str('dataStorageLocation')])
             'TODO: cant we remove the if clause?'
             if cs.mdata.data('specTypeClass') == 'specPeWater' and \
             'background' not in cs.mdata.data('systemTags') and \
@@ -1007,7 +1012,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         p_sg = []
         p_sl = []
         for s in self.dbanswer:
-            cs = load_pickle(self.cfg,s[str('pickleFile')])
+            cs = load_pickle(self.cfg,s[str('dataStorageLocation')])
             #peak_list = [cs.ebin(p) for p in cs.mdata.data('fitData')[fit_id]['par'][:-2:2]]
             peak_list = [cs.ebin(peak[0]) for peak in cs._get_fit_peaks(fit_par_type='par',
                                                                         fit_id=fit_id)]
@@ -1038,7 +1043,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
             hw_p_sg = []
             hw_p_sl = []
             for s in hw_data.dbanswer:
-                cs = load_pickle(self.cfg,s[str('pickleFile')])
+                cs = load_pickle(self.cfg,s[str('dataStorageLocation')])
                 #peak_list = [cs.ebin(p) for p in cs.mdata.data('fitData')[fit_id]['par'][:-2:2]]
                 hw_peak_list = [cs.ebin(peak[0]) for peak in cs._get_fit_peaks(fit_par_type='par',
                                                                                fit_id=fit_id)]
@@ -1133,7 +1138,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         width_pars_s_g = []
         width_pars_s_l = []
         for s in self.dbanswer:
-            cs = load_pickle(self.cfg,s[str('pickleFile')])
+            cs = load_pickle(self.cfg,s[str('dataStorageLocation')])
             csize = cs.mdata.data('clusterBaseUnitNumber')
             #width = np.sum(cs.mdata.data('fitPar')[-2:])
             width, width_pars = cs._get_peakshape_par('par', fit_id, width=True,
@@ -1455,7 +1460,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         diff_ref = {}
         ratio_dict = {}
         for s in self.dbanswer:
-            cs = load_pickle(self.cfg, s[str('pickleFile')])
+            cs = load_pickle(self.cfg, s[str('dataStorageLocation')])
             cn = cs.mdata.data('clusterBaseUnitNumber')
             ct = cs.mdata.data('trapTemp')
             for fit_id in add_fit_ids:
@@ -1655,7 +1660,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
          
         ls_par_dict = {}    
         for s in self.dbanswer:
-            cs = load_pickle(self.cfg, s[str('pickleFile')])
+            cs = load_pickle(self.cfg, s[str('dataStorageLocation')])
             cn = cs.mdata.data('clusterBaseUnitNumber')
             ct = cs.mdata.data('trapTemp')
             
@@ -1706,7 +1711,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         # populate peak lists
         for s in self.dbanswer:
             d2o_isomers = {'2': [], '1a': [], '1b': [], 'vib': []} 
-            cs = load_pickle(self.cfg, s[str('pickleFile')])
+            cs = load_pickle(self.cfg, s[str('dataStorageLocation')])
             cn = cs.mdata.data('clusterBaseUnitNumber')
             #peak_list = [cs.ebin(p) for p in cs.mdata.data('fitData')[fit_id]['par'][:-2:2]]
             peak_list = [cs.ebin(peak[0]) for peak in cs._get_fit_peaks(fit_par_type='par',
@@ -1725,7 +1730,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                                                fit_id=ref_fit_id, trapTempRange=ref_temp_range)
                 for rs in comp_list.dbanswer:
                     h2o_isomers = {'2': [], '1a': [], '1b': [], 'vib': []}
-                    crs = load_pickle(self.cfg,rs[str('pickleFile')])
+                    crs = load_pickle(self.cfg,rs[str('dataStorageLocation')])
                     #ref_peak_list = [crs.ebin(p) for p in crs.mdata.data('fitData')[ref_fit_id]['par'][:-2:2]]
                     ref_peak_list = [crs.ebin(peak[0]) for peak in 
                                      crs._get_fit_peaks(fit_par_type='par',
@@ -1799,7 +1804,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         if not new_fit_id:
             new_fit_id = ref_fit_id
         for s in self.dbanswer:
-            cs = load_pickle(self.cfg,s[str('pickleFile')])
+            cs = load_pickle(self.cfg,s[str('dataStorageLocation')])
             cs._refit(fit_id=new_fit_id, ref_fit_id=ref_fit_id, fit_par=fit_par,
                       cutoff=cutoff, asym_par=asym_par, use_boundaries=use_boundaries,
                       commit_after=True)
@@ -1816,7 +1821,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
         '''
         #SpecPeList.gauge(gauge_ref=gauge_ref, refit=refit)
         for s in self.dbanswer:
-            cs = load_pickle(self.cfg, s['pickleFile'])
+            cs = load_pickle(self.cfg, s['dataStorageLocation'])
             if gauge_ref is not None:
                 cs.gauge(gauge_ref, refit=refit, commit_after=commit_after,
                          ignore_wavelength=ignore_wavelength)
@@ -1861,7 +1866,7 @@ class SpecMList(SpecList):
                                      notInTags=notInTags, datFileName=datFileName,
                                      trapTemp=trapTemp, trapTempRange=trapTempRange,
                                      hide_trash=hide_trash, order_by=order_by)
-        self.pfile_list = [row['pickleFile'] for row in self.dbanswer]
+        self.pfile_list = [row['dataStorageLocation'] for row in self.dbanswer]
         self.view = viewlist.ViewMsList(self)
 
 

@@ -28,6 +28,7 @@ class Spec(object):
         self.ydata = ydata
         self.cfg = cfg
         self.view = view.View(self)
+        self.commit_msgs = set()
         
 #     def __del__(self):
 #         print('Commiting ...')
@@ -111,7 +112,7 @@ class Spec(object):
             short_log_items.append('mdata')
         # data changes    
         if self.commit_msgs:
-            #print('spec data has commit msgs:', self.commit_msgs)
+            print('spec data has commit msgs:', self.commit_msgs)
             commit_msgs = ['spec data updated with index: {}'.format(i) for i in self.commit_msgs]
             #data_log = '-m ' + '\n '.join(commit_msgs)
             git_msgs.append(commit_msgs)
@@ -123,8 +124,8 @@ class Spec(object):
             short_log = short_log_auto
         #git_options.extend(git_msgs)
         
-        #print('short log:', short_log)
-        #print('log:', git_msgs)
+        print('short log:', short_log)
+        print('log:', git_msgs)
         with Vcs(self.cfg.path['base']) as vcs:
             vcs.commit_changes(short_log=short_log, git_options=git_options, log=git_msgs)
 #         # init repo instance

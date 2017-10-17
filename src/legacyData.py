@@ -351,14 +351,14 @@ class LegacyData(object):
                                                 os.path.basename(self.metadata['datFileOrig']))
         #self.metadata['userTags'] = []
         ''' build pickle file name and path according following scheme:
-        config.path['data']/<year>/<recTime>_<sha1>.pickle'''
-
-        pickleFileName = '{}-{}-{}_{}.pickle'.format(year, month, day, self.metadata['sha1'])
-        pickleFileDir = os.path.join(self.cfg.path['data'],
-                                     self.metadata['machine'],
-                                     self.metadata['specType'],
-                                     year)
-        self.metadata['pickleFile'] = os.path.join(pickleFileDir, pickleFileName)
+        config.path['data']/<year>/<recTime>_<sha1_abbrev.>.pickle'''
+        # TODO: make sha1 abbrev configurable?
+        data_storage_dir = '{}{}{}_{}'.format(year, month, day, self.metadata['sha1'][:5])
+        data_storage_basedir = os.path.join(self.cfg.path['data'],
+                                            self.metadata['machine'],
+                                            self.metadata['specType'],
+                                            year)
+        self.metadata['dataStorageLocation'] = os.path.join(data_storage_basedir, data_storage_dir)
         if 'cfgFileOrig' in self.metadata.keys():
             self.metadata['cfgFile'] = os.path.join(archive_dir,
                                                     os.path.basename(self.metadata['cfgFileOrig']))
