@@ -156,7 +156,7 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
                         spec_class = getattr(spec, mdata['specTypeClass'])
                         spectrum = spec_class(mdata, xdata, ydata, cfg)
                         spectrum.mdata.commit_msgs.update(mi.mdata.commit_msgs)
-                        spectrum.commit_msgs.update(['idx', 'rawIntensity'])
+                        #spectrum.commit_msgs.update(['idx', 'rawIntensity'])
                         #spectrum._commit_pickle()
                         spectrum._commit_specdatadir()
                     except Exception as e:

@@ -28,7 +28,7 @@ class Spec(object):
         self.ydata = ydata
         self.cfg = cfg
         self.view = view.View(self)
-        self.commit_msgs = set()
+        self.commit_msgs = {'A': [], 'D': [], 'M': [], 'R': []}
         
 #     def __del__(self):
 #         print('Commiting ...')
@@ -71,22 +71,30 @@ class Spec(object):
         full_path = os.path.join(self.cfg.path['base'], self.mdata.data('dataStorageLocation'))
         #fl = os.listdir(full_path)
         #added_files = []
-        staged_files = []
+        #staged_files = []
         # init repo instance
-        repo_instance = Repo(self.cfg.path['base'])
+        #repo_instance = Repo(self.cfg.path['base'])
         for ext in file_ext:
             #added = 
-            repo_instance.index.add([os.path.join(full_path, '*.{}'.format(ext))])
+            #repo_instance.index.add([os.path.join(full_path, '*.{}'.format(ext))])
+            
+            with Vcs(self.cfg.path['base']) as vcs:
+                vcs.add_to_index(os.path.join(full_path, '*.{}'.format(ext)))
             #added_files.extend(added)
         
         # get staged files
-        diff_to_head = repo_instance.index.diff('HEAD')
-        for diff in diff_to_head:
-            staged_files.append(diff.a_path)
-        added_files = [os.path.basename(f) for f in staged_files]
-        data_idcs = [f.split('data_',1)[-1].rsplit('.dat')[0] for f in added_files if f not in ['mdata.json']]
+        #diff_to_head = repo_instance.index.diff('HEAD')
+#         diff_to_head = repo_instance.git.diff('HEAD~1..HEAD', name_status=True).splitlines()
+#         for diff in diff_to_head:
+#             m, p = diff.split('\t')
+#             print('change_type:', m)
+#             print('path:', p)
+#             self.commit_msgs[m].add(p)
+            #staged_files.append(diff.a_path)
+        #added_files = [os.path.basename(f) for f in staged_files]
+        #data_idcs = [f.split('data_',1)[-1].rsplit('.dat')[0] for f in added_files if f not in ['mdata.json']]
         
-        self.commit_msgs.update(data_idcs)
+        #self.commit_msgs.update(data_idcs)
                 
             
     
@@ -110,13 +118,23 @@ class Spec(object):
             #mdata_log = '-m ' + '\n '.join(mdata_log_entries)
             git_msgs.append(mdata_log_entries)
             short_log_items.append('mdata')
-        # data changes    
-        if self.commit_msgs:
-            print('spec data has commit msgs:', self.commit_msgs)
-            commit_msgs = ['spec data updated with index: {}'.format(i) for i in self.commit_msgs]
-            #data_log = '-m ' + '\n '.join(commit_msgs)
-            git_msgs.append(commit_msgs)
-            short_log_items.append('spec data')
+        # data changes
+        with Vcs(self.cfg.path['base']) as vcs:
+            staged_files = vcs.get_stagedfiles_name_status()
+        for f in staged_files:
+            self.commit_msgs[f[1]].append(f[0])
+        print('spec data has commit msgs:', self.commit_msgs)
+        mode_map = {'A': 'added', 'D': 'deleted', 'M': 'modified', 'R': 'renamed'}
+        for mode, file_list in self.commit_msgs.items():
+            if len(file_list) > 0:
+                git_msgs.append(['{}: {}'.format(mode_map[mode], f) for f in file_list])
+                short_log_items.append('files {}'.format(mode_map[mode]))
+#         if self.commit_msgs:
+#             print('spec data has commit msgs:', self.commit_msgs)
+#             commit_msgs = ['spec data updated with index: {}'.format(i) for i in self.commit_msgs]
+#             #data_log = '-m ' + '\n '.join(commit_msgs)
+#             git_msgs.append(commit_msgs)
+#             short_log_items.append('spec data')
         
         #print('short log items:', short_log_items)
         short_log_auto = short_log_auto + ', '.join(short_log_items)
@@ -138,7 +156,7 @@ class Spec(object):
             
         # clear up commit_stuff
 #         del repo_instance
-        self.commit_msgs.clear()
+        self.commit_msgs = {'A': [], 'D': [], 'M': [], 'R': []}
         self.mdata.commit_msgs = {}
  
                 
@@ -235,6 +253,7 @@ class Spec(object):
         bgSpec = load.load_pickle(self.cfg, bgFile)
         if not self.mdata.data('specTypeClass') == bgSpec.mdata.data('specTypeClass'):
             raise ValueError('Background file has different spec type class.')
+        # TODO: reference ref spectra by sha1 (without paths)
         self.mdata.update({'subtractBgRef': bgSpec.mdata.data('pickleFile')})
         bgSpec.mdata.update({'subtractBgRef': self.mdata.data('pickleFile')})
         bgSpec.mdata.add_tag('background', tagkey='systemTags')

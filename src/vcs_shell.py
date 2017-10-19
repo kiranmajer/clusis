@@ -1,5 +1,6 @@
 import git
 import os.path
+import glob
 
 
 class Vcs:
@@ -40,9 +41,18 @@ class Vcs:
             file_list.append(files)
         else:
             raise ValueError('files must be a single file or a list of files.')
-        # try to find valid absolute paths
-        valid_file_list = []
+        # expand glob
+        file_list_expanded = []
         for f in file_list:
+            if '*' in f:
+                f_expanded = glob.glob(f)
+                file_list_expanded.extend(f_expanded)
+            else:
+                file_list_expanded.append(f)
+        # try to find valid absolute paths
+        print(file_list_expanded)
+        valid_file_list = []
+        for f in file_list_expanded:
             if os.path.isabs(f) and os.path.exists(f) and f.startswith(self._repo_path):
                 valid_file_list.append(f)
             elif os.path.exists(os.path.join(self._repo_path, f)):
@@ -56,6 +66,16 @@ class Vcs:
         file_list = self.__valid_file_list(files)
         
         self._idx.add(file_list)
+
+
+    def get_stagedfiles_name_status(self):
+        stagedfiles_list = []
+        diff_to_head = self._repo.git.diff('HEAD', name_status=True).splitlines()
+        for diff in diff_to_head:
+            m, p = diff.split('\t')
+            print('change_type:', m, 'path:', p)
+            stagedfiles_list.append([p, m])
+        return stagedfiles_list
     
     
     def update_gitignore(self, files):
