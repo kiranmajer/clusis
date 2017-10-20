@@ -3,6 +3,7 @@ from legacyData import LegacyData
 from shutil import copy2
 from traceback import print_tb
 from sys import exc_info
+from glob import glob
 from vcs_shell import Vcs
 import os.path
 from dbshell import Db
@@ -78,7 +79,7 @@ def move_back(movedFiles, mode):
             raise ValueError('"mode" must be one of ["mv", "rm"].')
 
 
-def ls_recursive(rootdir, suffix='.dat'):
+def ls_recursive(rootdir, suffix='.dat', recursive=True):
     '''
     Populates a list with the full path of all files recursively found
     under rootdir with corresponding suffix.
@@ -88,17 +89,20 @@ def ls_recursive(rootdir, suffix='.dat'):
     fileList = []
     rootdir = os.path.abspath(rootdir)
     if os.path.exists(rootdir):
-        for root, subFolders, files in os.walk(rootdir):
-            for f in files:
-                if f.endswith(suffix) and root.find('selection') == -1: #skip selection folders since they contain doublets
-                    fileList.append(os.path.join(root,f))
+        if recursive:
+            for root, subFolders, files in os.walk(rootdir):
+                for f in files:
+                    if f.endswith(suffix) and root.find('selection') == -1: #skip selection folders since they contain doublets
+                        fileList.append(os.path.join(root,f))
+        else:
+            fileList = glob(rootdir + '/*' + suffix)
     else: raise IOError(2, 'No such file or directory: ' + rootdir)
             
     return fileList
 
 
 def ls(rootdir, suffix='.csv', recursive=False):
-    ls_recursive(rootdir=rootdir, suffix=suffix, recursive=recursive)
+    return ls_recursive(rootdir=rootdir, suffix=suffix, recursive=recursive)
 
  
 def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filename_mdata=False):
