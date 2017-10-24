@@ -57,8 +57,8 @@ def archive(cfg, mdata):
         movedFiles = [[new_file, old_file]]
     else:
         raise ValueError('Archive contains already a file with this file name.')
-
-    if 'cfgFileOrig' in mdata and mdata['specTypeClass'] not in ['spec']:
+    # TODO: hard coded ['Spec'], bad!
+    if 'cfgFileOrig' in mdata and mdata['specTypeClass'] not in ['Spec']:
         old_cfg = abs_path(cfg, mdata['cfgFileOrig'])
         new_cfg = abs_path(cfg, mdata['cfgFile'])
         if not os.path.exists(os.path.dirname(new_cfg)):
@@ -213,14 +213,14 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
 def load_pickle(cfg, pickleFile):
     if not os.path.isabs(pickleFile):
         pickleFile = os.path.join(cfg.path['base'], pickleFile)
-    typeclass_map = {'spec': spec.Spec,
-                     'specMs': spec.SpecMs,
-                     'specPe': spec.SpecPe,
-                     'specPePt': spec.SpecPePt,
-                     'specPeIr': spec.SpecPeIr,
-                     'specPeWater': spec.SpecPeWater,
-                     'specPf': spec.SpecPf
-                     }
+#     typeclass_map = {'spec': spec.Spec,
+#                      'specMs': spec.SpecMs,
+#                      'specPe': spec.SpecPe,
+#                      'specPePt': spec.SpecPePt,
+#                      'specPeIr': spec.SpecPeIr,
+#                      'specPeWater': spec.SpecPeWater,
+#                      'specPf': spec.SpecPf
+#                      }
     with open(pickleFile, 'rb') as f:
             mdata, xdata, ydata = pickle.load(f)
     
@@ -235,12 +235,22 @@ def load_pickle(cfg, pickleFile):
         if mdata['mdataVersion'] == 0.2:
             print('Old mdata version detected: 0.2.') 
             mdata = cfg.convert_mdata_v0p2_to_v0p3(mdata)
+            
+        if mdata['mdataVersion'] == 0.3:
+            print('Old mdata version detected: 0.3.') 
+            mdata = cfg.convert_mdata_v0p3_to_v0p4(mdata)
+            
+#         if mdata['mdataVersion'] == 0.4:
+#             print('Old mdata version detected: 0.4.') 
+#             mdata = cfg.convert_mdata_v0p2_to_v0p3(mdata)
         
         mdata_converted = True
         
-    spectrum = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
-    if mdata_converted:
-        spectrum.commit()
+    #spectrum = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
+    spec_class = getattr(spec, mdata['specTypeClass'])
+    spectrum = spec_class(mdata, xdata, ydata, cfg)
+#     if mdata_converted:
+#         spectrum.commit()
     
     return spectrum
 
@@ -365,7 +375,7 @@ def import_cludb_dir(cfg, import_dir):
     # process spectra
     for pfile in pickle_list:
         cs = load_pickle(cfg, pfile)
-        cs.commit(update=False)
+        #cs.commit(update=False)
         for key in ['datFile', 'cfgFile']:
             if key in cs.mdata.data().keys():
                 old_file = os.path.join(import_dir, cs.mdata.data(key))
@@ -374,6 +384,7 @@ def import_cludb_dir(cfg, import_dir):
                     os.makedirs(os.path.dirname(new_file))
                 print('Copying {} to {} ...'.format(old_file, new_file))
                 copy2(old_file, new_file)
+        cs.commit(update=False)
                 
     
 def export_speclist(speclist, export_base_dir, export_dir='export'):
