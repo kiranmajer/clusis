@@ -74,11 +74,12 @@ class Spec(object):
         #staged_files = []
         # init repo instance
         #repo_instance = Repo(self.cfg.path['base'])
-        for ext in file_ext:
+        #for ext in file_ext:
             #added = 
             #repo_instance.index.add([os.path.join(full_path, '*.{}'.format(ext))])
             
-            with Vcs(self.cfg.path['base']) as vcs:
+        with Vcs(self.cfg.path['base']) as vcs:
+            for ext in file_ext:
                 vcs.add_to_index(os.path.join(full_path, '*.{}'.format(ext)))
             #added_files.extend(added)
         

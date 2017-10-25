@@ -342,25 +342,26 @@ class LegacyData(object):
         year = str(time.localtime(self.metadata['recTime']).tm_year)
         month = str(time.localtime(self.metadata['recTime']).tm_mon)
         day = str(time.localtime(self.metadata['recTime']).tm_mday)
-        # dir for dat, cfg files
-        archive_dir = os.path.join(self.cfg.path['archive'],
-                                   self.metadata['machine'],
-                                   self.metadata['specType'],
-                                   year)
-        self.metadata['datFile'] = os.path.join(archive_dir,
-                                                os.path.basename(self.metadata['datFileOrig']))
+#         # dir for dat, cfg files
+#         archive_dir = os.path.join(self.cfg.path['archive'],
+#                                    self.metadata['machine'],
+#                                    self.metadata['specType'],
+#                                    year)
         #self.metadata['userTags'] = []
         ''' build pickle file name and path according following scheme:
         config.path['data']/<year>/<recTime>_<sha1_abbrev.>.pickle'''
         # TODO: make sha1 abbrev configurable?
-        data_storage_dir = '{}{}{}_{}'.format(year, month, day, self.metadata['sha1'][:5])
-        data_storage_basedir = os.path.join(self.cfg.path['data'],
-                                            self.metadata['machine'],
-                                            self.metadata['specType'],
-                                            year)
-        self.metadata['dataStorageLocation'] = os.path.join(data_storage_basedir, data_storage_dir)
+        data_dir, rawdata_dir = self.cfg.data_storage_dirs(year, month, day, self.metadata['sha1'])
+#         data_storage_basedir = os.path.join(self.cfg.path['data'],
+#                                             self.metadata['machine'],
+#                                             self.metadata['specType'],
+#                                             year)
+
+        self.metadata['datFile'] = os.path.join(rawdata_dir,
+                                                os.path.basename(self.metadata['datFileOrig']))
+        self.metadata['dataStorageLocation'] = os.path.join(data_dir)
         if 'cfgFileOrig' in self.metadata.keys():
-            self.metadata['cfgFile'] = os.path.join(archive_dir,
+            self.metadata['cfgFile'] = os.path.join(rawdata_dir,
                                                     os.path.basename(self.metadata['cfgFileOrig']))
 
     

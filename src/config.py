@@ -1,5 +1,6 @@
 import os.path
 import numpy as np
+import time
 
 
 class Cfg():
@@ -11,12 +12,12 @@ class Cfg():
         base_Dir = os.path.join(user_storage_dir, base_dir_name)
         # we keep the internal dir structure relative
         data_storage_dir = 'data'
-        archive_storage_dir = 'archive'
+        #archive_storage_dir = 'archive'
         
         self.path = {'cfg': cfg_dir,
                      'base': base_Dir,
                      'data': data_storage_dir,
-                     'archive': archive_storage_dir
+                     #'archive': archive_storage_dir
                      }
         
         'TODO: Db should be machine independent in long term.'             
@@ -80,7 +81,7 @@ class Cfg():
         '''
         self.wavelengths = [157.63e-9, 193.35e-9, 248.4e-9, 308e-9, 590e-9, 800e-9] # 157.63e-9, 193.35e-9, 248.4e-9
         'When modified -> increase mdata_version!'
-        self.mdata_version = 0.4
+        self.mdata_version = 0.5
         self.mdata_ref = {'spec': {'datFile': [str, True],
                                    'evalTags': [list, True],
                                    'info': [str, True],
@@ -431,8 +432,19 @@ class Cfg():
                                        '1b': 'blue',
                                        'vib': 'red',
                                        }
-
         
+        self.mdata_converter = {0.1: self.convert_mdata_v0p1_to_v0p2,
+                                0.2: self.convert_mdata_v0p2_to_v0p3,
+                                0.3: self.convert_mdata_v0p3_to_v0p4,
+                                0.4: self.convert_mdata_v0p4_to_v0p5,
+                                }
+
+
+    def data_storage_dirs(self, year, month, day, sha1_id, rawdata_dir_name='rawdata'):
+        data_dir = os.path.join(self.path['data'], '{}.{}.{}_{}'.format(year, month, day, sha1_id))
+        rawdata_dir = os.path.join(data_dir, rawdata_dir_name)
+        return data_dir, rawdata_dir
+
 
     def convert_mdata_v0p1_to_v0p2(self, mdata):
         start_version = 0.1
@@ -487,6 +499,24 @@ class Cfg():
             mdata['specTypeClass'] = mdata['specTypeClass'].replace('s', 'S', 1)
             data_storage_location = mdata.pop('pickleFile').rsplit('.pickle')[0]
             mdata['dataStorageLocation'] = data_storage_location 
+            mdata['mdataVersion'] = target_version
+        else:
+            raise ValueError('mdata has wrong version: {}, expected {}.'.format(mdata['mdataVersion'],
+                                                                                start_version))
+        
+        return mdata
+
+
+    def convert_mdata_v0p4_to_v0p5(self, mdata):
+        start_version = 0.4
+        target_version = 0.5
+        if mdata['mdataVersion'] == start_version:
+            print('Converting mdata from version {} to {} ...'.format(start_version, target_version))
+            year = str(time.localtime(mdata['recTime']).tm_year)
+            month = str(time.localtime(mdata['recTime']).tm_mon)
+            day = str(time.localtime(mdata['recTime']).tm_mday)
+            data_dir, rawdata_dir = self.data_storage_dirs(year, month, day, mdata['sha1'])
+            mdata['dataStorageLocation'] = data_dir 
             mdata['mdataVersion'] = target_version
         else:
             raise ValueError('mdata has wrong version: {}, expected {}.'.format(mdata['mdataVersion'],

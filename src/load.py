@@ -13,6 +13,7 @@ import pickle
 #import os
 import numpy as np
 import json
+import time
 
 
 #def sha1Unique(mdata):
@@ -213,45 +214,15 @@ def import_LegacyData(cfg, datFiles, spectype=None, commonMdata={}, prefer_filen
 def load_pickle(cfg, pickleFile):
     if not os.path.isabs(pickleFile):
         pickleFile = os.path.join(cfg.path['base'], pickleFile)
-#     typeclass_map = {'spec': spec.Spec,
-#                      'specMs': spec.SpecMs,
-#                      'specPe': spec.SpecPe,
-#                      'specPePt': spec.SpecPePt,
-#                      'specPeIr': spec.SpecPeIr,
-#                      'specPeWater': spec.SpecPeWater,
-#                      'specPf': spec.SpecPf
-#                      }
     with open(pickleFile, 'rb') as f:
             mdata, xdata, ydata = pickle.load(f)
-    
     # testing for correct mdata version
-    # TODO: make this self-executing for all conversion methods in cfg
-    mdata_converted = False
-    if mdata['mdataVersion'] < cfg.mdata_version:
-        if mdata['mdataVersion'] == 0.1:
-            print('Old mdata version detected: 0.1.') 
-            mdata = cfg.convert_mdata_v0p1_to_v0p2(mdata)
-            
-        if mdata['mdataVersion'] == 0.2:
-            print('Old mdata version detected: 0.2.') 
-            mdata = cfg.convert_mdata_v0p2_to_v0p3(mdata)
-            
-        if mdata['mdataVersion'] == 0.3:
-            print('Old mdata version detected: 0.3.') 
-            mdata = cfg.convert_mdata_v0p3_to_v0p4(mdata)
-            
-#         if mdata['mdataVersion'] == 0.4:
-#             print('Old mdata version detected: 0.4.') 
-#             mdata = cfg.convert_mdata_v0p2_to_v0p3(mdata)
-        
-        mdata_converted = True
-        
-    #spectrum = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
+    mdata, converted, git_log = verify_update_mdata_version(cfg, mdata)
     spec_class = getattr(spec, mdata['specTypeClass'])
     spectrum = spec_class(mdata, xdata, ydata, cfg)
-#     if mdata_converted:
-#         spectrum.commit()
-    
+    if converted:
+        spectrum.mdata.commit_msgs.update(git_log)
+
     return spectrum
 
 
@@ -273,16 +244,9 @@ def verify_update_mdata_version(cfg, mdata_dict):
 
 def spec_from_specdatadir(cfg, data_dir):
     if not os.path.isabs(data_dir):
-        data_dir = os.path.join(cfg.path['base'], data_dir)
-# trying getattr instead
-#     typeclass_map = {'spec': spec_3f.Spec,
-#                      'specM': spec_3f.SpecM,
-#                      'specTof': spec_3f.SpecTof,
-#                      }
-    
+        data_dir = os.path.join(cfg.path['base'], data_dir)   
     mdata, xdata, ydata = load_spec_data(data_dir)
     mdata, converted, git_log = verify_update_mdata_version(cfg, mdata)
-    #spectrum = typeclass_map[mdata['specTypeClass']](mdata, xdata, ydata, cfg)
     spec_class = getattr(spec, mdata['specTypeClass'])
     spectrum = spec_class(mdata, xdata, ydata, cfg)
     if converted:
@@ -376,14 +340,22 @@ def import_cludb_dir(cfg, import_dir):
     for pfile in pickle_list:
         cs = load_pickle(cfg, pfile)
         #cs.commit(update=False)
+        year = str(time.localtime(cs.mdata.data('recTime')).tm_year)
+        month = str(time.localtime(cs.mdata.data('recTime')).tm_mon)
+        day = str(time.localtime(cs.mdata.data('recTime')).tm_mday)
+        data_dir, rawdata_dir = cfg.data_storage_dirs(year, month, day, cs.mdata.data('sha1'))
         for key in ['datFile', 'cfgFile']:
             if key in cs.mdata.data().keys():
                 old_file = os.path.join(import_dir, cs.mdata.data(key))
-                new_file = os.path.join(cfg.path['base'], cs.mdata.data(key))
+                rawdata_file_path = os.path.join(rawdata_dir, os.path.basename(cs.mdata.data(key)))
+                new_file = os.path.join(cfg.path['base'], rawdata_file_path)
                 if not os.path.exists(os.path.dirname(new_file)):
                     os.makedirs(os.path.dirname(new_file))
                 print('Copying {} to {} ...'.format(old_file, new_file))
                 copy2(old_file, new_file)
+                cs.mdata.update({key: rawdata_file_path})
+                with Vcs(cfg.path['base']) as vcs:
+                    vcs.add_to_index(new_file)
         cs.commit(update=False)
                 
     
