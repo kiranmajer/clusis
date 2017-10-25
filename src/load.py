@@ -340,10 +340,11 @@ def import_cludb_dir(cfg, import_dir):
     for pfile in pickle_list:
         cs = load_pickle(cfg, pfile)
         #cs.commit(update=False)
-        year = str(time.localtime(cs.mdata.data('recTime')).tm_year)
-        month = str(time.localtime(cs.mdata.data('recTime')).tm_mon)
-        day = str(time.localtime(cs.mdata.data('recTime')).tm_mday)
-        data_dir, rawdata_dir = cfg.data_storage_dirs(year, month, day, cs.mdata.data('sha1'))
+        date_str = time.strftime('%Y.%m.%d', time.localtime(cs.mdata.data('recTime')))
+#         year = str(time.localtime(cs.mdata.data('recTime')).tm_year)
+#         month = str(time.localtime(cs.mdata.data('recTime')).tm_mon)
+#         day = str(time.localtime(cs.mdata.data('recTime')).tm_mday)
+        data_dir, rawdata_dir = cfg.data_storage_dirs(date_str, cs.mdata.data('sha1'))
         for key in ['datFile', 'cfgFile']:
             if key in cs.mdata.data().keys():
                 old_file = os.path.join(import_dir, cs.mdata.data(key))
@@ -356,7 +357,7 @@ def import_cludb_dir(cfg, import_dir):
                 cs.mdata.update({key: rawdata_file_path})
                 with Vcs(cfg.path['base']) as vcs:
                     vcs.add_to_index(new_file)
-        cs.commit(update=False)
+        cs.commit(update=False, short_log='{}: Initial commit: Import from legacy pickle files.'.format(cs.short_id))
                 
     
 def export_speclist(speclist, export_base_dir, export_dir='export'):

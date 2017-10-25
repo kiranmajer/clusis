@@ -440,8 +440,8 @@ class Cfg():
                                 }
 
 
-    def data_storage_dirs(self, year, month, day, sha1_id, rawdata_dir_name='rawdata'):
-        data_dir = os.path.join(self.path['data'], '{}.{}.{}_{}'.format(year, month, day, sha1_id))
+    def data_storage_dirs(self, date_str, sha1_id, rawdata_dir_name='rawdata'):
+        data_dir = os.path.join(self.path['data'], '{}_{}'.format(date_str, sha1_id))
         rawdata_dir = os.path.join(data_dir, rawdata_dir_name)
         return data_dir, rawdata_dir
 
@@ -512,10 +512,11 @@ class Cfg():
         target_version = 0.5
         if mdata['mdataVersion'] == start_version:
             print('Converting mdata from version {} to {} ...'.format(start_version, target_version))
-            year = str(time.localtime(mdata['recTime']).tm_year)
-            month = str(time.localtime(mdata['recTime']).tm_mon)
-            day = str(time.localtime(mdata['recTime']).tm_mday)
-            data_dir, rawdata_dir = self.data_storage_dirs(year, month, day, mdata['sha1'])
+            date_str = time.strftime('%Y.%m.%d', time.localtime(mdata['recTime']))
+#             year = str(time.localtime(mdata['recTime']).tm_year)
+#             month = str(time.localtime(mdata['recTime']).tm_mon)
+#             day = str(time.localtime(mdata['recTime']).tm_mday)
+            data_dir, rawdata_dir = self.data_storage_dirs(date_str, mdata['sha1'])
             mdata['dataStorageLocation'] = data_dir 
             mdata['mdataVersion'] = target_version
         else:

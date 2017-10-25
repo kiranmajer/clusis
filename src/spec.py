@@ -13,6 +13,7 @@ from scipy.optimize import leastsq
 import view
 import pickle
 import load
+import time
 from git import Repo
 from vcs_shell import Vcs
 
@@ -29,12 +30,22 @@ class Spec(object):
         self.cfg = cfg
         self.view = view.View(self)
         self.commit_msgs = {'A': [], 'D': [], 'M': [], 'R': []}
+        self.short_id = self.get_short_id() 
         
 #     def __del__(self):
 #         print('Commiting ...')
 #         self.commit()
 #         print('before deleting spec object.')
-        
+
+    def get_short_id(self, sha1_len=5):
+        date_str = time.strftime('%Y.%m.%d', time.localtime(self.mdata.data('recTime')))
+#         year = str(time.localtime(self.mdata.data('recTime')).tm_year)
+#         month = str(time.localtime(self.mdata.data('recTime')).tm_mon)
+#         day = str(time.localtime(self.mdata.data('recTime')).tm_mday)
+#         data_dir, rawdata_dir = self.cfg.data_storage_dirs(date_str, self.mdata.data('sha1')[:sha1_len])
+        return '{}_{}'.format(date_str, self.mdata.data('sha1')[:sha1_len])
+#         return os.path.basename(data_dir)
+   
     
     def _update_mdata_reference(self, specTypeClass):
         'Adapts mdata reference to the spec type class'
@@ -104,7 +115,7 @@ class Spec(object):
         # log summary
         #git_options = list(git_options)
         git_msgs = []
-        short_log_auto = '{} changed: '.format(self.mdata.data('sha1'))
+        #change_summary = 'changes: '.format(self.mdata.data('sha1'))
         short_log_items = []
         #git_msgs.append(short_log_auto)
         # mdata changes
@@ -138,9 +149,11 @@ class Spec(object):
 #             short_log_items.append('spec data')
         
         #print('short log items:', short_log_items)
-        short_log_auto = short_log_auto + ', '.join(short_log_items)
+        change_summary = 'changes: ' + ', '.join(short_log_items)
         if not short_log:
-            short_log = short_log_auto
+            short_log = '{} {}'.format(self.short_id, change_summary)
+        else:
+            git_msgs.insert(0, [change_summary])
         #git_options.extend(git_msgs)
         
         print('short log:', short_log)

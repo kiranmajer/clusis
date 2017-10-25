@@ -339,9 +339,10 @@ class LegacyData(object):
         """
         Adds data storage paths for *.dat, *.cfg, and *.pickle files to metadata
         """
-        year = str(time.localtime(self.metadata['recTime']).tm_year)
-        month = str(time.localtime(self.metadata['recTime']).tm_mon)
-        day = str(time.localtime(self.metadata['recTime']).tm_mday)
+        date_str = time.strftime('%Y.%m.%d', time.localtime(self.metadata('recTime')))
+#         year = str(time.localtime(self.metadata['recTime']).tm_year)
+#         month = str(time.localtime(self.metadata['recTime']).tm_mon)
+#         day = str(time.localtime(self.metadata['recTime']).tm_mday)
 #         # dir for dat, cfg files
 #         archive_dir = os.path.join(self.cfg.path['archive'],
 #                                    self.metadata['machine'],
@@ -351,7 +352,7 @@ class LegacyData(object):
         ''' build pickle file name and path according following scheme:
         config.path['data']/<year>/<recTime>_<sha1_abbrev.>.pickle'''
         # TODO: make sha1 abbrev configurable?
-        data_dir, rawdata_dir = self.cfg.data_storage_dirs(year, month, day, self.metadata['sha1'])
+        data_dir, rawdata_dir = self.cfg.data_storage_dirs(date_str, self.metadata['sha1'])
 #         data_storage_basedir = os.path.join(self.cfg.path['data'],
 #                                             self.metadata['machine'],
 #                                             self.metadata['specType'],
