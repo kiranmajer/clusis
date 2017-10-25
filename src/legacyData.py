@@ -175,13 +175,14 @@ class LegacyData(object):
                     pattern_groups = re.compile(r'(^\d{4})(\d{2})(\d{2})_')
                     year, month, day = pattern_groups.search(datFileName).groups()
                 except:
-                    year, month, day = 1970, 1, 1 # dummy date
+                    #year, month, day = 1970, 1, 1 # dummy date
+                    raise ValueError('Could not determine recording date.')
                 
             if self.datafile_type in ['pes', 'ms']:
                 startDate = '%s %s %s' % (day, month, year)
                 dayStarts = time.mktime(time.strptime(startDate, '%d %m %Y'))
                 dayEnds = dayStarts + 86400
-                if dayStarts <= timeStamp <= dayEnds or dayStarts == time.mktime(time.strptime('1 1 1970', '%d %m %Y')):
+                if dayStarts <= timeStamp <= dayEnds: #or dayStarts == time.mktime(time.strptime('1 1 1970', '%d %m %Y')):
                     self.metadata['recTime'] = timeStamp
                 else:
                     self.metadata['recTime'] = dayStarts

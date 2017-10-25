@@ -339,7 +339,16 @@ def import_cludb_dir(cfg, import_dir):
     # process spectra
     for pfile in pickle_list:
         cs = load_pickle(cfg, pfile)
-        #cs.commit(update=False)
+        # for now skip data with rec date older than 01.10.1990
+        if cs.mdata.data('recTime') < time.mktime(time.strptime("01.01.1990", "%d.%m.%Y")):
+            print('#######################################')
+            print('')
+            print('Skipping {} due to its recTime value of {}'.format(pfile,
+                                                                      time.strftime('%Y.%m.%d', 
+                                                                                    time.localtime(cs.mdata.data('recTime')))))
+            print('')
+            print('#######################################')
+            continue
         date_str = time.strftime('%Y.%m.%d', time.localtime(cs.mdata.data('recTime')))
 #         year = str(time.localtime(cs.mdata.data('recTime')).tm_year)
 #         month = str(time.localtime(cs.mdata.data('recTime')).tm_mon)
