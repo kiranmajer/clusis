@@ -916,6 +916,9 @@ class SpecPeWater(SpecPe):
         print('   R squared:', fit_values['info'][0])
         #print('   reduced chi squared:', fit_values['info'][0]/(len(self.xdata[xdata_key]) - len(fit_values['par'])))
         #print('Updating mdata...')
+        # remove 'info' and 'covar from fit_values since they can't easily be stored as json
+        del fit_values['covar']
+        del fit_values['info']
         self.mdata.update({'fitData': {fit_id: fit_values}})
         self.mdata.add_tag('fitted', tagkey='systemTags')
         # test asymmetry

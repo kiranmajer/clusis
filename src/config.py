@@ -81,7 +81,7 @@ class Cfg():
         '''
         self.wavelengths = [157.63e-9, 193.35e-9, 248.4e-9, 308e-9, 590e-9, 800e-9] # 157.63e-9, 193.35e-9, 248.4e-9
         'When modified -> increase mdata_version!'
-        self.mdata_version = 0.5
+        self.mdata_version = 0.6
         self.mdata_ref = {'spec': {'datFile': [str, True],
                                    'evalTags': [list, True],
                                    'info': [str, True],
@@ -437,6 +437,7 @@ class Cfg():
                                 0.2: self.convert_mdata_v0p2_to_v0p3,
                                 0.3: self.convert_mdata_v0p3_to_v0p4,
                                 0.4: self.convert_mdata_v0p4_to_v0p5,
+                                0.5: self.convert_mdata_v0p5_to_v0p6,
                                 }
 
 
@@ -524,3 +525,25 @@ class Cfg():
                                                                                 start_version))
         
         return mdata
+
+    def convert_mdata_v0p5_to_v0p6(self, mdata):
+        start_version = 0.5
+        target_version = 0.6
+        if mdata['mdataVersion'] == start_version:
+            print('Converting mdata from version {} to {} ...'.format(start_version, target_version))
+            if 'fitData' in mdata.keys():
+                for k in mdata['fitData'].keys():
+                    if 'covar' in mdata['fitData'][k].keys():
+                        del mdata['fitData'][k]['covar']
+                    if 'info' in mdata['fitData'][k].keys():
+                        del mdata['fitData'][k]['info']
+            mdata['mdataVersion'] = target_version
+        else:
+            raise ValueError('mdata has wrong version: {}, expected {}.'.format(mdata['mdataVersion'],
+                                                                                start_version))
+        
+        return mdata
+
+
+
+
