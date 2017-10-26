@@ -599,7 +599,7 @@ class ViewPes(View):
         
     def show_gaugeref(self):
         gaugeRef = self.spec.mdata.data('gaugeRef')
-        gaugeSpec = load.load_pickle(self.spec.cfg, gaugeRef)
+        gaugeSpec = load.spec_from_specdatadir(self.spec.cfg, gaugeRef)
         gaugeSpec.view.show_ebin_fit()
         
         
@@ -627,7 +627,7 @@ class ViewPes(View):
                                     'yoffset': yoffset,
                                     'color': color,
                                     'xdata_key': self.xdata_key})
-        addspec = load.load_pickle(self.spec.cfg, specfile)
+        addspec = load.spec_from_specdatadir(self.spec.cfg, specfile)
         time_unit = 1
         if 'tof' in self.xdata_key:
             time_unit = self.timeunit
@@ -692,7 +692,7 @@ class ViewPes(View):
         '''
         if ax is None:
             ax = self.ax
-        addspec = load.load_pickle(self.spec.cfg, specfile)
+        addspec = load.spec_from_specdatadir(self.spec.cfg, specfile)
         try:
             ea = addspec.mdata.data('electronAffinity')
             ea_ref = self.spec.mdata.data('electronAffinity')

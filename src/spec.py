@@ -264,7 +264,7 @@ class Spec(object):
         In all other cases one needs to adjust both xdata and ydata sets to match a common 
         time range before subtraction! This is NOT covert by this method. 
         '''
-        bgSpec = load.load_pickle(self.cfg, bgFile)
+        bgSpec = load.spec_from_specdatadir(self.cfg, bgFile)
         if not self.mdata.data('specTypeClass') == bgSpec.mdata.data('specTypeClass'):
             raise ValueError('Background file has different spec type class.')
         # TODO: reference ref spectra by sha1 (without paths)
@@ -393,7 +393,7 @@ class SpecPe(Spec):
         
         
     def gauge(self, gaugeRef, ignore_wavelength=False):
-        gaugeSpec = load.load_pickle(self.cfg, gaugeRef)
+        gaugeSpec = load.spec_from_specdatadir(self.cfg, gaugeRef)
         # make some simple tests for valid data
         if gaugeSpec.mdata.data('specTypeClass') not in ['specPePt']:
             raise ValueError('Gauge reference is not a Pt-spectrum.')
