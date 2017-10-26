@@ -139,10 +139,10 @@ class Cfg():
                                      'trapTemp': [float, False],
                                      'waveLength': [self.wavelengths, True],
                                      },
-                          'specPePt': {'fitCovar': [np.ndarray, False],
+                          'specPePt': {#'fitCovar': [np.ndarray, False],
                                        'fitConstrains': [dict, False],
                                        'fitCutoff': [float, False],
-                                       'fitInfo': [list, False],
+                                       #'fitInfo': [list, False],
                                        'fitPar': [np.ndarray, False],
                                        'fitPar0': [np.ndarray, False],
                                        'fitPeakPos': [list, False],
@@ -537,6 +537,9 @@ class Cfg():
                         del mdata['fitData'][k]['covar']
                     if 'info' in mdata['fitData'][k].keys():
                         del mdata['fitData'][k]['info']
+            for k in ['fitCovar', 'fitInfo']:
+                if k in mdata.keys():
+                    del mdata[k]
             mdata['mdataVersion'] = target_version
         else:
             raise ValueError('mdata has wrong version: {}, expected {}.'.format(mdata['mdataVersion'],

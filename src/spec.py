@@ -612,7 +612,7 @@ class SpecPePt(SpecPe):
             return fitValues
             raise
         else:
-            fitValues.update({'fitPar': p, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
+            fitValues.update({'fitPar': p}) # skip following due to json restrictions, 'fitCovar': covar, 'fitInfo': [info, mess, ierr]})
         
             return fitValues
        
