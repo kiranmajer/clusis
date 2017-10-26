@@ -391,9 +391,10 @@ def export_speclist(speclist, export_base_dir, export_dir='export'):
                 copy2(old_file, new_file)    
 
 
-def import_export_speclist(cfg, export_dir):
+def import_export_speclist(cfg, db_file, export_dir):
     export_dir = os.path.abspath(export_dir)
-    db = Db('casi', cfg)
+    db_name = os.path.basename(db_file).split('_v')[0]
+    db = Db(db_name, cfg)
     failedImports = []
     successfulImports = []
     filelist = ls_recursive(export_dir, suffix='.pickle')

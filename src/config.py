@@ -22,7 +22,9 @@ class Cfg():
         
         'TODO: Db should be machine independent in long term.'             
         self.db = {'casi': {'path': self.path['base'],  # path should always be absolute
+                            'version': 0.1,
                             'layout': {'pes': (['sha1', 'TEXT PRIMARY KEY'],
+                                               ['shortId', 'TEXT'],
                                                ['clusterBaseUnit', 'TEXT'],
                                                ['clusterBaseUnitNumber', 'INTEGER'],
                                                ['clusterDopant', 'TEXT'],
@@ -36,6 +38,7 @@ class Cfg():
                                                ['trapTemp', 'REAL']
                                                ),
                                        'ms': (['sha1', 'TEXT PRIMARY KEY'],
+                                              ['shortId', 'TEXT'],
                                               ['clusterBaseUnit', 'TEXT'],
                                               ['clusterBaseUnitNumberStart', 'INTEGER'],
                                               ['clusterBaseUnitNumberEnd', 'INTEGER'],
@@ -49,6 +52,7 @@ class Cfg():
                                               ['trapTemp', 'REAL']
                                               ),
                                        'pfs': (['sha1', 'TEXT PRIMARY KEY'],
+                                               ['shortId', 'TEXT'],
                                                ['clusterBaseUnit', 'TEXT'],
                                                ['clusterBaseUnitNumber', 'INTEGER'],
                                                ['clusterDopant', 'TEXT'],
@@ -62,6 +66,7 @@ class Cfg():
                                                ['trapTemp', 'REAL']
                                                ),
                                        'generic': (['sha1', 'TEXT PRIMARY KEY'],
+                                                   ['shortId', 'TEXT'],
                                                    ['dataStorageLocation', 'TEXT UNIQUE'],
                                                    ['datFile', 'TEXT'],
                                                    ['tags', 'LIST'],

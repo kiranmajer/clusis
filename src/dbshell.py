@@ -11,8 +11,8 @@ class Db(object):
         #self.__dbName = dbName
         self.__cfg = cfg
         self.__dbProps = cfg.db[dbName]
-        #dbFileName = '{}_v{}.db'.format(dbName, self.__dbProps['version'])
-        dbFileName = '{}.db'.format(dbName)
+        dbFileName = '{}_v{}.db'.format(dbName, self.__dbProps['version'])
+        #dbFileName = '{}.db'.format(dbName)
         self.__dbFile = os.path.join(self.__dbProps['path'], dbFileName)
         'TODO: into config?'        
 #        sqlite3.register_adapter(time.struct_time, self.__timeAdapter)
@@ -65,10 +65,17 @@ class Db(object):
         for spec in specList:
             specType = spec.mdata.data('specType')
             keys = [item[0] for item in self.__dbProps['layout'][specType]]
+            values = []
             for key in keys:
-                if key not in spec.mdata.data().keys():
+                if key is 'shortId':
+                    values.append(spec.short_id)
+                elif key not in spec.mdata.data().keys():
                     spec.mdata.add({key: None})
-            values = [spec.mdata.data(key) for key in keys]
+                    values.append(None)
+                elif key in spec.mdata.data().keys():
+                    values.append(spec.mdata.data(key))
+                else:
+                    raise ValueError('key "{}" not in mdata.'.format(key))
             if specType in list(valueList.keys()):
                 valueList[specType].append(tuple(values))
             else:

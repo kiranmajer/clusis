@@ -305,7 +305,8 @@ class Spec(object):
         # remove db entry
         sha1 = self.mdata.data('sha1')
         tablename = self.mdata.data('specType')
-        with Db(self.mdata.data('machine'), self.cfg) as db:
+        db_name = self.mdata.data('machine')
+        with Db(db_name, self.cfg) as db:
             db.remove(sha1, tablename)
 
 
