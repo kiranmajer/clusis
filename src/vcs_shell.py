@@ -27,7 +27,8 @@ class Vcs:
     
     
     def __exit__(self, exc_type, exc_value, traceback):
-        print('Exit Vcs instance at', self._repo_path)
+        pass
+        #print('Exit Vcs instance at', self._repo_path)
 #         del self._idx
 #         del self._repo
 #         del self._repo_path
@@ -50,7 +51,7 @@ class Vcs:
             else:
                 file_list_expanded.append(f)
         # try to find valid absolute paths
-        print(file_list_expanded)
+        #print(file_list_expanded)
         valid_file_list = []
         for f in file_list_expanded:
             if os.path.isabs(f) and os.path.exists(f) and f.startswith(self._repo_path):
@@ -73,7 +74,7 @@ class Vcs:
         diff_to_head = self._repo.git.diff('HEAD', name_status=True).splitlines()
         for diff in diff_to_head:
             m, p = diff.split('\t')
-            print('change_type:', m, 'path:', p)
+            #print('change_type:', m, 'path:', p)
             stagedfiles_list.append([p, m])
         return stagedfiles_list
     

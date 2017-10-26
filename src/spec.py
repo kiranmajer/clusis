@@ -135,7 +135,7 @@ class Spec(object):
             staged_files = vcs.get_stagedfiles_name_status()
         for f in staged_files:
             self.commit_msgs[f[1]].append(f[0])
-        print('spec data has commit msgs:', self.commit_msgs)
+        #print('spec data has commit msgs:', self.commit_msgs)
         mode_map = {'A': 'added', 'D': 'deleted', 'M': 'modified', 'R': 'renamed'}
         for mode, file_list in self.commit_msgs.items():
             if len(file_list) > 0:
@@ -156,8 +156,8 @@ class Spec(object):
             git_msgs.insert(0, [change_summary])
         #git_options.extend(git_msgs)
         
-        print('short log:', short_log)
-        print('log:', git_msgs)
+        #print('short log:', short_log)
+        #print('log:', git_msgs)
         with Vcs(self.cfg.path['base']) as vcs:
             vcs.commit_changes(short_log=short_log, git_options=git_options, log=git_msgs)
 #         # init repo instance
