@@ -716,7 +716,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                            export_dir=os.path.expanduser('~'), size=[20,14],
                            fontsize_label=12, markersize=6, xlim=[0,0.42],
                            ylim=[-4,0], ax2_ticks=[10, 20,40,80,150,350,1000, 5000],
-                           color=None, alpha=1.0, markeredgecolor='black',
+                           color=None, alpha=1.0, markeredgecolor='black', markeredgewidth=.1,
                            markertype_comp_data=None, markersize_comp_data=None,
                            fade_color=False, comp_data_hollow_marker=False,
                            color_comp_data=None, show_legend=True, show_own_data_legend=True,
@@ -842,7 +842,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                         res_set = fit_res[i]
                         i += 1
                         ex_str += '\n{:.2f}$\pm${:.2f}eV'.format(par_set[1], res_set[1])
-                    bbox_props = {'boxstyle': 'square', 'facecolor': 'white'} 
+                    bbox_props = {'boxstyle': 'round', 'facecolor': 'white', 'alpha': 0.8, 'linewidth': .8, 'edgecolor': '0.8'} 
                     # TODO: text position relative to axis?
                     ax.text(0.015, -0.2 + ylim[1], ex_str, verticalalignment='top',
                             fontsize=fontsize_label,bbox=bbox_props)
@@ -855,7 +855,7 @@ class SpecPeWaterFitList(SpecPeWaterList):
                 # mind the ',' after ods, because plot returns a list
                 ods, = ax.plot(peak_set[2], peak_set[1], 's', markersize=markersize,
                                color=color[idx], label=leg_label[idx], alpha=alpha,
-                               markeredgecolor=markeredgecolor[idx])
+                               markeredgecolor=markeredgecolor[idx], markeredgewidth=markeredgewidth)
                 own_data.append(ods)
                 idx += 1
                 
@@ -903,31 +903,61 @@ class SpecPeWaterFitList(SpecPeWaterList):
 #                     else:
 #                         marker='D'
                     # TODO: this is shoulden't be hard coded
-                    label = {'bowen_iso1_origin': 'Isomer I (Coe et al.)',
-                             'bowen_iso1_stretch': 'Vibrational (Coe et al.)',
-                             'neumark_iso1': 'Isomer I (Verlet et al.)',
-                             'neumark_iso1_high_press': 'Isomer I [Ne] (Young et al.)',
-                             'neumark_iso2': 'Isomer II (Verlet et al.)',
-                             'neumark_iso3': 'Isomer III (Verlet et al.)',
+#                     label = {'bowen_iso1_origin': 'Isomer I (Coe et al.)',
+#                              'bowen_iso1_stretch': 'Vibrational (Coe et al.)',
+#                              'neumark_iso1': 'Isomer I (Verlet et al.)',
+#                              'neumark_iso1_high_press': 'Isomer I [Ne] (Young et al.)',
+#                              'neumark_iso2': 'Isomer II (Verlet et al.)',
+#                              'neumark_iso3': 'Isomer III (Verlet et al.)',
+#                              'neumark_iso1_digitized': 'Isomer I (Verlet et al.) [digitized]',
+#                              'neumark_iso1_high_press_digitized': 'Isomer I [Ne] (Young et al.) [digitized]',
+#                              'neumark_iso2_digitized': 'Isomer II (Verlet et al.) [digitized]',
+#                              'neumark_iso3_digitized': 'Isomer III (Verlet et al.) [digitized]',
+#                              'water_jets': 'Water jets (several)',
+#                              'bowen_d2o_origin_1fit': 'Isomer I [1 fit] (Bowen)',
+#                              'bowen_d2o_origin_2fit': 'Isomer I [2 fit] (Bowen)',
+#                              'bowen_d2o_stretch': 'Vibrational (Bowen)',
+#                              'herbert_surface': 'surface (Jacobson, Herbert)',
+#                              'herbert_partial': 'part. embedded (Jacobson, Herbert)',
+#                              'herbert_cavity': 'cavity (Jacobson, Herbert)',
+#                              'herbert_cavity_aneal': 'cavity init. (Jacobson, Herbert)',
+#                              'turi_tb_surface': 'TB surface (Turi)',
+#                              'turi_tb_interior': 'TB interior (Turi)',
+#                              'turi_lgs_surface': 'LGS surface (Turi)',
+#                              'turi_lgs_interior': 'LGS interior (Turi)',
+#                              'barnett_surface': 'surface (Barnett et al.)',
+#                              'barnett_interior': 'interior (Barnett et al.)',
+#                              'barnett_diffuse': 'diffuse (Barnett et al.)',
+#                              'turi_tb_surface_digitized': 'TB surface (Turi) [digitized]',
+#                              'turi_tb_interior_digitized': 'TB interior (Turi) [digitized]',
+#                              'turi_lgs_surface_digitized': 'LGS surface (Turi) [digitized]',
+#                              'turi_lgs_interior_digitized': 'LGS interior (Turi) [digitized]',
+#                              }
+                    label = {'bowen_iso1_origin': 'Isomer I (a)',
+                             'bowen_iso1_stretch': 'Vibrational (a)',
+                             'neumark_iso1': 'Isomer I (b)',
+                             'neumark_iso1_high_press': 'Isomer I [Ne] (c)',
+                             'neumark_iso2': 'Isomer II (b)',
+                             'neumark_iso3': 'Isomer III (b)',
                              'neumark_iso1_digitized': 'Isomer I (Verlet et al.) [digitized]',
                              'neumark_iso1_high_press_digitized': 'Isomer I [Ne] (Young et al.) [digitized]',
                              'neumark_iso2_digitized': 'Isomer II (Verlet et al.) [digitized]',
                              'neumark_iso3_digitized': 'Isomer III (Verlet et al.) [digitized]',
-                             'water_jets': 'Water jets (several)',
+                             'water_jets': 'Water jets (d)',
                              'bowen_d2o_origin_1fit': 'Isomer I [1 fit] (Bowen)',
                              'bowen_d2o_origin_2fit': 'Isomer I [2 fit] (Bowen)',
                              'bowen_d2o_stretch': 'Vibrational (Bowen)',
-                             'herbert_surface': 'surface (Jacobson, Herbert)',
-                             'herbert_partial': 'part. embedded (Jacobson, Herbert)',
-                             'herbert_cavity': 'cavity (Jacobson, Herbert)',
-                             'herbert_cavity_aneal': 'cavity init. (Jacobson, Herbert)',
-                             'turi_tb_surface': 'TB surface (Turi)',
-                             'turi_tb_interior': 'TB interior (Turi)',
-                             'turi_lgs_surface': 'LGS surface (Turi)',
-                             'turi_lgs_interior': 'LGS interior (Turi)',
-                             'barnett_surface': 'surface (Barnett et al.)',
-                             'barnett_interior': 'interior (Barnett et al.)',
-                             'barnett_diffuse': 'diffuse (Barnett et al.)',
+                             'herbert_surface': 'surface (b)',
+                             'herbert_partial': 'partially embedded (b)',
+                             'herbert_cavity': 'cavity (b)',
+                             'herbert_cavity_aneal': 'cavity init. (b)',
+                             'turi_tb_surface': 'TB surface (c)',
+                             'turi_tb_interior': 'TB interior (c)',
+                             'turi_lgs_surface': 'LGS surface (c)',
+                             'turi_lgs_interior': 'LGS interior (c)',
+                             'barnett_surface': 'surface (a)',
+                             'barnett_interior': 'interior (a)',
+                             'barnett_diffuse': 'diffuse (a)',
                              'turi_tb_surface_digitized': 'TB surface (Turi) [digitized]',
                              'turi_tb_interior_digitized': 'TB interior (Turi) [digitized]',
                              'turi_lgs_surface_digitized': 'LGS surface (Turi) [digitized]',
@@ -958,8 +988,8 @@ class SpecPeWaterFitList(SpecPeWaterList):
                             }
                     leg = ax.legend(handles=ext_data, bbox_to_anchor=lpar['legend_anchor'][show_legend],
                                     loc=lpar['legend_loc'][show_legend], borderaxespad=0.,
-                                    ncol=lpar['legend_col'][show_legend], fontsize=fontsize_label,
-                                    columnspacing=0)
+                                    ncol=lpar['legend_col'][show_legend], fontsize=fontsize_label)
+                                    #columnspacing=0)
                 elif show_legend:
                     ax.legend(handles=ext_data, loc=0, fontsize=fontsize_label, numpoints=1)
                 
@@ -976,9 +1006,11 @@ class SpecPeWaterFitList(SpecPeWaterList):
                     vde0=slope[1]
                     vde1=vde0 + ir1*slope[0]
                     vde2=vde0 + ir2*slope[0]
-                    eds, = ax.plot([ir0, ir1], [vde0, vde1], '-', color=slope[2],
+                    eds, = ax.plot([ir0, ir2], [vde0, vde2], '-', color=slope[2],
                                    label='A={}'.format(slope[0]), lw=slope_lw)
-                    ax.plot([ir1, ir2], [vde1, vde2], '--', color=slope[2], lw=slope_lw)
+#                     eds, = ax.plot([ir0, ir1], [vde0, vde1], '-', color=slope[2],
+#                                    label='A={}'.format(slope[0]), lw=slope_lw)
+#                     ax.plot([ir1, ir2], [vde1, vde2], '--', color=slope[2], lw=slope_lw)
                     if slope[0] not in slope_legend_ref:
                         slope_legend_ref.append(slope[0])
                         slope_legend.append(eds)
